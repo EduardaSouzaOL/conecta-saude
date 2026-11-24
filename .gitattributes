@@ -1,0 +1,4 @@
+# Scripts de shell precisam de LF para rodar no Linux/CI
+mvnw text eol=lf
+*.sh text eol=lf
+mvnw.cmd text eol=crlf
