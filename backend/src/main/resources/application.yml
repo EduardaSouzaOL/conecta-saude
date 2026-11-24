@@ -1,0 +1,17 @@
+# Configuração base. Credenciais do banco vêm de variáveis de ambiente (ver ../.env.example).
+spring:
+  application:
+    name: minha-vacinacao
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:conectasaude}
+    username: ${MYSQL_USER:}
+    password: ${MYSQL_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # O schema é das migrações Flyway; o Hibernate só confere se as entidades batem com ele.
+      ddl-auto: validate
+  flyway:
+    # V1 = schema, V2 = terminologias RNDS, V3 = catálogo e calendário.
+    # Os dados sintéticos (V4) só entram nos perfis dev e test.
+    locations: classpath:db/migration
