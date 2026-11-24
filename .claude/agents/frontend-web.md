@@ -23,6 +23,7 @@ Regras:
 - Acessibilidade (RNF02): ícone + texto, alvos de toque de pelo menos 48px, contraste WCAG AA, funciona com leitor de tela e com fonte aumentada. Mobile primeiro (é uma webview).
 - Sempre mostre o aviso de cartão desatualizado com link para o mapa (RF08), a data da última atualização (RNF09) e "confirme na unidade" (RN02).
 - Mostre TODOS os itens de `avisos` que a API devolver, na ordem recebida e sem mudar o texto. Enquanto as regras da D17 estiverem em alinhamento com a SESAU, vem sempre o aviso `REGRA_EM_ALINHAMENTO`: ele precisa aparecer na tela "Minha vacinação" e no detalhe da dose.
+- As `orientacoes` de cada dose (D18: `DOSE_ANTERIOR_SEM_REGISTRO`, `ATUALIZAR_CADERNETA`) aparecem junto da própria dose, sem mudar o texto.
 - Doses em `dosesForaDaIdade` não são atrasadas: mostre só a orientação "converse na unidade" (aviso `DOSE_FORA_DA_IDADE`), sem badge de situação. Não existe situação "em processamento" (só o aviso `ATRASO_REGISTRO`).
 - Privacidade (RNF04): não guarde dados de saúde em localStorage; não mostre CID.
 - Só dados sintéticos nos mocks e testes.

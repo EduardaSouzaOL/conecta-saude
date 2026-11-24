@@ -2,6 +2,15 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.3.0 · 24/11/2026 · orientações por dose e reforços (D18, provisórias)
+
+> **Regras provisórias, em alinhamento com a SESAU.** As respostas às perguntas 11a, 11b e 12 vieram da Duda (decisão D18) e ainda precisam ser confirmadas com a Secretaria de Saúde.
+
+- **Novo campo obrigatório `orientacoes`** em cada dose: lista de `{ codigo, mensagem }` (mesmo formato de `avisos`), que o front mostra junto da dose. Lista vazia se não houver.
+- Novos códigos, usados só em `orientacoes`: `DOSE_ANTERIOR_SEM_REGISTRO` ("Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde.") e `ATUALIZAR_CADERNETA` ("Procure uma unidade de saúde para atualizar sua caderneta.").
+- **Reforço** (código de dose R1, R2, R3 ou REF) só fica disponível a partir da idade recomendada. `dataDisponivel` nunca é anterior à `dataRecomendada` num reforço.
+- Exemplos atualizados com a base sintética: Meningo C D2 do Heitor (pessoa 5) com `DOSE_ANTERIOR_SEM_REGISTRO`; VIP D3 do Heitor e Penta D2 do Bernardo (pessoa 48) com `ATUALIZAR_CADERNETA`; reforços da VIP e da febre amarela do Heitor (pessoa 95) liberados só aos 4 anos.
+
 ## 0.2.0 · 24/11/2026 · regras de situação da D17 (provisórias)
 
 > **Regras provisórias, em alinhamento com a SESAU.** As respostas às perguntas 1, 2 e 3 vieram da Duda (decisão D17) e ainda precisam ser confirmadas com a Secretaria de Saúde. Por isso a API sempre devolve o aviso `REGRA_EM_ALINHAMENTO`.
@@ -56,7 +65,7 @@ Escolhas da v0:
 ## Pontos provisórios (marcados com [provisório] no contrato)
 
 - Regras de situação da D17 (aguardam alinhamento com a SESAU).
-- Cálculo de `dataDisponivel` (ver pergunta 11).
+- Regras da D18 (reforço, orientações por dose), também aguardando a SESAU.
 - Definição de `dataUltimaAtualizacao`.
 - Escolha da `proximaDose`.
 - `elegivel` nas campanhas.
@@ -79,7 +88,15 @@ Escolhas da v0:
 8. **Horário de funcionamento e sala fechada (RF11, RF16):** o banco não tem horário nem situação da sala (fechada, em reforma). Adicionamos colunas em `unidade_saude`?
 9. **"Toda a rede" × "salas de referência" (RF13):** não há esse dado no banco. Entra na v1?
 10. **Influenza anual:** a dose anual não tem idade recomendada no calendário. Como ela aparece na situação vacinal?
-11. **A partir de quando uma dose "já pode ser tomada"?** (surgiu ao aplicar a D17) O contrato usa: 1ª dose = idade mínima do esquema; doses seguintes = dose anterior + intervalo mínimo. Dois efeitos a confirmar:
-    - Com o intervalo mínimo do calendário, alguns **reforços** ficam "já pode tomar" muito antes da idade recomendada (ex.: reforço da febre amarela, previsto para os 4 anos, liberado 30 dias depois da 1ª dose; reforço da Pneumo 10 aos 7 meses). Para reforços, vale só a idade recomendada?
-    - Quando a **dose anterior não tem registro**, `dataDisponivel` vem `null` e a dose segue só a idade recomendada (pode ficar atrasada). Ela deveria ficar "ainda não disponível" até a anterior ser tomada?
-12. **Dose que já passou da idade recomendada, mas o intervalo mínimo ainda não foi cumprido** (ex.: VIP D3 do Heitor, pessoa 5): o contrato mostra "ainda não disponível" com a data em que libera. Confirma?
+
+### Respondidas (D18, provisórias até o alinhamento com a SESAU)
+
+11a. **Reforço liberado só pelo intervalo mínimo:** não. O reforço só fica "já pode tomar" a partir da idade recomendada.
+11b. **Dose anterior sem registro:** a dose seguinte continua na lista com a situação pela idade, com a orientação `DOSE_ANTERIOR_SEM_REGISTRO`.
+12. **Passou da idade recomendada, mas o intervalo mínimo ainda não foi cumprido:** "ainda não disponível", com a data em que libera e a orientação `ATUALIZAR_CADERNETA`.
+
+### Abertas (surgiram ao aplicar a D18)
+
+13. **Janela de "já pode tomar" do reforço:** pela D17 a dose fica atrasada logo depois da idade recomendada, e pela D18 o reforço só fica disponível nessa mesma data. Na prática, o reforço passa de "ainda não disponível" para "atrasada" e só fica "já pode tomar" no próprio dia. É isso mesmo, ou o reforço deve ter algum prazo antes de ficar atrasado?
+14. **Quando mostrar `DOSE_ANTERIOR_SEM_REGISTRO`:** a API mostra só quando a dose anterior já passou da idade recomendada (está pendente). Para um bebê cuja D1 ainda nem chegou, a D2 futura não recebe a orientação. Confirma?
+15. **Doses que não são reforço, mas têm idade recomendada muito depois do intervalo mínimo** (ex.: varicela D2, recomendada aos 4 anos, com intervalo mínimo de 30 dias depois da D1 aos 15 meses): pela D18 elas ficam "já pode tomar" logo após o intervalo. Mantém assim?
