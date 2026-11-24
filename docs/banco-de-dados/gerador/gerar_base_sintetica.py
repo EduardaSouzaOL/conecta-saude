@@ -21,6 +21,7 @@ import csv
 import json
 import os
 import random
+import unicodedata
 from datetime import date, datetime, timedelta
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -568,8 +569,9 @@ def main():
         cpf = novo_id(gerar_cpf, cpfs) if (adulto or rng.random() < 0.7) else None
         cns = novo_id(gerar_cns, cnss) if (not cpf or rng.random() < 0.85) else None
         tel = f"(81) 9{rng.randint(8000, 9999)}-{rng.randint(1000, 9999)}" if adulto else None
-        email = (f"{primeiro.lower()}.{pid}@example.com".encode("ascii", "ignore").decode()
-                 if adulto else None)
+        # translitera para ASCII (Cecília -> cecilia) em vez de apagar a letra acentuada
+        email = (unicodedata.normalize("NFKD", f"{primeiro.lower()}.{pid}@example.com")
+                 .encode("ascii", "ignore").decode() if adulto else None)
         p = dict(id=pid, nome=nome, cpf=cpf, cns=cns, nasc=nasc, sexo=sexo, tel=tel, email=email,
                  baixa_adesao=rng.random() < 0.12, unidade=None)
         pessoas.append(p)
