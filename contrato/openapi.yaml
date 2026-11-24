@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.1.0
+  version: 0.2.0
   summary: Situação vacinal, histórico de doses, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
-    Contrato **v0** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    Contrato **v0.2** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
     para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
 
     Regras que valem para toda a API:
@@ -16,6 +16,9 @@ info:
     - A situação vacinal é uma **previsão de rotina**; o aprazamento oficial é do profissional de
       saúde (RN02). Por isso as respostas trazem o aviso "confirme na unidade" e a data da última
       atualização dos dados (RNF09).
+    - **Regras provisórias (D17):** as regras de situação da dose ainda estão em alinhamento com
+      a Secretaria de Saúde. Enquanto isso, toda resposta de situação vacinal e de detalhe da dose
+      traz em `avisos` o item `REGRA_EM_ALINHAMENTO`, e o front mostra todos os `avisos` recebidos.
     - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
       (`pessoa_responsavel`). Outra pessoa devolve **403**.
     - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
@@ -87,6 +90,11 @@ paths:
         esquema vacinal, da data de nascimento e dos registros existentes. Alimenta a tela
         "Minha vacinação" (painel-resumo RF06, lista por situação RF05, próxima dose RF07,
         aviso de cartão desatualizado RF08 e data da última atualização RNF09).
+
+        **[provisório · D17]** Uma dose fica atrasada logo depois da idade recomendada. Dose de
+        esquema cuja idade máxima já passou sai da lista e vai para `dosesForaDaIdade`, com o
+        aviso "converse na unidade". Não há situação "em processamento": a demora de até 14 dias
+        para o registro aparecer é só o aviso `ATRASO_REGISTRO`. Regras em alinhamento com a SESAU.
       parameters:
         - $ref: '#/components/parameters/IdPessoa'
       responses:
@@ -103,9 +111,9 @@ paths:
                     Doses do calendário até 9 meses (sem a influenza anual). O resumo conta só
                     as doses deste exemplo. A Rotavírus D1 foi tomada, mas não chegou ao sistema
                     (sub-registro da base sintética): aparece como atrasada, mesmo com a D2
-                    registrada, que é o caso do aviso de cartão desatualizado. A Penta D3 aparece
-                    como "já pode tomar" porque a dose aplicada em 23/11 ainda está em
-                    processamento (atraso de ~14 dias, RNF09).
+                    registrada, que é o caso do aviso de cartão desatualizado. A VIP D3 já passou
+                    da idade recomendada, mas o intervalo mínimo depois da D2 (aplicada em 07/11)
+                    ainda não foi cumprido: fica "ainda não disponível" até 07/12.
                   value:
                     pessoa:
                       id: 5
@@ -113,134 +121,94 @@ paths:
                       dataNascimento: '2026-05-07'
                     dataReferencia: '2026-11-24'
                     dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
-                    resumo:
-                      atrasadas: 4
-                      podeTomar: 1
-                      emDia: 8
-                      aindaNaoDisponiveis: 2
+                    resumo: { atrasadas: 5, podeTomar: 0, emDia: 8, aindaNaoDisponiveis: 2 }
                     proximaDose:
-                      idDose: 11
-                      vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                      numeroDose: 3
-                      descricao: 6 meses
-                      situacao: AINDA_NAO_DISPONIVEL
-                      dataPrevista: '2026-12-07'
-                      registro: null
+                      { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null }
                     doses:
-                      - idDose: 1
-                        vacina: { id: 1, nome: BCG }
-                        numeroDose: 1
-                        descricao: Ao nascer (dose única)
-                        situacao: EM_DIA
-                        dataPrevista: '2026-05-07'
-                        registro: { idRegistro: 35, dataAplicacao: '2026-05-07', transcricao: false }
-                      - idDose: 2
-                        vacina: { id: 2, nome: Hepatite B }
-                        numeroDose: 1
-                        descricao: Ao nascer (até 30 dias)
-                        situacao: EM_DIA
-                        dataPrevista: '2026-05-07'
-                        registro: { idRegistro: 36, dataAplicacao: '2026-05-07', transcricao: false }
-                      - idDose: 6
-                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                        numeroDose: 1
-                        descricao: 2 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-07-07'
-                        registro: { idRegistro: 37, dataAplicacao: '2026-07-17', transcricao: false }
-                      - idDose: 14
-                        vacina: { id: 5, nome: Rotavírus humano }
-                        numeroDose: 1
-                        descricao: 2 meses
-                        situacao: ATRASADA
-                        dataPrevista: '2026-07-07'
-                        registro: null
-                      - idDose: 9
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        numeroDose: 1
-                        descricao: 2 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-07-07'
-                        registro: { idRegistro: 39, dataAplicacao: '2026-07-20', transcricao: false }
-                      - idDose: 16
-                        vacina: { id: 6, nome: Pneumocócica 10-valente }
-                        numeroDose: 1
-                        descricao: 2 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-07-07'
-                        registro: { idRegistro: 42, dataAplicacao: '2026-07-21', transcricao: false }
-                      - idDose: 19
-                        vacina: { id: 7, nome: Meningocócica C conjugada }
-                        numeroDose: 1
-                        descricao: 3 meses
-                        situacao: ATRASADA
-                        dataPrevista: '2026-08-06'
-                        registro: null
-                      - idDose: 7
-                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                        numeroDose: 2
-                        descricao: 4 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-09-06'
-                        registro: { idRegistro: 38, dataAplicacao: '2026-09-06', transcricao: false }
-                      - idDose: 10
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        numeroDose: 2
-                        descricao: 4 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-09-06'
-                        registro: { idRegistro: 40, dataAplicacao: '2026-11-07', transcricao: false }
-                      - idDose: 15
-                        vacina: { id: 5, nome: Rotavírus humano }
-                        numeroDose: 2
-                        descricao: 4 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-09-06'
-                        registro: { idRegistro: 41, dataAplicacao: '2026-11-08', transcricao: false }
-                      - idDose: 17
-                        vacina: { id: 6, nome: Pneumocócica 10-valente }
-                        numeroDose: 2
-                        descricao: 4 meses
-                        situacao: ATRASADA
-                        dataPrevista: '2026-09-06'
-                        registro: null
-                      - idDose: 20
-                        vacina: { id: 7, nome: Meningocócica C conjugada }
-                        numeroDose: 2
-                        descricao: 5 meses
-                        situacao: ATRASADA
-                        dataPrevista: '2026-10-06'
-                        registro: null
-                      - idDose: 8
-                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                        numeroDose: 3
-                        descricao: 6 meses
-                        situacao: PODE_TOMAR
-                        dataPrevista: '2026-11-06'
-                        registro: null
-                      - idDose: 11
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        numeroDose: 3
-                        descricao: 6 meses
-                        situacao: AINDA_NAO_DISPONIVEL
-                        dataPrevista: '2026-12-07'
-                        registro: null
-                      - idDose: 23
-                        vacina: { id: 9, nome: Febre amarela }
-                        numeroDose: 1
-                        descricao: 9 meses
-                        situacao: AINDA_NAO_DISPONIVEL
-                        dataPrevista: '2027-02-05'
-                        registro: null
+                      - { idDose: 1, vacina: { id: 1, nome: BCG }, numeroDose: 1, descricao: Ao nascer (dose única), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 35, dataAplicacao: '2026-05-07', transcricao: false } }
+                      - { idDose: 2, vacina: { id: 2, nome: Hepatite B }, numeroDose: 1, descricao: Ao nascer (até 30 dias), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 36, dataAplicacao: '2026-05-07', transcricao: false } }
+                      - { idDose: 6, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: { idRegistro: 37, dataAplicacao: '2026-07-17', transcricao: false } }
+                      - { idDose: 9, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: { idRegistro: 39, dataAplicacao: '2026-07-20', transcricao: false } }
+                      - { idDose: 14, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 1, descricao: 2 meses, situacao: ATRASADA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: null }
+                      - { idDose: 16, vacina: { id: 6, nome: Pneumocócica 10-valente }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-07-07', registro: { idRegistro: 42, dataAplicacao: '2026-07-21', transcricao: false } }
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses, situacao: ATRASADA, dataRecomendada: '2026-08-06', dataDisponivel: '2026-08-06', registro: null }
+                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-06', dataDisponivel: '2026-08-16', registro: { idRegistro: 38, dataAplicacao: '2026-09-06', transcricao: false } }
+                      - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-06', dataDisponivel: '2026-08-19', registro: { idRegistro: 40, dataAplicacao: '2026-11-07', transcricao: false } }
+                      - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-06', dataDisponivel: null, registro: { idRegistro: 41, dataAplicacao: '2026-11-08', transcricao: false } }
+                      - { idDose: 17, vacina: { id: 6, nome: Pneumocócica 10-valente }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-09-06', dataDisponivel: '2026-08-20', registro: null }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: ATRASADA, dataRecomendada: '2026-10-06', dataDisponivel: null, registro: null }
+                      - { idDose: 8, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 3, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2026-11-06', dataDisponivel: '2026-10-06', registro: null }
+                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null }
+                      - { idDose: 23, vacina: { id: 9, nome: Febre amarela }, numeroDose: 1, descricao: 9 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2027-02-05', dataDisponivel: '2027-02-05', registro: null }
+                    dosesForaDaIdade: []
                     avisos:
-                      previsaoDeRotina: >-
-                        Esta é uma previsão de rotina. Quem define as datas das suas doses é o
-                        profissional de saúde: confirme na unidade.
-                      cartaoDesatualizado: >-
-                        Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais
-                        próxima para atualizar.
-                      atrasoDeAtualizacao: >-
-                        Uma dose pode levar cerca de 14 dias para aparecer aqui depois de aplicada.
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
+                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                bebeDeQuatroMeses:
+                  summary: Bernardo (pessoa 48, nascido em 13/07/2026), recorte com "já pode tomar"
+                  description: |
+                    A Meningo C D2 é recomendada aos 5 meses (12/12), mas o intervalo mínimo
+                    depois da D1 já foi cumprido em 19/11: "já pode tomar". A Penta D2 já passou da
+                    idade recomendada, mas a D1 foi aplicada em 26/10 e o intervalo mínimo só se
+                    cumpre em 25/11: "ainda não disponível". O resumo conta só as doses do recorte.
+                  value:
+                    pessoa:
+                      id: 48
+                      nome: Bernardo Oliveira Andrade
+                      dataNascimento: '2026-07-13'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
+                    resumo: { atrasadas: 1, podeTomar: 1, emDia: 2, aindaNaoDisponiveis: 1 }
+                    proximaDose:
+                      { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null }
+                    doses:
+                      - { idDose: 6, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-09-12', dataDisponivel: '2026-08-28', registro: { idRegistro: 611, dataAplicacao: '2026-10-26', transcricao: false } }
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses, situacao: EM_DIA, dataRecomendada: '2026-10-12', dataDisponivel: '2026-10-12', registro: { idRegistro: 615, dataAplicacao: '2026-10-20', transcricao: false } }
+                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null }
+                      - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-11-12', dataDisponivel: '2026-10-12', registro: null }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: PODE_TOMAR, dataRecomendada: '2026-12-12', dataDisponivel: '2026-11-19', registro: null }
+                    dosesForaDaIdade: []
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
+                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                criancaComDoseForaDaIdade:
+                  summary: Heitor (pessoa 95, nascido em 19/06/2025), recorte com dose fora da idade
+                  description: |
+                    A Meningo C (esquema até 364 dias de idade) não tem registro e a criança já
+                    passou da idade máxima: as duas doses saem da lista e vão para
+                    `dosesForaDaIdade`, com o aviso "converse na unidade". A VIP D3 e a Rotavírus
+                    D2 foram tomadas, mas não chegaram ao sistema, e aparecem como atrasadas.
+                  value:
+                    pessoa:
+                      id: 95
+                      nome: Heitor Ferreira Rocha
+                      dataNascimento: '2025-06-19'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-10-18T08:23:00-03:00'
+                    resumo: { atrasadas: 4, podeTomar: 0, emDia: 2, aindaNaoDisponiveis: 1 }
+                    proximaDose:
+                      { idDose: 13, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 5, descricao: 2º reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2027-04-14', registro: null }
+                    doses:
+                      - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2025-10-19', dataDisponivel: '2025-09-29', registro: null }
+                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2025-12-19', dataDisponivel: '2025-12-28', registro: null }
+                      - { idDose: 21, vacina: { id: 8, nome: Meningocócica ACWY }, numeroDose: 1, descricao: Reforço aos 12 meses, situacao: ATRASADA, dataRecomendada: '2026-06-19', dataDisponivel: '2026-06-19', registro: null }
+                      - { idDose: 26, vacina: { id: 10, nome: Tríplice viral (SCR) }, numeroDose: 2, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-07-17', registro: { idRegistro: 1266, dataAplicacao: '2026-09-20', transcricao: false } }
+                      - { idDose: 27, vacina: { id: 11, nome: Varicela }, numeroDose: 1, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-09-19', registro: { idRegistro: 1267, dataAplicacao: '2026-10-01', transcricao: false } }
+                      - { idDose: 30, vacina: { id: 13, nome: DTP (tríplice bacteriana) }, numeroDose: 1, descricao: 1º reforço aos 15 meses, situacao: ATRASADA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-09-19', registro: null }
+                      - { idDose: 13, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 5, descricao: 2º reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2027-04-14', registro: null }
+                    dosesForaDaIdade:
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses }
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
+                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                      - { codigo: DOSE_FORA_DA_IDADE, mensagem: Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer. }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -353,7 +321,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          example: 8
+          example: 20
       responses:
         '200':
           description: Detalhe da dose
@@ -362,37 +330,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetalheDose'
               examples:
-                pentaTerceiraDose:
-                  summary: Heitor (pessoa 5), Penta 3ª dose, já pode tomar
+                meningoCSegundaDose:
+                  summary: Bernardo (pessoa 48), Meningo C 2ª dose, já pode tomar
                   value:
-                    idPessoa: 5
-                    dose:
-                      idDose: 8
-                      vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                      numeroDose: 3
-                      descricao: 6 meses
-                      situacao: PODE_TOMAR
-                      dataPrevista: '2026-11-06'
-                      registro: null
-                    esquema: Penta – 3 doses
+                    idPessoa: 48
+                    dose: { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: PODE_TOMAR, dataRecomendada: '2026-12-12', dataDisponivel: '2026-11-19', registro: null }
+                    esquema: Meningo C – 2 doses
                     intervaloMinimoDias: 30
                     doencas:
-                      - { id: 2, nome: Hepatite B }
-                      - { id: 3, nome: Difteria }
-                      - { id: 4, nome: Tétano }
-                      - { id: 5, nome: Coqueluche }
-                      - { id: 6, nome: Haemophilus influenzae b }
+                      - { id: 10, nome: Doença meningocócica C }
                     registros: []
-                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
+                    dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
                     avisos:
-                      previsaoDeRotina: >-
-                        Esta é uma previsão de rotina. Quem define as datas das suas doses é o
-                        profissional de saúde: confirme na unidade.
-                      cartaoDesatualizado: >-
-                        Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais
-                        próxima para atualizar.
-                      atrasoDeAtualizacao: >-
-                        Uma dose pode levar cerca de 14 dias para aparecer aqui depois de aplicada.
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -771,14 +723,20 @@ components:
     SituacaoDose:
       type: string
       description: |
-        Situação de uma dose prevista (RF05). Nunca existe "não posso tomar" (RN03).
-        **[provisório]** Definições da v0, a confirmar:
+        Situação de uma dose prevista (RF05). São só estas 4; não existe "não posso tomar"
+        (RN03) nem "em processamento" (D17: a demora de até 14 dias para o registro aparecer
+        vira só o aviso `ATRASO_REGISTRO`).
+
+        **[provisório · D17, em alinhamento com a SESAU]** Regras:
         - `EM_DIA`: há registro que cumpre esta dose.
-        - `PODE_TOMAR`: sem registro; a pessoa já tem a idade e o intervalo mínimos.
-        - `ATRASADA`: sem registro e já passou do momento recomendado para a dose.
-        - `AINDA_NAO_DISPONIVEL`: sem registro; a pessoa ainda não tem a idade ou o intervalo
-          mínimos. `dataPrevista` diz quando fica disponível.
-        O limite entre `PODE_TOMAR` e `ATRASADA` ainda não está definido.
+        - `AINDA_NAO_DISPONIVEL`: sem registro e hoje é antes de `dataDisponivel` (idade mínima
+          do esquema, para a 1ª dose, ou intervalo mínimo depois da dose anterior).
+        - `ATRASADA`: sem registro, já disponível, e hoje é depois de `dataRecomendada` (a dose
+          fica atrasada logo depois da idade recomendada).
+        - `PODE_TOMAR`: sem registro, já disponível, e hoje ainda não passou de `dataRecomendada`.
+
+        Dose sem registro cuja pessoa já passou da **idade máxima** do esquema não recebe
+        situação: sai de `doses` e vai para `dosesForaDaIdade` (ver `SituacaoVacinal`).
       enum: [ATRASADA, PODE_TOMAR, EM_DIA, AINDA_NAO_DISPONIVEL]
 
     RegistroResumo:
@@ -797,7 +755,7 @@ components:
 
     DosePrevista:
       type: object
-      required: [idDose, vacina, numeroDose, descricao, situacao, dataPrevista, registro]
+      required: [idDose, vacina, numeroDose, descricao, situacao, dataRecomendada, dataDisponivel, registro]
       properties:
         idDose:
           type: integer
@@ -813,22 +771,48 @@ components:
           description: Descrição da dose no calendário (ex. "2 meses", "Reforço aos 4 anos")
         situacao:
           $ref: '#/components/schemas/SituacaoDose'
-        dataPrevista:
+        dataRecomendada:
           type: [string, 'null']
           format: date
           description: |
-            Quando a dose fica disponível para a pessoa: o maior entre a idade recomendada e o
-            intervalo mínimo após a dose anterior. `null` quando o calendário não tem idade
-            recomendada (ex. influenza anual).
+            Data de nascimento + idade recomendada no calendário (`idade_recomendada_dias`).
+            Depois dela, a dose sem registro fica `ATRASADA`. `null` quando o calendário não
+            tem idade recomendada (ex. influenza anual).
+        dataDisponivel:
+          type: [string, 'null']
+          format: date
+          description: |
+            **[provisório]** A partir de quando a pessoa pode tomar a dose. 1ª dose do esquema:
+            data de nascimento + idade mínima do esquema. Doses seguintes: data da dose anterior
+            + intervalo mínimo. `null` quando a dose anterior não tem registro (a situação segue
+            só a `dataRecomendada`).
         registro:
           description: Registro que cumpre a dose, ou `null` se não há
           oneOf:
             - $ref: '#/components/schemas/RegistroResumo'
             - type: 'null'
 
+    DoseForaDaIdade:
+      type: object
+      description: |
+        Dose sem registro de um esquema cuja idade máxima a pessoa já passou (D17). Não é
+        mostrada como atrasada: o front só orienta a conversar na unidade (aviso
+        `DOSE_FORA_DA_IDADE`).
+      required: [idDose, vacina, numeroDose, descricao]
+      properties:
+        idDose:
+          type: integer
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        numeroDose:
+          type: integer
+          minimum: 1
+        descricao:
+          type: string
+
     ResumoSituacao:
       type: object
-      description: Contagem para o painel-resumo (RF06)
+      description: Contagem para o painel-resumo (RF06). Não conta `dosesForaDaIdade`.
       required: [atrasadas, podeTomar, emDia, aindaNaoDisponiveis]
       properties:
         atrasadas:
@@ -844,21 +828,37 @@ components:
           type: integer
           minimum: 0
 
-    Avisos:
+    CodigoAviso:
+      type: string
+      description: |
+        - `REGRA_EM_ALINHAMENTO`: as regras de situação ainda estão em alinhamento com a SESAU
+          (D17). Sempre presente enquanto as regras forem provisórias.
+        - `PREVISAO_DE_ROTINA`: o aprazamento oficial é do profissional; confirme na unidade (RN02).
+        - `CARTAO_DESATUALIZADO`: dose no cartão físico que não aparece aqui (RF08).
+        - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 14 dias para aparecer (RNF09, D17).
+        - `DOSE_FORA_DA_IDADE`: há doses em `dosesForaDaIdade`; converse na unidade (D17).
+      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE]
+
+    Aviso:
       type: object
-      description: Textos que o front sempre mostra junto da situação vacinal (RN02, RF08, RNF09)
-      required: [previsaoDeRotina, cartaoDesatualizado, atrasoDeAtualizacao]
+      description: |
+        Texto que o front mostra junto da situação vacinal, sem mudar a redação. O front
+        mostra todos os avisos que vierem, na ordem recebida.
+      required: [codigo, mensagem]
       properties:
-        previsaoDeRotina:
+        codigo:
+          $ref: '#/components/schemas/CodigoAviso'
+        mensagem:
           type: string
-        cartaoDesatualizado:
-          type: string
-        atrasoDeAtualizacao:
-          type: string
+
+    Avisos:
+      type: array
+      items:
+        $ref: '#/components/schemas/Aviso'
 
     SituacaoVacinal:
       type: object
-      required: [pessoa, dataReferencia, dataUltimaAtualizacao, resumo, proximaDose, doses, avisos]
+      required: [pessoa, dataReferencia, dataUltimaAtualizacao, resumo, proximaDose, doses, dosesForaDaIdade, avisos]
       properties:
         pessoa:
           $ref: '#/components/schemas/PessoaResumo'
@@ -878,15 +878,20 @@ components:
         proximaDose:
           description: |
             **[provisório]** Próxima dose que vai ficar disponível (RF07): a dose
-            `AINDA_NAO_DISPONIVEL` com a menor `dataPrevista`. `null` se não houver.
+            `AINDA_NAO_DISPONIVEL` com a menor `dataDisponivel`. `null` se não houver.
           oneOf:
             - $ref: '#/components/schemas/DosePrevista'
             - type: 'null'
         doses:
           type: array
-          description: Doses previstas no calendário para a pessoa, ordenadas por `dataPrevista`
+          description: Doses previstas no calendário para a pessoa, ordenadas por `dataRecomendada`
           items:
             $ref: '#/components/schemas/DosePrevista'
+        dosesForaDaIdade:
+          type: array
+          description: Doses sem registro de esquemas cuja idade máxima já passou (D17). Lista vazia se não houver
+          items:
+            $ref: '#/components/schemas/DoseForaDaIdade'
         avisos:
           $ref: '#/components/schemas/Avisos'
 
