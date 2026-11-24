@@ -61,18 +61,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Eu'
               examples:
-                responsavelComUmaFilha:
-                  summary: Joana (pessoa 4) com a filha Manuela (pessoa 5)
+                responsavelComUmFilho:
+                  summary: Valentina (pessoa 4) com o filho Heitor (pessoa 5)
                   value:
                     pessoa:
                       id: 4
-                      nome: Joana Leite Oliveira
-                      dataNascimento: '1992-01-21'
+                      nome: Valentina Oliveira Ferreira
+                      dataNascimento: '2005-11-12'
                     dependentes:
                       - pessoa:
                           id: 5
-                          nome: Manuela Gomes Oliveira
-                          dataNascimento: '2026-05-08'
+                          nome: Heitor Nascimento Ferreira
+                          dataNascimento: '2026-05-07'
                         parentesco: MAE
         '401':
           $ref: '#/components/responses/NaoAutenticado'
@@ -98,31 +98,33 @@ paths:
                 $ref: '#/components/schemas/SituacaoVacinal'
               examples:
                 bebeDeSeisMeses:
-                  summary: Manuela (pessoa 5, nascida em 08/05/2026), exemplo reduzido
+                  summary: Heitor (pessoa 5, nascido em 07/05/2026), doses até 9 meses
                   description: |
-                    Recorte das doses até 9 meses. O resumo conta só as doses deste exemplo.
-                    A Penta D1 e a Pneumo 10 D2 foram tomadas, mas não chegaram ao sistema
-                    (sub-registro da base sintética): aparecem como atrasadas, que é o caso do
-                    aviso de cartão desatualizado.
+                    Doses do calendário até 9 meses (sem a influenza anual). O resumo conta só
+                    as doses deste exemplo. A Rotavírus D1 foi tomada, mas não chegou ao sistema
+                    (sub-registro da base sintética): aparece como atrasada, mesmo com a D2
+                    registrada, que é o caso do aviso de cartão desatualizado. A Penta D3 aparece
+                    como "já pode tomar" porque a dose aplicada em 23/11 ainda está em
+                    processamento (atraso de ~14 dias, RNF09).
                   value:
                     pessoa:
                       id: 5
-                      nome: Manuela Gomes Oliveira
-                      dataNascimento: '2026-05-08'
+                      nome: Heitor Nascimento Ferreira
+                      dataNascimento: '2026-05-07'
                     dataReferencia: '2026-11-24'
-                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
                     resumo:
-                      atrasadas: 2
+                      atrasadas: 4
                       podeTomar: 1
                       emDia: 8
                       aindaNaoDisponiveis: 2
                     proximaDose:
-                      idDose: 8
-                      vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                      idDose: 11
+                      vacina: { id: 4, nome: Poliomielite inativada (VIP) }
                       numeroDose: 3
                       descricao: 6 meses
                       situacao: AINDA_NAO_DISPONIVEL
-                      dataPrevista: '2026-12-17'
+                      dataPrevista: '2026-12-07'
                       registro: null
                     doses:
                       - idDose: 1
@@ -130,91 +132,105 @@ paths:
                         numeroDose: 1
                         descricao: Ao nascer (dose única)
                         situacao: EM_DIA
-                        dataPrevista: '2026-05-08'
-                        registro: { idRegistro: 50, dataAplicacao: '2026-05-09', transcricao: false }
+                        dataPrevista: '2026-05-07'
+                        registro: { idRegistro: 35, dataAplicacao: '2026-05-07', transcricao: false }
                       - idDose: 2
                         vacina: { id: 2, nome: Hepatite B }
                         numeroDose: 1
                         descricao: Ao nascer (até 30 dias)
                         situacao: EM_DIA
-                        dataPrevista: '2026-05-08'
-                        registro: { idRegistro: 51, dataAplicacao: '2026-05-10', transcricao: false }
+                        dataPrevista: '2026-05-07'
+                        registro: { idRegistro: 36, dataAplicacao: '2026-05-07', transcricao: false }
                       - idDose: 6
                         vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
                         numeroDose: 1
                         descricao: 2 meses
-                        situacao: ATRASADA
-                        dataPrevista: '2026-07-08'
-                        registro: null
-                      - idDose: 7
-                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                        numeroDose: 2
-                        descricao: 4 meses
                         situacao: EM_DIA
-                        dataPrevista: '2026-09-07'
-                        registro: { idRegistro: 52, dataAplicacao: '2026-11-17', transcricao: false }
-                      - idDose: 8
-                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
-                        numeroDose: 3
-                        descricao: 6 meses
-                        situacao: AINDA_NAO_DISPONIVEL
-                        dataPrevista: '2026-12-17'
+                        dataPrevista: '2026-07-07'
+                        registro: { idRegistro: 37, dataAplicacao: '2026-07-17', transcricao: false }
+                      - idDose: 14
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        numeroDose: 1
+                        descricao: 2 meses
+                        situacao: ATRASADA
+                        dataPrevista: '2026-07-07'
                         registro: null
                       - idDose: 9
                         vacina: { id: 4, nome: Poliomielite inativada (VIP) }
                         numeroDose: 1
                         descricao: 2 meses
                         situacao: EM_DIA
-                        dataPrevista: '2026-07-08'
-                        registro: { idRegistro: 53, dataAplicacao: '2026-07-19', transcricao: false }
-                      - idDose: 10
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        numeroDose: 2
-                        descricao: 4 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-09-07'
-                        registro: { idRegistro: 54, dataAplicacao: '2026-09-21', transcricao: false }
-                      - idDose: 11
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        numeroDose: 3
-                        descricao: 6 meses
-                        situacao: PODE_TOMAR
-                        dataPrevista: '2026-11-07'
-                        registro: null
+                        dataPrevista: '2026-07-07'
+                        registro: { idRegistro: 39, dataAplicacao: '2026-07-20', transcricao: false }
                       - idDose: 16
                         vacina: { id: 6, nome: Pneumocócica 10-valente }
                         numeroDose: 1
                         descricao: 2 meses
                         situacao: EM_DIA
-                        dataPrevista: '2026-07-08'
-                        registro: { idRegistro: 55, dataAplicacao: '2026-07-28', transcricao: false }
+                        dataPrevista: '2026-07-07'
+                        registro: { idRegistro: 42, dataAplicacao: '2026-07-21', transcricao: false }
+                      - idDose: 19
+                        vacina: { id: 7, nome: Meningocócica C conjugada }
+                        numeroDose: 1
+                        descricao: 3 meses
+                        situacao: ATRASADA
+                        dataPrevista: '2026-08-06'
+                        registro: null
+                      - idDose: 7
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-09-06'
+                        registro: { idRegistro: 38, dataAplicacao: '2026-09-06', transcricao: false }
+                      - idDose: 10
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-09-06'
+                        registro: { idRegistro: 40, dataAplicacao: '2026-11-07', transcricao: false }
+                      - idDose: 15
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-09-06'
+                        registro: { idRegistro: 41, dataAplicacao: '2026-11-08', transcricao: false }
                       - idDose: 17
                         vacina: { id: 6, nome: Pneumocócica 10-valente }
                         numeroDose: 2
                         descricao: 4 meses
                         situacao: ATRASADA
-                        dataPrevista: '2026-09-07'
+                        dataPrevista: '2026-09-06'
                         registro: null
-                      - idDose: 19
-                        vacina: { id: 7, nome: Meningocócica C conjugada }
-                        numeroDose: 1
-                        descricao: 3 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-08-07'
-                        registro: { idRegistro: 56, dataAplicacao: '2026-10-09', transcricao: false }
                       - idDose: 20
                         vacina: { id: 7, nome: Meningocócica C conjugada }
                         numeroDose: 2
                         descricao: 5 meses
-                        situacao: EM_DIA
-                        dataPrevista: '2026-10-07'
-                        registro: { idRegistro: 57, dataAplicacao: '2026-11-08', transcricao: false }
+                        situacao: ATRASADA
+                        dataPrevista: '2026-10-06'
+                        registro: null
+                      - idDose: 8
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        numeroDose: 3
+                        descricao: 6 meses
+                        situacao: PODE_TOMAR
+                        dataPrevista: '2026-11-06'
+                        registro: null
+                      - idDose: 11
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        numeroDose: 3
+                        descricao: 6 meses
+                        situacao: AINDA_NAO_DISPONIVEL
+                        dataPrevista: '2026-12-07'
+                        registro: null
                       - idDose: 23
                         vacina: { id: 9, nome: Febre amarela }
                         numeroDose: 1
                         descricao: 9 meses
                         situacao: AINDA_NAO_DISPONIVEL
-                        dataPrevista: '2027-02-06'
+                        dataPrevista: '2027-02-05'
                         registro: null
                     avisos:
                       previsaoDeRotina: >-
@@ -253,65 +269,65 @@ paths:
                 $ref: '#/components/schemas/ListaRegistros'
               examples:
                 bebeDeSeisMeses:
-                  summary: Manuela (pessoa 5), três registros mais antigos
+                  summary: Heitor (pessoa 5), três registros mais recentes
                   value:
                     idPessoa: 5
-                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
                     registros:
-                      - id: 52
+                      - id: 41
+                        idDose: 15
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        imunobiologico: { codigo: '45', sigla: ROTA }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-11-08'
+                        lote: SIMYA5051
+                        fabricante: { codigo: '27880', nome: GlaxoSmithKline (GSK) }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-11-11T14:56:00-03:00'
+                      - id: 40
+                        idDose: 10
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        imunobiologico: { codigo: '22', sigla: VIP }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-11-07'
+                        lote: SIMLG8850
+                        fabricante: { codigo: '2862', nome: Sanofi Pasteur }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-11-10T09:29:00-03:00'
+                      - id: 38
                         idDose: 7
                         vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
                         imunobiologico: { codigo: '42', sigla: Penta }
                         dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
                         estrategia: { codigo: '1', descricao: Rotina }
-                        dataAplicacao: '2026-11-17'
-                        lote: SIMUU3667
-                        fabricante: { codigo: '27880', nome: GlaxoSmithKline (GSK) }
-                        unidade: { id: 9, nome: USF Fictícia Ibura }
+                        dataAplicacao: '2026-09-06'
+                        lote: SIMZL1382
+                        fabricante: { codigo: '163', nome: Serum Institute of India }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
                         transcricao: false
-                        dataRegistroNaFonte: '2026-11-18T15:07:00-03:00'
-                      - id: 51
-                        idDose: 2
-                        vacina: { id: 2, nome: Hepatite B }
-                        imunobiologico: { codigo: '9', sigla: HB }
-                        dose: { codigo: '8', sigla: D, descricao: Dose }
-                        estrategia: { codigo: '1', descricao: Rotina }
-                        dataAplicacao: '2026-05-10'
-                        lote: SIMLQ6024
-                        fabricante: { codigo: '164', nome: LG Chem }
-                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
-                        transcricao: false
-                        dataRegistroNaFonte: '2026-05-10T08:35:00-03:00'
-                      - id: 50
-                        idDose: 1
-                        vacina: { id: 1, nome: BCG }
-                        imunobiologico: { codigo: '15', sigla: BCG }
-                        dose: { codigo: '9', sigla: DU, descricao: Única }
-                        estrategia: { codigo: '1', descricao: Rotina }
-                        dataAplicacao: '2026-05-09'
-                        lote: SIMSQ3515
-                        fabricante: { codigo: '151', nome: Fundação Ataulpho de Paiva }
-                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
-                        transcricao: false
-                        dataRegistroNaFonte: '2026-05-09T10:08:00-03:00'
+                        dataRegistroNaFonte: '2026-09-06T09:22:00-03:00'
                 transcricaoSemLote:
-                  summary: Maria (pessoa 1), BCG transcrita do cartão físico
+                  summary: Cecília (pessoa 1), influenza transcrita do cartão físico, sem lote
                   value:
                     idPessoa: 1
-                    dataUltimaAtualizacao: '2021-11-27T11:49:00-03:00'
+                    dataUltimaAtualizacao: '2026-10-24T17:06:00-03:00'
                     registros:
-                      - id: 1
-                        idDose: 1
-                        vacina: { id: 1, nome: BCG }
-                        imunobiologico: { codigo: '15', sigla: BCG }
+                      - id: 6
+                        idDose: 36
+                        vacina: { id: 16, nome: Influenza }
+                        imunobiologico: { codigo: '33', sigla: INF3 }
                         dose: { codigo: '9', sigla: DU, descricao: Única }
-                        estrategia: { codigo: '1', descricao: Rotina }
-                        dataAplicacao: '2000-12-26'
+                        estrategia: { codigo: '8', descricao: Serviço Privado }
+                        dataAplicacao: '2026-05-13'
                         lote: null
-                        fabricante: null
-                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
+                        fabricante: { codigo: '152', nome: Instituto Butantan }
+                        unidade: { id: 11, nome: USF Fictícia Cohab }
                         transcricao: true
-                        dataRegistroNaFonte: '2001-07-18T09:32:00-03:00'
+                        dataRegistroNaFonte: '2026-10-24T17:06:00-03:00'
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -337,7 +353,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-          example: 11
+          example: 8
       responses:
         '200':
           description: Detalhe da dose
@@ -346,24 +362,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetalheDose'
               examples:
-                vipTerceiraDose:
-                  summary: Manuela (pessoa 5), VIP 3ª dose, já pode tomar
+                pentaTerceiraDose:
+                  summary: Heitor (pessoa 5), Penta 3ª dose, já pode tomar
                   value:
                     idPessoa: 5
                     dose:
-                      idDose: 11
-                      vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                      idDose: 8
+                      vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
                       numeroDose: 3
                       descricao: 6 meses
                       situacao: PODE_TOMAR
-                      dataPrevista: '2026-11-07'
+                      dataPrevista: '2026-11-06'
                       registro: null
-                    esquema: VIP – 3 doses + 2 reforços
+                    esquema: Penta – 3 doses
                     intervaloMinimoDias: 30
                     doencas:
-                      - { id: 7, nome: Poliomielite }
+                      - { id: 2, nome: Hepatite B }
+                      - { id: 3, nome: Difteria }
+                      - { id: 4, nome: Tétano }
+                      - { id: 5, nome: Coqueluche }
+                      - { id: 6, nome: Haemophilus influenzae b }
                     registros: []
-                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
                     avisos:
                       previsaoDeRotina: >-
                         Esta é uma previsão de rotina. Quem define as datas das suas doses é o

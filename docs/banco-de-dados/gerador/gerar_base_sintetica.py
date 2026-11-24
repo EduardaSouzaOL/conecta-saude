@@ -578,24 +578,42 @@ def main():
     def data_nasc(idade_min_dias, idade_max_dias):
         return DATA_REF - timedelta(days=rng.randint(idade_min_dias, idade_max_dias))
 
-    # 110 famílias: 1-2 responsáveis + 1-3 crianças/adolescentes (0 a 17 anos)
+    # 110 famílias: 1-2 responsáveis + 1-3 crianças/adolescentes (0 a 17 anos).
+    # Vínculos plausíveis: a mãe tem entre 18 e 45 anos no nascimento de cada
+    # filho, e o pai é pelo menos 18 anos mais velho que o filho mais velho.
+    IDADE_MIN_PAIS, IDADE_MAX_MAE = anos(18) + 3, anos(45)  # +3 dias: folga para anos bissextos
+    faixas = [(0, anos(2)), (anos(2), anos(6)), (anos(6), anos(15)), (anos(15), anos(18) - 1)]
     for _ in range(110):
         sob = rng.choice(SOBRENOMES)
         unidade = rng.choice([u[0] for u in uni_rows if u[3] != "MATERNIDADE"])
-        adultos = [nova_pessoa("F", data_nasc(anos(20), anos(45)), sob, True)]
+        idade_mae = rng.randint(anos(20), anos(55))
+        # janela de idade possível dos filhos dessa mãe
+        jan_min = max(0, idade_mae - IDADE_MAX_MAE)
+        jan_max = min(anos(18) - 1, idade_mae - IDADE_MIN_PAIS)
+        idades_filhos = []
+        for _ in range(rng.randint(1, 3)):
+            for _tent in range(50):
+                # mais crianças pequenas para exercitar o calendário infantil
+                f = rng.choices(faixas, weights=[35, 25, 30, 10])[0]
+                lo, hi = max(f[0], jan_min), min(f[1], jan_max)
+                if lo <= hi:
+                    idades_filhos.append(rng.randint(lo, hi))
+                    break
+            else:
+                idades_filhos.append(rng.randint(jan_min, jan_max))
+        mais_velho = max(idades_filhos)
+        adultos = [nova_pessoa("F", DATA_REF - timedelta(days=idade_mae), sob, True)]
         if rng.random() < 0.5:
-            adultos.append(nova_pessoa("M", data_nasc(anos(22), anos(50)), sob, True))
+            idade_pai = max(idade_mae + rng.randint(anos(-3), anos(8)), mais_velho + IDADE_MIN_PAIS, anos(20))
+            adultos.append(nova_pessoa("M", DATA_REF - timedelta(days=idade_pai), sob, True))
         for a in adultos:
             a["unidade"] = unidade
-        for _ in range(rng.randint(1, 3)):
-            # mais crianças pequenas para exercitar o calendário infantil
-            faixa = rng.choices([(0, anos(2)), (anos(2), anos(6)), (anos(6), anos(15)), (anos(15), anos(18) - 1)],
-                                weights=[35, 25, 30, 10])[0]
-            c = nova_pessoa(rng.choice("FM"), data_nasc(*faixa), sob, False)
+        for idade_f in idades_filhos:
+            c = nova_pessoa(rng.choice("FM"), DATA_REF - timedelta(days=idade_f), sob, False)
             c["unidade"] = unidade
             for a in adultos:
-                responsaveis.append((c["id"], a["id"], "MAE" if a["sexo"] == "F" else "PAI",
-                                     max(c["nasc"], a["nasc"])))
+                assert (c["nasc"] - a["nasc"]).days >= IDADE_MIN_PAIS
+                responsaveis.append((c["id"], a["id"], "MAE" if a["sexo"] == "F" else "PAI", c["nasc"]))
         usuarios.append(adultos[0])
     # 30 adultos/idosos sem dependentes
     for _ in range(30):

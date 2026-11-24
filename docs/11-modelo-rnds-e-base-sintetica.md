@@ -16,7 +16,7 @@
 | [`banco-de-dados/schema.sql`](banco-de-dados/schema.sql) | Esquema completo (MySQL 8), agora com as tabelas de terminologia da RNDS |
 | [`banco-de-dados/seed-01-terminologias-rnds.sql`](banco-de-dados/seed-01-terminologias-rnds.sql) | Códigos de dose, estratégia, via, local de aplicação e os 81 fabricantes oficiais |
 | [`banco-de-dados/seed-02-catalogo-e-calendario.sql`](banco-de-dados/seed-02-catalogo-e-calendario.sql) | 16 vacinas, doenças, esquemas e doses do calendário, de-para RNDS → vacina, 12 unidades fictícias, 2 campanhas |
-| [`banco-de-dados/seed-03-dados-sinteticos.sql`](banco-de-dados/seed-03-dados-sinteticos.sql) | 404 pessoas, 125 usuários, 314 vínculos de responsável, 4.749 registros RNDS e 5.292 doses na caderneta simulada |
+| [`banco-de-dados/seed-03-dados-sinteticos.sql`](banco-de-dados/seed-03-dados-sinteticos.sql) | 412 pessoas, 129 usuários, 329 vínculos de responsável, 5.023 registros RNDS e 5.550 doses na caderneta simulada |
 | [`banco-de-dados/sintetico/`](banco-de-dados/sintetico/) | Os mesmos dados em CSV (separador `;`), 3 exemplos de `Immunization` em JSON e o [resumo de cobertura](banco-de-dados/sintetico/resumo-cobertura.md) |
 | [`banco-de-dados/referencias/regras-entrada-pni-recorte.csv`](banco-de-dados/referencias/regras-entrada-pni-recorte.csv) | Recorte da regra oficial de entrada de dados do PNI para as vacinas do app (vacina × estratégia × dose, faixa etária, aprazamento, intervalo mínimo) |
 | [`banco-de-dados/referencias/fabricantes-brfabricantepni.csv`](banco-de-dados/referencias/fabricantes-brfabricantepni.csv) | Tabela oficial de fabricantes BRFabricantePNI (81 códigos) |
@@ -63,9 +63,9 @@ O app lê o espelho somente leitura em `registro_vacinacao`. Cada linha correspo
 
 Cardinalidades conforme o Modelo de Informação do RIA rotina no [guia da RNDS](https://rnds-guia.saude.gov.br/docs/ria-rotina/mi-ria-r/) e a [apresentação do modelo à CIT (2023)](https://www.conass.org.br/wp-content/uploads/2023/06/3.-b-AP_MI_RIA_22.06.2023_PAULA_CIT-1.pdf).
 
-O de-para do calendário fica em duas colunas: `rnds_imunobiologico.id_vacina` (código RNDS → vacina do app) e `dose_esquema.codigo_dose_rnds` (como cada dose do calendário chega da RNDS). Um registro que não se encaixa fica com `id_dose_esquema = NULL`. A base tem 18 casos assim, para testar:
+O de-para do calendário fica em duas colunas: `rnds_imunobiologico.id_vacina` (código RNDS → vacina do app) e `dose_esquema.codigo_dose_rnds` (como cada dose do calendário chega da RNDS). Um registro que não se encaixa fica com `id_dose_esquema = NULL`. A base tem 12 casos assim, para testar:
 
-- 12 crianças que tomaram a **tetra viral (SCRV)** aos 15 meses. Pela regra oficial, ela "corresponde a D2 de tríplice viral e D1 de varicela", então o app precisa tratar um registro como duas doses.
+- 6 crianças que tomaram a **tetra viral (SCRV)** aos 15 meses. Pela regra oficial, ela "corresponde a D2 de tríplice viral e D1 de varicela", então o app precisa tratar um registro como duas doses.
 - 2 adolescentes com **HPV em esquema especial de 3 doses** (estratégia 2 "Especial").
 
 ### Mudanças no esquema
@@ -112,7 +112,8 @@ Estão marcadas com `(ASSUMIDO)` no gerador.
 5. **Transcrição:** cerca de 15% das doses não registradas foram transcritas depois (`fonte_primaria = FALSE`, via e local `0`, lote às vezes vazio).
 6. **Adultos:** o histórico infantil de quem hoje é adulto quase não existe na RNDS. A base só simula BCG (raramente registrada), febre amarela, tríplice viral, dT, hepatite B e influenza.
 7. **CBO do vacinador:** 223505 (enfermeiro) e 322205 (técnico de enfermagem). Conferir na tabela CBO.
-8. **8% das crianças** tomaram a tetra viral no lugar de SCR D2 + varicela D1, e **12% das pessoas têm "baixa adesão"** (mais atraso e doses perdidas).
+8. **Famílias:** a mãe tem entre 18 e 45 anos no nascimento de cada filho, e o pai é pelo menos 18 anos mais velho que o filho mais velho. O vínculo de responsável começa na data de nascimento da criança.
+9. **8% das crianças** tomaram a tetra viral no lugar de SCR D2 + varicela D1, e **12% das pessoas têm "baixa adesão"** (mais atraso e doses perdidas).
 
 ## Resultado
 
@@ -120,13 +121,13 @@ Estão marcadas com `(ASSUMIDO)` no gerador.
 
 | Dose | Tomaram | Registradas na RNDS |
 |---|---:|---:|
-| BCG ao nascer | 94% | 91% |
-| Penta 3ª dose | 91% | 88% |
-| Tríplice viral 12 meses | 81% | 76% |
-| Febre amarela, reforço aos 4 anos | 64% | 56% |
-| HPV (9 a 14 anos), cenário hipotético | 69% | 45% |
+| BCG ao nascer | 97% | 93% |
+| Penta 3ª dose | 92% | 86% |
+| Tríplice viral 12 meses | 85% | 78% |
+| Febre amarela, reforço aos 4 anos | 72% | 63% |
+| HPV (9 a 14 anos), cenário hipotético | 67% | 44% |
 
-São 516 doses tomadas e não registradas, que é exatamente o público do aviso "Tem dose no cartão físico que não aparece aqui?". A amostra é pequena (404 pessoas), então os percentuais por subgrupo oscilam; para mais volume, aumente o número de famílias no gerador.
+São 502 doses tomadas e não registradas, que é exatamente o público do aviso "Tem dose no cartão físico que não aparece aqui?". A amostra é pequena (412 pessoas), então os percentuais por subgrupo oscilam; para mais volume, aumente o número de famílias no gerador.
 
 ## Identificadores sintéticos
 

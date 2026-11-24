@@ -10,24 +10,23 @@
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico",
-        "code": "67"
+        "code": "33"
       }
     ]
   },
   "patient": {
     "identifier": {
       "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
-      "value": "723840759890362"
+      "value": "31543411614"
     }
   },
-  "occurrenceDateTime": "2021-11-02",
-  "primarySource": true,
-  "lotNumber": "SIMZA5678",
+  "occurrenceDateTime": "2026-05-13",
+  "primarySource": false,
   "site": {
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRLocalAplicacao",
-        "code": "1"
+        "code": "0"
       }
     ]
   },
@@ -35,7 +34,7 @@
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRViaAdministracao",
-        "code": "10890"
+        "code": "0"
       }
     ]
   },
@@ -44,7 +43,7 @@
       "actor": {
         "identifier": {
           "system": "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
-          "value": "700641963802151"
+          "value": "881181205747482"
         }
       }
     }
@@ -58,7 +57,7 @@
             "coding": [
               {
                 "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BREstrategiaVacinacao",
-                "code": "1"
+                "code": "8"
               }
             ]
           }

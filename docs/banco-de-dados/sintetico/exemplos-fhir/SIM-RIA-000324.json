@@ -10,23 +10,24 @@
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico",
-        "code": "15"
+        "code": "67"
       }
     ]
   },
   "patient": {
     "identifier": {
       "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
-      "value": "39031543420"
+      "value": "934220849953952"
     }
   },
-  "occurrenceDateTime": "2000-12-26",
-  "primarySource": false,
+  "occurrenceDateTime": "2021-10-09",
+  "primarySource": true,
+  "lotNumber": "SIMRZ4010",
   "site": {
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRLocalAplicacao",
-        "code": "0"
+        "code": "2"
       }
     ]
   },
@@ -34,7 +35,7 @@
     "coding": [
       {
         "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRViaAdministracao",
-        "code": "0"
+        "code": "10890"
       }
     ]
   },
@@ -43,7 +44,7 @@
       "actor": {
         "identifier": {
           "system": "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
-          "value": "732586870798719"
+          "value": "996609669101995"
         }
       }
     }
@@ -65,5 +66,11 @@
       ],
       "doseNumberString": "9"
     }
-  ]
+  ],
+  "manufacturer": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRFabricantePNI",
+      "value": "152"
+    }
+  }
 }

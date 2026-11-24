@@ -17,12 +17,12 @@
   "patient": {
     "identifier": {
       "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
-      "value": "820991706144285"
+      "value": "725417085257292"
     }
   },
-  "occurrenceDateTime": "2009-03-29",
+  "occurrenceDateTime": "2020-05-31",
   "primarySource": true,
-  "lotNumber": "SIMLT8757",
+  "lotNumber": "SIMNS4584",
   "site": {
     "coding": [
       {
@@ -70,7 +70,7 @@
   "manufacturer": {
     "identifier": {
       "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRFabricantePNI",
-      "value": "163"
+      "value": "27880"
     }
   }
 }
