@@ -1,0 +1,76 @@
+{
+  "resourceType": "Immunization",
+  "meta": {
+    "profile": [
+      "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRImunobiologicoAdministrado-3.0"
+    ]
+  },
+  "status": "completed",
+  "vaccineCode": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico",
+        "code": "67"
+      }
+    ]
+  },
+  "patient": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
+      "value": "723840759890362"
+    }
+  },
+  "occurrenceDateTime": "2021-11-02",
+  "primarySource": true,
+  "lotNumber": "SIMZA5678",
+  "site": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRLocalAplicacao",
+        "code": "1"
+      }
+    ]
+  },
+  "route": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRViaAdministracao",
+        "code": "10890"
+      }
+    ]
+  },
+  "performer": [
+    {
+      "actor": {
+        "identifier": {
+          "system": "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
+          "value": "700641963802151"
+        }
+      }
+    }
+  ],
+  "protocolApplied": [
+    {
+      "extension": [
+        {
+          "url": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BREstrategiaVacinacao-1.0",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BREstrategiaVacinacao",
+                "code": "1"
+              }
+            ]
+          }
+        }
+      ],
+      "doseNumberString": "9"
+    }
+  ],
+  "manufacturer": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRFabricantePNI",
+      "value": "152"
+    }
+  }
+}

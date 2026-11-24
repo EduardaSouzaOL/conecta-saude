@@ -1,0 +1,76 @@
+{
+  "resourceType": "Immunization",
+  "meta": {
+    "profile": [
+      "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRImunobiologicoAdministrado-3.0"
+    ]
+  },
+  "status": "completed",
+  "vaccineCode": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico",
+        "code": "42"
+      }
+    ]
+  },
+  "patient": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
+      "value": "820991706144285"
+    }
+  },
+  "occurrenceDateTime": "2009-03-29",
+  "primarySource": true,
+  "lotNumber": "SIMLT8757",
+  "site": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRLocalAplicacao",
+        "code": "3"
+      }
+    ]
+  },
+  "route": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRViaAdministracao",
+        "code": "10890"
+      }
+    ]
+  },
+  "performer": [
+    {
+      "actor": {
+        "identifier": {
+          "system": "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
+          "value": "965674140129278"
+        }
+      }
+    }
+  ],
+  "protocolApplied": [
+    {
+      "extension": [
+        {
+          "url": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BREstrategiaVacinacao-1.0",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BREstrategiaVacinacao",
+                "code": "1"
+              }
+            ]
+          }
+        }
+      ],
+      "doseNumberString": "1"
+    }
+  ],
+  "manufacturer": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRFabricantePNI",
+      "value": "163"
+    }
+  }
+}
