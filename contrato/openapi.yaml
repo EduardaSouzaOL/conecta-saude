@@ -1,0 +1,1139 @@
+openapi: 3.1.0
+info:
+  title: Minha vacinação · API do ConectaSaúde Recife
+  version: 0.1.0
+  summary: Situação vacinal, histórico de doses, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
+  description: |
+    Contrato **v0** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
+
+    Regras que valem para toda a API:
+    - **Somente leitura** (RNF05, RN05): nenhum endpoint cria ou altera dose.
+    - **Dados sintéticos** em desenvolvimento e demonstração (RNF08). Todos os exemplos vêm de
+      `docs/banco-de-dados/sintetico/` e usam como data de referência **24/11/2026**.
+    - **Privacidade** (RNF04): a API nunca devolve CID, condição clínica, grupo de atendimento,
+      CPF, CNS ou dados do profissional que aplicou a dose.
+    - A situação vacinal é uma **previsão de rotina**; o aprazamento oficial é do profissional de
+      saúde (RN02). Por isso as respostas trazem o aviso "confirme na unidade" e a data da última
+      atualização dos dados (RNF09).
+    - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
+      (`pessoa_responsavel`). Outra pessoa devolve **403**.
+    - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
+
+    Pontos marcados com **[provisório]** dependem de definição de regra de negócio e podem mudar
+    (ver `docs/contrato-changelog.md`).
+  contact:
+    name: Equipe ConectaSaúde Recife (Projeto ARIES)
+  license:
+    name: Uso restrito ao Projeto ARIES
+    identifier: LicenseRef-ARIES
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local (perfil dev)
+security:
+  - tokenConecta: []
+tags:
+  - name: Pessoa
+    description: Pessoa logada e seus dependentes (RF01, RF02)
+  - name: Situação vacinal
+    description: Painel-resumo, doses por situação, histórico e detalhe da dose (RF04 a RF08)
+  - name: Unidades
+    description: Mapa e detalhe das unidades de saúde (RF10 a RF13)
+  - name: Campanhas
+    description: Campanhas vigentes e elegibilidade (RF18)
+  - name: Vacinas
+    description: Catálogo de vacinas e doenças que elas previnem (RF22)
+
+paths:
+  /v1/eu:
+    get:
+      tags: [Pessoa]
+      operationId: obterEu
+      summary: Pessoa logada e seus dependentes
+      description: |
+        Devolve a pessoa identificada pelo token e as pessoas pelas quais ela é responsável
+        (RF01, RF02). É o ponto de entrada do módulo: o front usa os ids daqui nas outras chamadas.
+      responses:
+        '200':
+          description: Pessoa logada e dependentes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Eu'
+              examples:
+                responsavelComUmaFilha:
+                  summary: Joana (pessoa 4) com a filha Manuela (pessoa 5)
+                  value:
+                    pessoa:
+                      id: 4
+                      nome: Joana Leite Oliveira
+                      dataNascimento: '1992-01-21'
+                    dependentes:
+                      - pessoa:
+                          id: 5
+                          nome: Manuela Gomes Oliveira
+                          dataNascimento: '2026-05-08'
+                        parentesco: MAE
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /v1/pessoas/{idPessoa}/situacao-vacinal:
+    get:
+      tags: [Situação vacinal]
+      operationId: obterSituacaoVacinal
+      summary: Painel-resumo e doses previstas por situação
+      description: |
+        Calcula a situação de cada dose prevista no calendário para a pessoa (RN01), a partir do
+        esquema vacinal, da data de nascimento e dos registros existentes. Alimenta a tela
+        "Minha vacinação" (painel-resumo RF06, lista por situação RF05, próxima dose RF07,
+        aviso de cartão desatualizado RF08 e data da última atualização RNF09).
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Situação vacinal da pessoa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituacaoVacinal'
+              examples:
+                bebeDeSeisMeses:
+                  summary: Manuela (pessoa 5, nascida em 08/05/2026), exemplo reduzido
+                  description: |
+                    Recorte das doses até 9 meses. O resumo conta só as doses deste exemplo.
+                    A Penta D1 e a Pneumo 10 D2 foram tomadas, mas não chegaram ao sistema
+                    (sub-registro da base sintética): aparecem como atrasadas, que é o caso do
+                    aviso de cartão desatualizado.
+                  value:
+                    pessoa:
+                      id: 5
+                      nome: Manuela Gomes Oliveira
+                      dataNascimento: '2026-05-08'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    resumo:
+                      atrasadas: 2
+                      podeTomar: 1
+                      emDia: 8
+                      aindaNaoDisponiveis: 2
+                    proximaDose:
+                      idDose: 8
+                      vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                      numeroDose: 3
+                      descricao: 6 meses
+                      situacao: AINDA_NAO_DISPONIVEL
+                      dataPrevista: '2026-12-17'
+                      registro: null
+                    doses:
+                      - idDose: 1
+                        vacina: { id: 1, nome: BCG }
+                        numeroDose: 1
+                        descricao: Ao nascer (dose única)
+                        situacao: EM_DIA
+                        dataPrevista: '2026-05-08'
+                        registro: { idRegistro: 50, dataAplicacao: '2026-05-09', transcricao: false }
+                      - idDose: 2
+                        vacina: { id: 2, nome: Hepatite B }
+                        numeroDose: 1
+                        descricao: Ao nascer (até 30 dias)
+                        situacao: EM_DIA
+                        dataPrevista: '2026-05-08'
+                        registro: { idRegistro: 51, dataAplicacao: '2026-05-10', transcricao: false }
+                      - idDose: 6
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        numeroDose: 1
+                        descricao: 2 meses
+                        situacao: ATRASADA
+                        dataPrevista: '2026-07-08'
+                        registro: null
+                      - idDose: 7
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-09-07'
+                        registro: { idRegistro: 52, dataAplicacao: '2026-11-17', transcricao: false }
+                      - idDose: 8
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        numeroDose: 3
+                        descricao: 6 meses
+                        situacao: AINDA_NAO_DISPONIVEL
+                        dataPrevista: '2026-12-17'
+                        registro: null
+                      - idDose: 9
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        numeroDose: 1
+                        descricao: 2 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-07-08'
+                        registro: { idRegistro: 53, dataAplicacao: '2026-07-19', transcricao: false }
+                      - idDose: 10
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-09-07'
+                        registro: { idRegistro: 54, dataAplicacao: '2026-09-21', transcricao: false }
+                      - idDose: 11
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        numeroDose: 3
+                        descricao: 6 meses
+                        situacao: PODE_TOMAR
+                        dataPrevista: '2026-11-07'
+                        registro: null
+                      - idDose: 16
+                        vacina: { id: 6, nome: Pneumocócica 10-valente }
+                        numeroDose: 1
+                        descricao: 2 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-07-08'
+                        registro: { idRegistro: 55, dataAplicacao: '2026-07-28', transcricao: false }
+                      - idDose: 17
+                        vacina: { id: 6, nome: Pneumocócica 10-valente }
+                        numeroDose: 2
+                        descricao: 4 meses
+                        situacao: ATRASADA
+                        dataPrevista: '2026-09-07'
+                        registro: null
+                      - idDose: 19
+                        vacina: { id: 7, nome: Meningocócica C conjugada }
+                        numeroDose: 1
+                        descricao: 3 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-08-07'
+                        registro: { idRegistro: 56, dataAplicacao: '2026-10-09', transcricao: false }
+                      - idDose: 20
+                        vacina: { id: 7, nome: Meningocócica C conjugada }
+                        numeroDose: 2
+                        descricao: 5 meses
+                        situacao: EM_DIA
+                        dataPrevista: '2026-10-07'
+                        registro: { idRegistro: 57, dataAplicacao: '2026-11-08', transcricao: false }
+                      - idDose: 23
+                        vacina: { id: 9, nome: Febre amarela }
+                        numeroDose: 1
+                        descricao: 9 meses
+                        situacao: AINDA_NAO_DISPONIVEL
+                        dataPrevista: '2027-02-06'
+                        registro: null
+                    avisos:
+                      previsaoDeRotina: >-
+                        Esta é uma previsão de rotina. Quem define as datas das suas doses é o
+                        profissional de saúde: confirme na unidade.
+                      cartaoDesatualizado: >-
+                        Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais
+                        próxima para atualizar.
+                      atrasoDeAtualizacao: >-
+                        Uma dose pode levar cerca de 14 dias para aparecer aqui depois de aplicada.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/pessoas/{idPessoa}/registros:
+    get:
+      tags: [Situação vacinal]
+      operationId: listarRegistros
+      summary: Histórico de doses registradas
+      description: |
+        Lista os registros de vacinação da pessoa (RF04): vacina, dose, data, lote, fabricante,
+        unidade e fonte do registro. Inclui registros que não se encaixam no calendário
+        (`idDose` nulo, por exemplo tetra viral ou HPV em esquema especial). Ordem: data de
+        aplicação, da mais recente para a mais antiga.
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Registros da pessoa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaRegistros'
+              examples:
+                bebeDeSeisMeses:
+                  summary: Manuela (pessoa 5), três registros mais antigos
+                  value:
+                    idPessoa: 5
+                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    registros:
+                      - id: 52
+                        idDose: 7
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        imunobiologico: { codigo: '42', sigla: Penta }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-11-17'
+                        lote: SIMUU3667
+                        fabricante: { codigo: '27880', nome: GlaxoSmithKline (GSK) }
+                        unidade: { id: 9, nome: USF Fictícia Ibura }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-11-18T15:07:00-03:00'
+                      - id: 51
+                        idDose: 2
+                        vacina: { id: 2, nome: Hepatite B }
+                        imunobiologico: { codigo: '9', sigla: HB }
+                        dose: { codigo: '8', sigla: D, descricao: Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-05-10'
+                        lote: SIMLQ6024
+                        fabricante: { codigo: '164', nome: LG Chem }
+                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-05-10T08:35:00-03:00'
+                      - id: 50
+                        idDose: 1
+                        vacina: { id: 1, nome: BCG }
+                        imunobiologico: { codigo: '15', sigla: BCG }
+                        dose: { codigo: '9', sigla: DU, descricao: Única }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-05-09'
+                        lote: SIMSQ3515
+                        fabricante: { codigo: '151', nome: Fundação Ataulpho de Paiva }
+                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-05-09T10:08:00-03:00'
+                transcricaoSemLote:
+                  summary: Maria (pessoa 1), BCG transcrita do cartão físico
+                  value:
+                    idPessoa: 1
+                    dataUltimaAtualizacao: '2021-11-27T11:49:00-03:00'
+                    registros:
+                      - id: 1
+                        idDose: 1
+                        vacina: { id: 1, nome: BCG }
+                        imunobiologico: { codigo: '15', sigla: BCG }
+                        dose: { codigo: '9', sigla: DU, descricao: Única }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2000-12-26'
+                        lote: null
+                        fabricante: null
+                        unidade: { id: 12, nome: Maternidade Fictícia Recife }
+                        transcricao: true
+                        dataRegistroNaFonte: '2001-07-18T09:32:00-03:00'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/pessoas/{idPessoa}/doses/{idDose}:
+    get:
+      tags: [Situação vacinal]
+      operationId: obterDetalheDose
+      summary: Detalhe de uma dose prevista
+      description: |
+        Tela 3 do protótipo: situação da dose, quando fica disponível, doenças que a vacina
+        previne e os registros ligados a ela. `idDose` é o id da dose no calendário
+        (`dose_esquema`).
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+        - name: idDose
+          in: path
+          required: true
+          description: Id da dose no calendário (`dose_esquema.id_dose_esquema`)
+          schema:
+            type: integer
+            minimum: 1
+          example: 11
+      responses:
+        '200':
+          description: Detalhe da dose
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheDose'
+              examples:
+                vipTerceiraDose:
+                  summary: Manuela (pessoa 5), VIP 3ª dose, já pode tomar
+                  value:
+                    idPessoa: 5
+                    dose:
+                      idDose: 11
+                      vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                      numeroDose: 3
+                      descricao: 6 meses
+                      situacao: PODE_TOMAR
+                      dataPrevista: '2026-11-07'
+                      registro: null
+                    esquema: VIP – 3 doses + 2 reforços
+                    intervaloMinimoDias: 30
+                    doencas:
+                      - { id: 7, nome: Poliomielite }
+                    registros: []
+                    dataUltimaAtualizacao: '2026-11-18T15:07:00-03:00'
+                    avisos:
+                      previsaoDeRotina: >-
+                        Esta é uma previsão de rotina. Quem define as datas das suas doses é o
+                        profissional de saúde: confirme na unidade.
+                      cartaoDesatualizado: >-
+                        Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais
+                        próxima para atualizar.
+                      atrasoDeAtualizacao: >-
+                        Uma dose pode levar cerca de 14 dias para aparecer aqui depois de aplicada.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/unidades:
+    get:
+      tags: [Unidades]
+      operationId: listarUnidades
+      summary: Unidades de saúde para o mapa
+      description: |
+        Lista as unidades com sala de vacina (RF10). Com `vacina`, cada unidade traz a
+        disponibilidade daquela vacina (RF13). Com `lat` e `lng`, traz a distância e ordena da
+        mais próxima para a mais distante. Vacina é porta aberta (RF12, RN04): unidades sem a
+        vacina disponível continuam na lista, com a disponibilidade indicada.
+      parameters:
+        - name: vacina
+          in: query
+          required: false
+          description: Id da vacina do catálogo (`GET /v1/vacinas`)
+          schema:
+            type: integer
+            minimum: 1
+          example: 4
+        - name: lat
+          in: query
+          required: false
+          description: Latitude do ponto de referência. Enviar junto com `lng`.
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+          example: -8.12
+        - name: lng
+          in: query
+          required: false
+          description: Longitude do ponto de referência. Enviar junto com `lat`.
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+          example: -34.93
+      responses:
+        '200':
+          description: Unidades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaUnidades'
+              examples:
+                vipPertoDoIbura:
+                  summary: VIP, a partir de um ponto no Ibura (recorte com 2 unidades)
+                  value:
+                    unidades:
+                      - id: 9
+                        nome: USF Fictícia Ibura
+                        tipo: USF
+                        endereco: Rua Fictícia do Ibura, 15 – Ibura
+                        distritoSanitario: DS VI
+                        latitude: -8.127
+                        longitude: -34.937
+                        possuiSalaVacina: true
+                        distanciaMetros: 1090
+                        disponibilidadeVacina: DISPONIVEL
+                      - id: 8
+                        nome: USF Fictícia Boa Viagem
+                        tipo: USF
+                        endereco: Av. Fictícia de Boa Viagem, 4000 – Boa Viagem
+                        distritoSanitario: DS VI
+                        latitude: -8.118
+                        longitude: -34.897
+                        possuiSalaVacina: true
+                        distanciaMetros: 3650
+                        disponibilidadeVacina: INDISPONIVEL
+                    avisoPortaAberta: >-
+                      Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde.
+        '400':
+          $ref: '#/components/responses/RequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /v1/unidades/{idUnidade}:
+    get:
+      tags: [Unidades]
+      operationId: obterUnidade
+      summary: Detalhe da unidade
+      description: |
+        Nome, endereço, telefone, horário, sala de vacina e as vacinas com a disponibilidade
+        informada pela Prefeitura (RF11, RF15).
+      parameters:
+        - name: idUnidade
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 9
+      responses:
+        '200':
+          description: Detalhe da unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheUnidade'
+              examples:
+                ibura:
+                  summary: USF Fictícia Ibura (recorte das vacinas)
+                  value:
+                    id: 9
+                    nome: USF Fictícia Ibura
+                    tipo: USF
+                    endereco: Rua Fictícia do Ibura, 15 – Ibura
+                    distritoSanitario: DS VI
+                    latitude: -8.127
+                    longitude: -34.937
+                    possuiSalaVacina: true
+                    cnes: '9987676'
+                    telefone: (81) 3355-9444
+                    horarioFuncionamento: null
+                    vacinas:
+                      - vacina: { id: 1, nome: BCG }
+                        disponibilidade: TEMPORARIAMENTE_INDISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                      - vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        disponibilidade: DISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                      - vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        disponibilidade: DISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                    avisoPortaAberta: >-
+                      Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/campanhas:
+    get:
+      tags: [Campanhas]
+      operationId: listarCampanhas
+      summary: Campanhas de vacinação
+      description: |
+        Lista as campanhas (RF18). Com `vigentes=true`, só as que estão acontecendo hoje
+        (status ATIVA e data de hoje dentro do período). Com `idPessoa`, cada campanha diz se
+        a pessoa é elegível **[provisório]**: a regra de elegibilidade ainda não está definida
+        (o público-alvo é texto livre no banco); enquanto isso, `elegivel` vem `null`.
+      parameters:
+        - name: vigentes
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: idPessoa
+          in: query
+          required: false
+          description: Pessoa para calcular a elegibilidade (a logada ou um dependente)
+          schema:
+            type: integer
+            minimum: 1
+          example: 5
+      responses:
+        '200':
+          description: Campanhas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaCampanhas'
+              examples:
+                vigentes:
+                  summary: Campanhas vigentes em 24/11/2026
+                  value:
+                    campanhas:
+                      - id: 2
+                        nome: Multivacinação 2026
+                        descricao: Atualização da caderneta de crianças e adolescentes menores de 15 anos
+                        dataInicio: '2026-11-09'
+                        dataFim: '2026-12-12'
+                        publicoAlvo: Menores de 15 anos
+                        status: ATIVA
+                        vacinas:
+                          - { id: 3, nome: Penta (DTP/Hib/HB) }
+                          - { id: 4, nome: Poliomielite inativada (VIP) }
+                          - { id: 6, nome: Pneumocócica 10-valente }
+                        elegivel: null
+        '400':
+          $ref: '#/components/responses/RequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+
+  /v1/vacinas:
+    get:
+      tags: [Vacinas]
+      operationId: listarVacinas
+      summary: Catálogo de vacinas
+      description: Vacinas ativas do catálogo e as doenças que cada uma previne (RF22).
+      responses:
+        '200':
+          description: Vacinas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaVacinas'
+              examples:
+                recorte:
+                  summary: Recorte com 2 das 16 vacinas
+                  value:
+                    vacinas:
+                      - id: 1
+                        nome: BCG
+                        descricao: Calendário Nacional de Vacinação
+                        doencas:
+                          - { id: 1, nome: Tuberculose (formas graves) }
+                      - id: 3
+                        nome: Penta (DTP/Hib/HB)
+                        descricao: Calendário Nacional de Vacinação
+                        doencas:
+                          - { id: 2, nome: Hepatite B }
+                          - { id: 3, nome: Difteria }
+                          - { id: 4, nome: Tétano }
+                          - { id: 5, nome: Coqueluche }
+                          - { id: 6, nome: Haemophilus influenzae b }
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+components:
+  securitySchemes:
+    tokenConecta:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token do login do Conecta Recife (SSO, D15). O formato real ainda não está definido.
+        No perfil `dev`, o backend aceita um token falso que indica qual pessoa sintética está
+        logada (docs/15, seção 1).
+
+  parameters:
+    IdPessoa:
+      name: idPessoa
+      in: path
+      required: true
+      description: Id da pessoa (a logada ou um dependente vinculado a ela)
+      schema:
+        type: integer
+        minimum: 1
+      example: 5
+
+  responses:
+    NaoAutenticado:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Não autenticado
+            status: 401
+            detail: Entre de novo no Conecta Recife.
+    SemAcesso:
+      description: A pessoa logada não é a pessoa pedida nem responsável por ela
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Sem acesso
+            status: 403
+            detail: Você só pode ver os seus dados e os das pessoas que estão sob a sua responsabilidade.
+    NaoEncontrado:
+      description: Recurso não encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Não encontrado
+            status: 404
+            detail: Não encontramos o que você procurou.
+    RequisicaoInvalida:
+      description: Parâmetros inválidos (por exemplo, `lat` sem `lng`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Requisição inválida
+            status: 400
+            detail: Envie latitude e longitude juntas.
+
+  schemas:
+    Problema:
+      type: object
+      description: Problem Details (RFC 9457)
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+
+    PessoaResumo:
+      type: object
+      description: Dados mínimos da pessoa. Nunca inclui CPF, CNS ou dados de saúde.
+      required: [id, nome, dataNascimento]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        dataNascimento:
+          type: string
+          format: date
+
+    Parentesco:
+      type: string
+      description: Parentesco do responsável com o dependente, como está em `pessoa_responsavel.parentesco`
+      examples: [MAE]
+
+    Dependente:
+      type: object
+      required: [pessoa, parentesco]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        parentesco:
+          $ref: '#/components/schemas/Parentesco'
+
+    Eu:
+      type: object
+      required: [pessoa, dependentes]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        dependentes:
+          type: array
+          description: Pessoas vinculadas à pessoa logada como responsável (vínculos sem data de fim)
+          items:
+            $ref: '#/components/schemas/Dependente'
+
+    VacinaResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    DoencaResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    SituacaoDose:
+      type: string
+      description: |
+        Situação de uma dose prevista (RF05). Nunca existe "não posso tomar" (RN03).
+        **[provisório]** Definições da v0, a confirmar:
+        - `EM_DIA`: há registro que cumpre esta dose.
+        - `PODE_TOMAR`: sem registro; a pessoa já tem a idade e o intervalo mínimos.
+        - `ATRASADA`: sem registro e já passou do momento recomendado para a dose.
+        - `AINDA_NAO_DISPONIVEL`: sem registro; a pessoa ainda não tem a idade ou o intervalo
+          mínimos. `dataPrevista` diz quando fica disponível.
+        O limite entre `PODE_TOMAR` e `ATRASADA` ainda não está definido.
+      enum: [ATRASADA, PODE_TOMAR, EM_DIA, AINDA_NAO_DISPONIVEL]
+
+    RegistroResumo:
+      type: object
+      description: Registro que cumpre a dose
+      required: [idRegistro, dataAplicacao, transcricao]
+      properties:
+        idRegistro:
+          type: integer
+        dataAplicacao:
+          type: string
+          format: date
+        transcricao:
+          type: boolean
+          description: Verdadeiro quando o registro veio da transcrição do cartão físico (`fonte_primaria = false`)
+
+    DosePrevista:
+      type: object
+      required: [idDose, vacina, numeroDose, descricao, situacao, dataPrevista, registro]
+      properties:
+        idDose:
+          type: integer
+          description: Id da dose no calendário (`dose_esquema`)
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        numeroDose:
+          type: integer
+          minimum: 1
+          description: Ordem da dose no esquema (1 = primeira). O front transforma em texto simples ("hora da segunda dose")
+        descricao:
+          type: string
+          description: Descrição da dose no calendário (ex. "2 meses", "Reforço aos 4 anos")
+        situacao:
+          $ref: '#/components/schemas/SituacaoDose'
+        dataPrevista:
+          type: [string, 'null']
+          format: date
+          description: |
+            Quando a dose fica disponível para a pessoa: o maior entre a idade recomendada e o
+            intervalo mínimo após a dose anterior. `null` quando o calendário não tem idade
+            recomendada (ex. influenza anual).
+        registro:
+          description: Registro que cumpre a dose, ou `null` se não há
+          oneOf:
+            - $ref: '#/components/schemas/RegistroResumo'
+            - type: 'null'
+
+    ResumoSituacao:
+      type: object
+      description: Contagem para o painel-resumo (RF06)
+      required: [atrasadas, podeTomar, emDia, aindaNaoDisponiveis]
+      properties:
+        atrasadas:
+          type: integer
+          minimum: 0
+        podeTomar:
+          type: integer
+          minimum: 0
+        emDia:
+          type: integer
+          minimum: 0
+        aindaNaoDisponiveis:
+          type: integer
+          minimum: 0
+
+    Avisos:
+      type: object
+      description: Textos que o front sempre mostra junto da situação vacinal (RN02, RF08, RNF09)
+      required: [previsaoDeRotina, cartaoDesatualizado, atrasoDeAtualizacao]
+      properties:
+        previsaoDeRotina:
+          type: string
+        cartaoDesatualizado:
+          type: string
+        atrasoDeAtualizacao:
+          type: string
+
+    SituacaoVacinal:
+      type: object
+      required: [pessoa, dataReferencia, dataUltimaAtualizacao, resumo, proximaDose, doses, avisos]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        dataReferencia:
+          type: string
+          format: date
+          description: Data usada no cálculo (hoje, no fuso de Recife)
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+          description: |
+            **[provisório]** Quando os dados desta pessoa foram atualizados pela última vez na
+            fonte (hoje: o registro mais recente que chegou à RNDS simulada). `null` se a pessoa
+            não tem registros.
+        resumo:
+          $ref: '#/components/schemas/ResumoSituacao'
+        proximaDose:
+          description: |
+            **[provisório]** Próxima dose que vai ficar disponível (RF07): a dose
+            `AINDA_NAO_DISPONIVEL` com a menor `dataPrevista`. `null` se não houver.
+          oneOf:
+            - $ref: '#/components/schemas/DosePrevista'
+            - type: 'null'
+        doses:
+          type: array
+          description: Doses previstas no calendário para a pessoa, ordenadas por `dataPrevista`
+          items:
+            $ref: '#/components/schemas/DosePrevista'
+        avisos:
+          $ref: '#/components/schemas/Avisos'
+
+    CodigoDescricao:
+      type: object
+      required: [codigo]
+      properties:
+        codigo:
+          type: string
+        sigla:
+          type: [string, 'null']
+        descricao:
+          type: [string, 'null']
+
+    Fabricante:
+      type: object
+      required: [codigo, nome]
+      properties:
+        codigo:
+          type: [string, 'null']
+          description: Código BRFabricantePNI
+        nome:
+          type: string
+          description: Nome por extenso (ou o display oficial, se não houver)
+
+    UnidadeResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    RegistroVacinacao:
+      type: object
+      description: |
+        Um registro de vacinação (espelho somente leitura de um `Immunization` da RNDS).
+        Não inclui dados do profissional que aplicou a dose nem motivo de indicação.
+      required: [id, idDose, vacina, imunobiologico, dose, estrategia, dataAplicacao, lote, fabricante, unidade, transcricao, dataRegistroNaFonte]
+      properties:
+        id:
+          type: integer
+        idDose:
+          type: [integer, 'null']
+          description: Dose do calendário que este registro cumpre. `null` quando o registro não se encaixa no calendário (ex. tetra viral, HPV em esquema especial)
+        vacina:
+          description: Vacina do catálogo do app (de-para do código RNDS). `null` se o código não está no catálogo
+          oneOf:
+            - $ref: '#/components/schemas/VacinaResumo'
+            - type: 'null'
+        imunobiologico:
+          $ref: '#/components/schemas/CodigoDescricao'
+        dose:
+          $ref: '#/components/schemas/CodigoDescricao'
+        estrategia:
+          $ref: '#/components/schemas/CodigoDescricao'
+        dataAplicacao:
+          type: string
+          format: date
+        lote:
+          type: [string, 'null']
+          description: Pode faltar em transcrição
+        fabricante:
+          description: Pode faltar em transcrição
+          oneOf:
+            - $ref: '#/components/schemas/Fabricante'
+            - type: 'null'
+        unidade:
+          description: Unidade onde a dose foi aplicada, se for uma unidade conhecida
+          oneOf:
+            - $ref: '#/components/schemas/UnidadeResumo'
+            - type: 'null'
+        transcricao:
+          type: boolean
+          description: Verdadeiro quando o registro veio da transcrição do cartão físico (`fonte_primaria = false`)
+        dataRegistroNaFonte:
+          type: [string, 'null']
+          format: date-time
+          description: Quando o registro ficou disponível na fonte (RNDS)
+
+    ListaRegistros:
+      type: object
+      required: [idPessoa, dataUltimaAtualizacao, registros]
+      properties:
+        idPessoa:
+          type: integer
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistroVacinacao'
+
+    DetalheDose:
+      type: object
+      required: [idPessoa, dose, esquema, intervaloMinimoDias, doencas, registros, dataUltimaAtualizacao, avisos]
+      properties:
+        idPessoa:
+          type: integer
+        dose:
+          $ref: '#/components/schemas/DosePrevista'
+        esquema:
+          type: string
+          description: Nome do esquema vacinal
+        intervaloMinimoDias:
+          type: [integer, 'null']
+          description: Intervalo mínimo após a dose anterior, em dias
+        doencas:
+          type: array
+          description: Doenças que a vacina previne
+          items:
+            $ref: '#/components/schemas/DoencaResumo'
+        registros:
+          type: array
+          description: Registros que cumprem esta dose
+          items:
+            $ref: '#/components/schemas/RegistroVacinacao'
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+        avisos:
+          $ref: '#/components/schemas/Avisos'
+
+    Disponibilidade:
+      type: string
+      description: Disponibilidade da vacina na unidade, informada pela Prefeitura. `SEM_INFORMACAO` quando não há dado
+      enum: [DISPONIVEL, INDISPONIVEL, TEMPORARIAMENTE_INDISPONIVEL, SEM_INFORMACAO]
+
+    Unidade:
+      type: object
+      required: [id, nome, tipo, endereco, distritoSanitario, latitude, longitude, possuiSalaVacina]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        tipo:
+          type: string
+          description: Tipo da unidade (USF, POLICLINICA, MATERNIDADE…)
+        endereco:
+          type: string
+        distritoSanitario:
+          type: [string, 'null']
+        latitude:
+          type: [number, 'null']
+        longitude:
+          type: [number, 'null']
+        possuiSalaVacina:
+          type: boolean
+
+    UnidadeNoMapa:
+      allOf:
+        - $ref: '#/components/schemas/Unidade'
+        - type: object
+          properties:
+            distanciaMetros:
+              type: [integer, 'null']
+              description: Distância em linha reta até o ponto informado. `null` sem `lat`/`lng`
+            disponibilidadeVacina:
+              description: Disponibilidade da vacina filtrada. `null` sem o filtro `vacina`
+              oneOf:
+                - $ref: '#/components/schemas/Disponibilidade'
+                - type: 'null'
+
+    ListaUnidades:
+      type: object
+      required: [unidades, avisoPortaAberta]
+      properties:
+        unidades:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnidadeNoMapa'
+        avisoPortaAberta:
+          type: string
+
+    VacinaNaUnidade:
+      type: object
+      required: [vacina, disponibilidade, dataAtualizacao]
+      properties:
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        disponibilidade:
+          $ref: '#/components/schemas/Disponibilidade'
+        dataAtualizacao:
+          type: [string, 'null']
+          format: date-time
+
+    DetalheUnidade:
+      allOf:
+        - $ref: '#/components/schemas/Unidade'
+        - type: object
+          required: [cnes, telefone, horarioFuncionamento, vacinas, avisoPortaAberta]
+          properties:
+            cnes:
+              type: [string, 'null']
+            telefone:
+              type: [string, 'null']
+            horarioFuncionamento:
+              type: [string, 'null']
+              description: '**[provisório]** Ainda não existe no banco; vem `null` até a fonte ser definida'
+            vacinas:
+              type: array
+              items:
+                $ref: '#/components/schemas/VacinaNaUnidade'
+            avisoPortaAberta:
+              type: string
+
+    Campanha:
+      type: object
+      required: [id, nome, descricao, dataInicio, dataFim, publicoAlvo, status, vacinas, elegivel]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: [string, 'null']
+        dataInicio:
+          type: string
+          format: date
+        dataFim:
+          type: string
+          format: date
+        publicoAlvo:
+          type: string
+        status:
+          type: string
+          enum: [PLANEJADA, ATIVA, ENCERRADA, CANCELADA]
+        vacinas:
+          type: array
+          items:
+            $ref: '#/components/schemas/VacinaResumo'
+        elegivel:
+          type: [boolean, 'null']
+          description: '**[provisório]** Se a pessoa de `idPessoa` é elegível. `null` sem `idPessoa` ou enquanto a regra não estiver definida'
+
+    ListaCampanhas:
+      type: object
+      required: [campanhas]
+      properties:
+        campanhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campanha'
+
+    Vacina:
+      type: object
+      required: [id, nome, descricao, doencas]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: [string, 'null']
+        doencas:
+          type: array
+          items:
+            $ref: '#/components/schemas/DoencaResumo'
+
+    ListaVacinas:
+      type: object
+      required: [vacinas]
+      properties:
+        vacinas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vacina'
