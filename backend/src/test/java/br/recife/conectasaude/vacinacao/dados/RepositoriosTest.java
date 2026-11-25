@@ -118,6 +118,13 @@ class RepositoriosTest extends BancoDeTeste {
         assertThat(campanhas.findAllByOrderById())
                 .extracting(Campanha::getNome, Campanha::isSeletiva)
                 .containsExactly(tuple("Campanha de Influenza 2026", false), tuple("Multivacinação 2026", true));
+        // Influenza 2026 ([MS-INFLU-2026]): grupos prioritários de 28/03 a 30/05/2026, já encerrada.
+        assertThat(campanhas.findById(1)).get().satisfies(c -> {
+            assertThat(c.getDataInicio()).isEqualTo(LocalDate.of(2026, 3, 28));
+            assertThat(c.getDataFim()).isEqualTo(LocalDate.of(2026, 5, 30));
+            assertThat(c.getStatus()).isEqualTo("ENCERRADA");
+            assertThat(c.getPublicoAlvo()).contains("gestantes", "puérperas", "demais grupos prioritários");
+        });
         assertThat(importacoes.findFirstByIdFonteAndStatusOrderByDataImportacaoDesc(1, "CONCLUIDA")).isPresent();
     }
 
@@ -141,7 +148,8 @@ class RepositoriosTest extends BancoDeTeste {
                 .containsExactly(tuple("P6M", "P6Y"),
                         tuple("P60Y", null));
         assertThat(faixasCampanha.findByIdCampanhaOrderById(1))
-                .allSatisfy(f -> assertThat(f.getFonteRegra()).contains("[a conferir no informe]"));
+                .allSatisfy(f -> assertThat(f.getFonteRegra()).startsWith("[MS-INFLU-2026]")
+                        .contains("28 de março a 30 de maio").doesNotContain("a conferir"));
 
         assertThat(faixasCampanha.findByIdCampanhaInOrderByIdCampanhaAscIdAsc(List.of(2, 1)))
                 .extracting(CampanhaFaixaEtaria::getId).containsExactly(1, 2, 3);

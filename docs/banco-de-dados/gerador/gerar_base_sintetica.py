@@ -665,13 +665,15 @@ def main():
     s2 += inserts("campanha", ["id_campanha", "nome", "descricao", "data_inicio", "data_fim",
                                "publico_alvo", "status", "seletiva"],
                   [(1, "Campanha de Influenza 2026", "Vacinação anual contra a gripe",
-                    date(2026, 3, 25), date(2026, 6, 30),
-                    "Crianças de 6 meses a menores de 6 anos, idosos 60+, gestantes e demais grupos prioritários",
+                    # [MS-INFLU-2026] grupos prioritários: 28 de março a 30 de maio de 2026
+                    date(2026, 3, 28), date(2026, 5, 30),
+                    "Crianças de 6 meses a menores de 6 anos, idosos com 60 anos ou mais, gestantes, "
+                    "puérperas e demais grupos prioritários",
                     "ENCERRADA", False),
                    (2, "Multivacinação 2026", "Atualização da caderneta de crianças e adolescentes menores de 15 anos",
                     date(2026, 11, 9), date(2026, 12, 12), "Menores de 15 anos", "ATIVA", True)])
     # seletiva: TRUE = só quem tem dose a fazer das vacinas da campanha ([MS-MULTI-2026]);
-    # FALSE = todos na faixa etária (influenza anual).
+    # FALSE = todos na faixa etária (influenza anual, [MS-INFLU-2026]).
     # [RNF07] Faixa etária de cada campanha como dado (decisão de 25/11/2026: regras do PNI/MS).
     # Períodos ISO 8601 a partir do nascimento; limite = fora da faixa a partir desse dia
     # (P15Y: no dia do 15º aniversário já está fora), mesma convenção da dose_esquema (docs/16).
@@ -680,14 +682,20 @@ def main():
     FONTE_MULTI_2026 = ("[MS-MULTI-2026] Ministério da Saúde, \"Estratégia para a atualização das cadernetas "
                         "de vacinação das crianças e dos adolescentes menores de 15 anos – Multivacinação 2026\": "
                         "público-alvo menores de 15 anos (14 anos, 11 meses e 29 dias); vacinação seletiva")
-    FONTE_INFLU_2026 = ("[a conferir no informe] publico_alvo da campanha / Informe da Campanha Nacional de "
-                        "Vacinação contra a Influenza 2026 (MS)")
+    # Influenza 2026: estratégia para todo o grupo (não seletiva); gestantes, puérperas e demais
+    # grupos prioritários não têm faixa etária.
+    # Documento: https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/guias-e-manuais/2026/
+    #            estrategia-de-vacinacao-contra-a-influenza-nas-regioes-nordeste-centro-oeste-sul-e-sudeste-2026.pdf
+    # (a URL fica só aqui: fonte_regra é VARCHAR(300)).
+    FONTE_INFLU_2026 = ("[MS-INFLU-2026] Ministério da Saúde, \"Estratégia de vacinação contra a influenza "
+                        "nas regiões Nordeste, Centro-Oeste, Sul e Sudeste – 2026\": "
+                        "vacinação dos grupos prioritários de 28 de março a 30 de maio")
     s2 += "\n-- [RNF07] faixas etárias das campanhas (ISO 8601; limite = fora a partir de nascimento + período)\n"
     s2 += "-- gestantes e demais grupos prioritários não são faixa etária: a API não calcula essa elegibilidade\n"
     s2 += inserts("campanha_faixa_etaria", ["id_faixa_etaria", "id_campanha", "idade_minima_periodo",
                                             "idade_limite_periodo", "fonte_regra"],
-                  [(1, 1, "P6M", "P6Y", FONTE_INFLU_2026 + ": crianças de 6 meses a menores de 6 anos"),
-                   (2, 1, "P60Y", None, FONTE_INFLU_2026 + ": pessoas de 60 anos ou mais"),
+                  [(1, 1, "P6M", "P6Y", FONTE_INFLU_2026 + "; crianças de 6 meses a menores de 6 anos de idade (5 anos, 11 meses e 29 dias)"),
+                   (2, 1, "P60Y", None, FONTE_INFLU_2026 + "; idosos com 60 anos ou mais de idade"),
                    (3, 2, "P0D", "P15Y", FONTE_MULTI_2026)])
     s2 += inserts("campanha_vacina", ["id_campanha", "id_vacina"],
                   [(1, vac_id["Influenza"])] + [(2, vac_id[v["nome"]]) for v in VACINAS

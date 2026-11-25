@@ -30,7 +30,7 @@ import java.util.Objects;
 public final class GeradorLembretes {
 
     /** Janela do "em breve", em dias corridos depois da data de referência (inclusive). */
-    public static final int JANELA_EM_BREVE_DIAS = 30;
+    public static final int JANELA_EM_BREVE_DIAS = 7;
 
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
