@@ -8,20 +8,26 @@ import org.springframework.stereotype.Component;
 
 /**
  * Token FALSO, só nos perfis dev e test: {@code dev-pessoa-<id>} diz qual pessoa sintética está
- * logada (ex.: {@code Authorization: Bearer dev-pessoa-4} = Valentina). Nunca ativo em produção.
+ * logada com gov.br (ex.: {@code Authorization: Bearer dev-pessoa-4} = Valentina) e
+ * {@code dev-pessoa-<id>-email} simula a mesma pessoa logada com e-mail (D22). Nunca ativo em
+ * produção.
  */
 @Component
 @Profile({"dev", "test"})
 public class ValidadorTokenDev implements ValidadorToken {
 
-    private static final Pattern FORMATO = Pattern.compile("dev-pessoa-(\\d{1,9})");
+    private static final Pattern FORMATO = Pattern.compile("dev-pessoa-(\\d{1,9})(-email)?");
 
     @Override
-    public Optional<Integer> idPessoa(String token) {
+    public Optional<PessoaLogada> pessoaLogada(String token) {
         if (token == null) {
             return Optional.empty();
         }
         Matcher m = FORMATO.matcher(token);
-        return m.matches() ? Optional.of(Integer.parseInt(m.group(1))) : Optional.empty();
+        if (!m.matches()) {
+            return Optional.empty();
+        }
+        MetodoLogin metodo = m.group(2) == null ? MetodoLogin.GOV_BR : MetodoLogin.EMAIL;
+        return Optional.of(new PessoaLogada(Integer.parseInt(m.group(1)), metodo));
     }
 }

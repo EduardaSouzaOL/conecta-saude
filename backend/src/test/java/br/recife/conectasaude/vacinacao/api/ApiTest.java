@@ -157,6 +157,93 @@ class ApiTest extends BancoDeTeste {
                 .andExpect(header().string("Access-Control-Allow-Origin", front));
     }
 
+    static MockHttpServletRequestBuilder comTokenEmail(MockHttpServletRequestBuilder req, int idPessoa) {
+        return req.header("Authorization", "Bearer dev-pessoa-" + idPessoa + "-email");
+    }
+
+    @Test
+    void euDizOMetodoDeLoginEOsRecursos() throws Exception {
+        mvc.perform(comToken(get("/v1/eu"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.metodoLogin").value("GOV_BR"))
+                .andExpect(jsonPath("$.recursos.carteiraPdf").value(true))
+                .andExpect(jsonPath("$.recursos.ouvidoria").value(true));
+        mvc.perform(comTokenEmail(get("/v1/eu"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoa.id").value(4))
+                .andExpect(jsonPath("$.metodoLogin").value("EMAIL"))
+                .andExpect(jsonPath("$.recursos.carteiraPdf").value(false))
+                .andExpect(jsonPath("$.recursos.ouvidoria").value(false));
+    }
+
+    @Test
+    void carteiraPdfEOuvidoriaSoComLoginGovBr() throws Exception {
+        for (String caminho : new String[] {"/v1/ouvidoria", "/v1/pessoas/4/carteira.pdf", "/v1/pessoas/5/carteira.pdf"}) {
+            mvc.perform(comTokenEmail(get(caminho), 4)).andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                    .andExpect(jsonPath("$.type").value("/problemas/login-gov-br-necessario"))
+                    .andExpect(jsonPath("$.title").value("Login gov.br necessário"));
+            mvc.perform(get(caminho)).andExpect(status().isUnauthorized());
+        }
+        // O teste de login vem antes do acesso: com e-mail, até pessoa sem vínculo dá o mesmo 403
+        mvc.perform(comTokenEmail(get("/v1/pessoas/48/carteira.pdf"), 4)).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.type").value("/problemas/login-gov-br-necessario"));
+        mvc.perform(comToken(get("/v1/ouvidoria"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.canais[0].telefone").value("0800 281 1520"))
+                .andExpect(jsonPath("$.canais[1].whatsapp").value("(81) 9117-1407"))
+                .andExpect(jsonPath("$.canais[2].telefone").value("136"));
+    }
+
+    @Test
+    void carteiraPdfDoResponsavelEDoDependente() throws Exception {
+        for (int id : new int[] {4, 5}) {
+            byte[] pdf = mvc.perform(comToken(get("/v1/pessoas/" + id + "/carteira.pdf"), 4))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("application/pdf"))
+                    .andExpect(header().string("Content-Disposition",
+                            "attachment; filename=\"carteira-vacinacao-" + id + ".pdf\""))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andReturn().getResponse().getContentAsByteArray();
+            String texto = textoDoPdf(pdf);
+            Pessoa p = pessoas.findById(id).orElseThrow();
+            assertThat(texto).contains("Carteira de vacinação", p.getNome(), "Meu SUS Digital", "sintéticos");
+            if (p.getCpf() != null) {
+                assertThat(texto).doesNotContain(p.getCpf());
+            }
+            if (p.getCns() != null) {
+                assertThat(texto).doesNotContain(p.getCns());
+            }
+            assertThat(texto).doesNotContainPattern("\\b(CPF|CNS|CID)\\b");
+        }
+        // Sem vínculo com a pessoa: o mesmo 403 de sempre
+        mvc.perform(comToken(get("/v1/pessoas/48/carteira.pdf"), 4)).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.title").value("Sem acesso"));
+        mvc.perform(comToken(get("/v1/pessoas/4/carteira.pdf"), 5)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void carteiraPdfTrazAsDosesRegistradas() throws Exception {
+        String texto = textoDoPdf(mvc.perform(comToken(get("/v1/pessoas/5/carteira.pdf"), 4))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray());
+        String registros = mvc.perform(comToken(get("/v1/pessoas/5/registros"), 4))
+                .andReturn().getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.JsonNode lista = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(registros).path("registros");
+        assertThat(lista.size()).isPositive();
+        for (com.fasterxml.jackson.databind.JsonNode r : lista) {
+            java.time.LocalDate data = java.time.LocalDate.parse(r.path("dataAplicacao").asText());
+            assertThat(texto).contains(data.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            if (!r.path("lote").isNull()) {
+                assertThat(texto).contains(r.path("lote").asText());
+            }
+        }
+    }
+
+    static String textoDoPdf(byte[] pdf) throws java.io.IOException {
+        assertThat(new String(pdf, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            return new org.apache.pdfbox.text.PDFTextStripper().getText(doc);
+        }
+    }
+
     @Test
     void latitudeSemLongitudeDa400() throws Exception {
         mvc.perform(comToken(get("/v1/unidades?lat=-8.12"), 4)).andExpect(status().isBadRequest())

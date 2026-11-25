@@ -2,6 +2,27 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.7.0 · 25/11/2026 · carteira em PDF e ouvidoria só com login gov.br (D22)
+
+> Decisão D22 (Duda, 25/11/2026): o canal de ouvidoria (RF23) e a carteira de vacinação em PDF (RF09) entram no piloto, **só para quem entrou no Conecta com login gov.br**. Quem entrou com e-mail comum não tem acesso. Ver [08](08-decisoes.md).
+
+**Mudança compatível para quem lê**, com dois endpoints novos. `Eu` ganhou dois campos obrigatórios (`metodoLogin`, `recursos`); quem ignora campos novos não quebra. Sobe a versão menor porque há endpoints novos e um tipo de erro novo.
+
+### O que mudou
+
+- `GET /v1/eu`: novos campos `metodoLogin` (`GOV_BR`, `EMAIL`, `OUTRO`) e `recursos` (`carteiraPdf`, `ouvidoria`, booleanos). Hoje os dois recursos são `true` só com `GOV_BR`. O front decide o que mostrar por `recursos`. Novo exemplo `loginComEmail`.
+- **Novo** `GET /v1/pessoas/{idPessoa}/carteira.pdf` (`baixarCarteiraPdf`): PDF gerado na hora com nome, data de nascimento, doses registradas (vacina, dose, data, lote, fabricante, unidade, transcrição) e data de emissão. Sem CPF, CNS, CID ou dado do profissional. Diz que não substitui o documento oficial (Meu SUS Digital). Cabeçalhos `Content-Disposition: attachment; filename="carteira-vacinacao-{idPessoa}.pdf"` e `Cache-Control: no-store`.
+- **Novo** `GET /v1/ouvidoria` (`obterOuvidoria`), schema `Ouvidoria` (`orientacao`, `canais[]`, `avisos`) e `CanalOuvidoria` (`nome`, `descricao`, `telefone`, `whatsapp`, `site`). Canais confirmados em 25/11/2026: Ouvidoria Municipal de Saúde do Recife (0800 281 1520), ConectaZap no WhatsApp ((81) 9117-1407) e OuvSUS (136).
+- **Novo erro** `403` com `type` `/problemas/login-gov-br-necessario` (exemplo `LoginGovBrNecessario`) nos dois endpoints novos, para quem não entrou com gov.br. O teste de login vem antes do teste de acesso à pessoa.
+- Token de teste: `dev-pessoa-<id>` = gov.br; `dev-pessoa-<id>-email` = e-mail. O token real precisa informar o método de login **[pendente: SSO da Emprel]**.
+- Nova tag "Só com login gov.br". `info.version` 0.6.1 → 0.7.0.
+
+### Em aberto
+
+- Nível de conta gov.br exigido (bronze, prata, ouro).
+- Como o token do Conecta informa o método de login (Emprel).
+- Alinhamento da carteira com o Meu SUS Digital.
+
 ## 0.6.1 · 25/11/2026 · janela de "em breve" de 7 dias (D21)
 
 > Decisão do Adan (25/11/2026), complemento da D21: a janela de `DOSE_DISPONIVEL_EM_BREVE` passa de 30 para **7 dias** (inclusive). Responde a pergunta 18.

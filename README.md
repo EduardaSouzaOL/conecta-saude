@@ -93,6 +93,13 @@ A pasta `frontend/` ainda não existe: veja [Status e próximos passos](#status-
 
    A pessoa 4 (Valentina) vê os próprios dados e os do filho Heitor (pessoa 5). Outra pessoa devolve **403**; sem token, **401**.
 
+   `dev-pessoa-<id>` simula login com **gov.br**; `dev-pessoa-<id>-email`, login com **e-mail**. A carteira em PDF e a ouvidoria só funcionam com gov.br (D22):
+
+   ```bash
+   curl -H "Authorization: Bearer dev-pessoa-4" -o carteira.pdf http://localhost:8080/v1/pessoas/5/carteira.pdf
+   curl -H "Authorization: Bearer dev-pessoa-4-email" http://localhost:8080/v1/ouvidoria   # 403
+   ```
+
 ### Testes
 
 ```bash

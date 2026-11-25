@@ -3,11 +3,12 @@ package br.recife.conectasaude.vacinacao.seguranca;
 import java.util.Optional;
 
 /**
- * Transforma o token do cabeçalho Authorization no id da pessoa logada. É o ÚNICO ponto a trocar
- * quando o SSO do Conecta Recife for definido (docs/14, seção 5; docs/15, seção 9).
+ * Transforma o token do cabeçalho Authorization na pessoa logada. É o ÚNICO ponto a trocar
+ * quando o SSO do Conecta Recife for definido (docs/14, seção 5; docs/15, seção 9). O token real
+ * precisa dizer também o método de login (gov.br ou e-mail), por causa da D22.
  */
 public interface ValidadorToken {
 
-    /** Id da pessoa dona do token; vazio se o token não vale. */
-    Optional<Integer> idPessoa(String token);
+    /** Pessoa dona do token e método de login; vazio se o token não vale. */
+    Optional<PessoaLogada> pessoaLogada(String token);
 }
