@@ -269,7 +269,7 @@ class ApiTest extends BancoDeTeste {
     @Test
     void entrarComoListaPessoasSemCpfNemCns() throws Exception {
         String corpo = mvc.perform(get("/v1/demo/pessoas")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.pessoas.length()").value(4))
+                .andExpect(jsonPath("$.pessoas.length()").value(8))
                 .andExpect(jsonPath("$.pessoas[0].id").value(4))
                 .andExpect(jsonPath("$.pessoas[0].tokenGovBr").value("dev-pessoa-4"))
                 .andExpect(jsonPath("$.pessoas[0].tokenEmail").value("dev-pessoa-4-email"))
@@ -277,7 +277,7 @@ class ApiTest extends BancoDeTeste {
                 .andExpect(jsonPath("$.pessoas[*].cpf").isEmpty())
                 .andExpect(jsonPath("$.pessoas[*].cns").isEmpty())
                 .andReturn().getResponse().getContentAsString();
-        for (int id : new int[] {1, 4, 5, 46, 48, 94, 95}) {
+        for (int id : new int[] {1, 4, 5, 26, 46, 48, 94, 95, 110, 111, 115, 116, 402}) {
             Pessoa p = pessoas.findById(id).orElseThrow();
             if (p.getCpf() != null) {
                 assertThat(corpo).doesNotContain(p.getCpf());

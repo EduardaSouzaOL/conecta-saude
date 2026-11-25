@@ -21,7 +21,7 @@ curl -H "Authorization: Bearer dev-pessoa-4" http://localhost:8080/v1/eu        
 curl -H "Authorization: Bearer dev-pessoa-4-email" http://localhost:8080/v1/eu   # a mesma pessoa, com e-mail
 ```
 
-**Modo visitante e "Entrar como":** sem token, `GET /v1/unidades`, `/v1/unidades/{id}`, `/v1/vacinas` e `/v1/campanhas` (sem `idPessoa`) respondem normalmente (`FiltroAutenticacao.ROTAS_VISITANTE`). `GET /v1/demo/pessoas` (`api.DemoController`, só dev e test) lista as pessoas da demonstração com o token de teste de cada uma.
+**Modo visitante e "Entrar como":** sem token, `GET /v1/unidades`, `/v1/unidades/{id}`, `/v1/vacinas` e `/v1/campanhas` (sem `idPessoa`) respondem normalmente (`FiltroAutenticacao.ROTAS_VISITANTE`). `GET /v1/demo/pessoas` (`api.DemoController`, só dev e test) lista as pessoas da demonstração com o token de teste de cada uma. Quem aparece e o resumo ficam em `minha-vacinacao.demo.pessoas` no `application-dev.yml` (e no `application-test.yml`).
 
 **Carteira em PDF e ouvidoria (D22):** `GET /v1/pessoas/{idPessoa}/carteira.pdf` (`servico.CarteiraPdfService`, PDFBox) e `GET /v1/ouvidoria` (`servico.OuvidoriaService`) só respondem para login gov.br; com e-mail, 403 `/problemas/login-gov-br-necessario` (`ControleDeAcesso.exigirLoginGovBr`). O PDF é gerado na hora, sem CPF, CNS, CID ou dado do profissional, e não é guardado. O SSO real precisa informar o método de login em `seguranca.ValidadorToken`.
 

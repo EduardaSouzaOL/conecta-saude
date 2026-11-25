@@ -9,7 +9,8 @@ Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). M
 **Mudança compatível** (endpoints que exigiam token passam a aceitar sem; um endpoint novo só em dev).
 
 - **Modo visitante:** `GET /v1/unidades`, `GET /v1/unidades/{idUnidade}`, `GET /v1/vacinas` e `GET /v1/campanhas` (sem `idPessoa`) respondem sem token. Com token, ele é conferido (inválido = 401). Todo dado de pessoa continua exigindo login.
-- **Novo `GET /v1/demo/pessoas`** (`listarPessoasDemo`), **só nos perfis dev e test**, sem token: 4 pessoas sintéticas com o caso de cada uma e os tokens de teste `tokenGovBr` e `tokenEmail`. Sem CPF, CNS ou dado de saúde.
+- **Novo `GET /v1/demo/pessoas`** (`listarPessoasDemo`), **só nos perfis dev e test**, sem token: 8 pessoas sintéticas com o caso de cada uma e os tokens de teste `tokenGovBr` e `tokenEmail`. Sem CPF, CNS ou dado de saúde. Quem aparece e o resumo vêm de `minha-vacinacao.demo.pessoas` no `application-dev.yml`.
+- Decisão registrada como **D23** no [08](08-decisoes.md).
 - `info.version` 0.7.1 → 0.8.0.
 
 ## 0.7.1 · 25/11/2026 · correções pela Instrução Normativa 2026 e horário das unidades

@@ -1046,6 +1046,7 @@ paths:
         - Não precisa de token. Não traz CPF, CNS nem dado de saúde: só nome, nascimento, idade,
           dependentes e um resumo do caso.
         - "Continuar sem entrar" não chama nada: usa só os endpoints do modo visitante.
+        - Quem aparece e o resumo vêm da configuração do perfil (`minha-vacinacao.demo.pessoas`).
       responses:
         '200':
           description: Pessoas da demonstração
@@ -1055,50 +1056,113 @@ paths:
                 $ref: '#/components/schemas/ListaPessoasDemo'
               examples:
                 padrao:
-                  summary: As 4 pessoas da demonstração (base sintética, 24/11/2026)
+                  summary: As 8 pessoas da demonstração (base sintética, 24/11/2026)
                   value:
                     pessoas:
                       - id: 4
-                        nome: Valentina Oliveira Ferreira
+                        nome: 'Valentina Oliveira Ferreira'
                         dataNascimento: '2005-11-12'
-                        idade: 21 anos
+                        idade: '21 anos'
                         resumo: 'Mãe do Heitor, bebê de 6 meses com doses atrasadas, lembretes e campanha.'
                         dependentes:
-                          - { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                          - id: 5
+                            nome: 'Heitor Nascimento Ferreira'
+                            dataNascimento: '2026-05-07'
                         tokenGovBr: dev-pessoa-4
                         tokenEmail: dev-pessoa-4-email
                       - id: 46
-                        nome: Luana Teixeira Andrade
+                        nome: 'Luana Teixeira Andrade'
                         dataNascimento: '1990-02-02'
-                        idade: 36 anos
+                        idade: '36 anos'
                         resumo: 'Mãe do João e do Bernardo, bebê de 4 meses com doses atrasadas e uma que fica disponível amanhã.'
                         dependentes:
-                          - { id: 47, nome: João Silva Andrade, dataNascimento: '2013-12-29' }
-                          - { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                          - id: 47
+                            nome: 'João Silva Andrade'
+                            dataNascimento: '2013-12-29'
+                          - id: 48
+                            nome: 'Bernardo Oliveira Andrade'
+                            dataNascimento: '2026-07-13'
                         tokenGovBr: dev-pessoa-46
                         tokenEmail: dev-pessoa-46-email
                       - id: 94
-                        nome: Letícia Teixeira Rocha
+                        nome: 'Letícia Teixeira Rocha'
                         dataNascimento: '1981-06-04'
-                        idade: 45 anos
+                        idade: '45 anos'
                         resumo: 'Responsável por três crianças. O Heitor, de 1 ano e 5 meses, tem doses fora da idade e a MenACWY atrasada.'
                         dependentes:
-                          - { id: 95, nome: Heitor Ferreira Rocha, dataNascimento: '2025-06-19' }
-                          - { id: 96, nome: Ícaro Moura Rocha, dataNascimento: '2019-06-08' }
-                          - { id: 97, nome: Carlos Vasconcelos Rocha, dataNascimento: '2023-05-11' }
+                          - id: 95
+                            nome: 'Heitor Ferreira Rocha'
+                            dataNascimento: '2025-06-19'
+                          - id: 96
+                            nome: 'Ícaro Moura Rocha'
+                            dataNascimento: '2019-06-08'
+                          - id: 97
+                            nome: 'Carlos Vasconcelos Rocha'
+                            dataNascimento: '2023-05-11'
                         tokenGovBr: dev-pessoa-94
                         tokenEmail: dev-pessoa-94-email
                       - id: 1
-                        nome: Cecília Silva Albuquerque
+                        nome: 'Cecília Silva Albuquerque'
                         dataNascimento: '2000-12-24'
-                        idade: 25 anos
+                        idade: '25 anos'
                         resumo: 'Adulta com uma dose transcrita do cartão físico, sem lote. Mãe da Lívia.'
                         dependentes:
-                          - { id: 3, nome: Lívia Souza Albuquerque, dataNascimento: '2020-03-28' }
+                          - id: 3
+                            nome: 'Lívia Souza Albuquerque'
+                            dataNascimento: '2020-03-28'
                         tokenGovBr: dev-pessoa-1
                         tokenEmail: dev-pessoa-1-email
+                      - id: 115
+                        nome: 'Matheus Rocha Vasconcelos'
+                        dataNascimento: '2000-11-01'
+                        idade: '26 anos'
+                        resumo: 'Pai da Ana, de 1 ano, do Igor, de 6 anos, e do Henrique, de 7 anos.'
+                        dependentes:
+                          - id: 116
+                            nome: 'Ana Melo Vasconcelos'
+                            dataNascimento: '2025-10-26'
+                          - id: 117
+                            nome: 'Igor Souza Vasconcelos'
+                            dataNascimento: '2020-07-04'
+                          - id: 118
+                            nome: 'Henrique Araújo Vasconcelos'
+                            dataNascimento: '2019-04-09'
+                        tokenGovBr: dev-pessoa-115
+                        tokenEmail: dev-pessoa-115-email
+                      - id: 110
+                        nome: 'Antônio Barbosa Vasconcelos'
+                        dataNascimento: '1992-09-04'
+                        idade: '34 anos'
+                        resumo: 'Pai de três crianças, entre elas a Clara, recém-nascida de 1 mês.'
+                        dependentes:
+                          - id: 111
+                            nome: 'Maria Leite Vasconcelos'
+                            dataNascimento: '2026-03-17'
+                          - id: 112
+                            nome: 'Clara Leite Vasconcelos'
+                            dataNascimento: '2026-10-07'
+                          - id: 113
+                            nome: 'Luiz Batista Vasconcelos'
+                            dataNascimento: '2022-12-05'
+                        tokenGovBr: dev-pessoa-110
+                        tokenEmail: dev-pessoa-110-email
+                      - id: 26
+                        nome: 'Lucas Lima Rocha'
+                        dataNascimento: '2012-07-23'
+                        idade: '14 anos'
+                        resumo: 'Adolescente de 14 anos.'
+                        dependentes: []
+                        tokenGovBr: dev-pessoa-26
+                        tokenEmail: dev-pessoa-26-email
+                      - id: 402
+                        nome: 'Pedro Melo Rocha'
+                        dataNascimento: '1954-11-03'
+                        idade: '72 anos'
+                        resumo: 'Idoso de 72 anos.'
+                        dependentes: []
+                        tokenGovBr: dev-pessoa-402
+                        tokenEmail: dev-pessoa-402-email
                     aviso: 'Só para demonstração: todas as pessoas são fictícias (dados sintéticos).'
-
   /v1/ouvidoria:
     get:
       tags: [Só com login gov.br]

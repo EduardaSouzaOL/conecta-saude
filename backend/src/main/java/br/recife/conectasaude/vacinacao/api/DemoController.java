@@ -7,6 +7,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,36 +22,45 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @Profile({"dev", "test"})
+@EnableConfigurationProperties(DemoController.Propriedades.class)
 @RequestMapping(value = "/v1/demo", produces = "application/json")
 public class DemoController {
 
     static final String AVISO = "Só para demonstração: todas as pessoas são fictícias (dados sintéticos).";
 
-    /** Pessoas escolhidas por terem casos bons para a demonstração (os mesmos dos exemplos do contrato). */
-    record Caso(int idPessoa, String resumo) {}
+    /**
+     * Pessoas da tela, na ordem da lista, com o resumo do caso. Vêm da configuração do perfil
+     * ({@code minha-vacinacao.demo.pessoas} no application-dev.yml): dá para trocar sem programar.
+     * O resumo não fala de condição de saúde.
+     */
+    @ConfigurationProperties(prefix = "minha-vacinacao.demo")
+    public record Propriedades(List<Caso> pessoas) {
+        public Propriedades {
+            pessoas = pessoas == null ? List.of() : List.copyOf(pessoas);
+        }
+    }
 
-    static final List<Caso> CASOS = List.of(
-            new Caso(4, "Mãe do Heitor, bebê de 6 meses com doses atrasadas, lembretes e campanha."),
-            new Caso(46, "Mãe do João e do Bernardo, bebê de 4 meses com doses atrasadas e uma que fica disponível amanhã."),
-            new Caso(94, "Responsável por três crianças. O Heitor, de 1 ano e 5 meses, tem doses fora da idade e a MenACWY atrasada."),
-            new Caso(1, "Adulta com uma dose transcrita do cartão físico, sem lote. Mãe da Lívia."));
+    public record Caso(int id, String resumo) {}
 
     private final PessoaRepository pessoas;
     private final VinculoResponsavelRepository vinculos;
     private final Clock relogio;
+    private final List<Caso> casos;
 
-    public DemoController(PessoaRepository pessoas, VinculoResponsavelRepository vinculos, Clock relogio) {
+    public DemoController(PessoaRepository pessoas, VinculoResponsavelRepository vinculos, Clock relogio,
+            Propriedades propriedades) {
         this.pessoas = pessoas;
         this.vinculos = vinculos;
         this.relogio = relogio;
+        this.casos = propriedades.pessoas();
     }
 
     @GetMapping("/pessoas")
     @Transactional(readOnly = true)
     public Respostas.ListaPessoasDemo pessoas() {
         LocalDate hoje = LocalDate.now(relogio);
-        List<Respostas.PessoaDemo> lista = CASOS.stream()
-                .flatMap(c -> pessoas.findById(c.idPessoa()).stream().map(p -> pessoaDemo(p, c.resumo(), hoje)))
+        List<Respostas.PessoaDemo> lista = casos.stream()
+                .flatMap(c -> pessoas.findById(c.id()).stream().map(p -> pessoaDemo(p, c.resumo(), hoje)))
                 .toList();
         return new Respostas.ListaPessoasDemo(lista, AVISO);
     }
