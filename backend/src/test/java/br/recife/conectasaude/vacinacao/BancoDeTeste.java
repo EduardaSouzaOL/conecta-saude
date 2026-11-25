@@ -1,5 +1,6 @@
 package br.recife.conectasaude.vacinacao;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +15,26 @@ import org.testcontainers.containers.MySQLContainer;
  *
  * <p>Usa Testcontainers quando o Docker está rodando. Sem Docker, usa um MySQL já existente se as
  * variáveis {@code TESTE_DB_URL}, {@code TESTE_DB_USER} e {@code TESTE_DB_PASSWORD} estiverem
- * definidas (o banco precisa estar vazio). Sem nenhum dos dois, os testes são pulados.
+ * definidas (o banco precisa estar vazio). Sem nenhum dos dois, os testes são pulados, com um aviso
+ * no console.
+ *
+ * <p>Com {@code CI=true} ou {@code EXIGIR_BANCO=true}, a falta de banco <b>quebra</b> o build em vez
+ * de pular: assim a API e o contrato nunca ficam sem verificação no CI.
  */
 @SpringBootTest
 @ActiveProfiles("test")
 public abstract class BancoDeTeste {
 
     private static final String URL_EXTERNA = System.getenv("TESTE_DB_URL");
+    private static final String MENSAGEM_SEM_BANCO =
+            "Sem Docker e sem TESTE_DB_URL: os testes de banco (API, contrato, migrações, repositórios) não rodaram";
     private static MySQLContainer<?> mysql;
+    private static boolean avisou;
+
+    static boolean bancoObrigatorio() {
+        return "true".equalsIgnoreCase(System.getenv("CI"))
+                || "true".equalsIgnoreCase(System.getenv("EXIGIR_BANCO"));
+    }
 
     private static boolean dockerDisponivel() {
         try {
@@ -41,8 +54,16 @@ public abstract class BancoDeTeste {
     @BeforeAll
     static void exigirBanco() {
         iniciarSePreciso();
-        Assumptions.assumeTrue(mysql != null || URL_EXTERNA != null,
-                "Sem Docker e sem TESTE_DB_URL: teste de banco pulado");
+        boolean temBanco = mysql != null || URL_EXTERNA != null;
+        if (!temBanco && bancoObrigatorio()) {
+            Assertions.fail(MENSAGEM_SEM_BANCO + " (CI=true ou EXIGIR_BANCO=true exige banco)");
+        }
+        if (!temBanco && !avisou) {
+            avisou = true;
+            System.err.println("\n*** ATENÇÃO: " + MENSAGEM_SEM_BANCO
+                    + ". Suba o Docker ou defina TESTE_DB_URL. ***\n");
+        }
+        Assumptions.assumeTrue(temBanco, MENSAGEM_SEM_BANCO);
     }
 
     @DynamicPropertySource
