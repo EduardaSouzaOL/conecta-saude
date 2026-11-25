@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.6.1
+  version: 0.7.0
   summary: Situação vacinal, histórico de doses, lembretes, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
-    Contrato **v0.6.1** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    Contrato **v0.7.0** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
     para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
 
     Regras que valem para toda a API:
@@ -27,6 +27,10 @@ info:
       só enquanto a dose está dentro da idade oficial; lembrete de campanha (e `elegivel`) só para
       quem está na faixa etária da campanha e, se a campanha é seletiva, tem dose a fazer de uma
       vacina dela. Nome da dose (`nomeDose`) pela descrição oficial da RNDS (BRDose).
+    - **Carteira em PDF e ouvidoria só com login gov.br (D22):** `GET /v1/pessoas/{idPessoa}/carteira.pdf`
+      e `GET /v1/ouvidoria` respondem 403 (`/problemas/login-gov-br-necessario`) para quem entrou no
+      Conecta com e-mail ou outra forma. `GET /v1/eu` diz como a pessoa entrou (`metodoLogin`) e o
+      que ela pode usar (`recursos`), para o front decidir o que mostrar.
     - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
       (`pessoa_responsavel`). Outra pessoa devolve **403**.
     - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
@@ -56,6 +60,8 @@ tags:
     description: Campanhas vigentes e elegibilidade (RF18)
   - name: Vacinas
     description: Catálogo de vacinas e doenças que elas previnem (RF22)
+  - name: Só com login gov.br
+    description: Carteira de vacinação em PDF (RF09) e canal de ouvidoria (RF23), só para quem entrou com gov.br (D22)
 
 paths:
   /v1/eu:
@@ -66,6 +72,9 @@ paths:
       description: |
         Devolve a pessoa identificada pelo token e as pessoas pelas quais ela é responsável
         (RF01, RF02). É o ponto de entrada do módulo: o front usa os ids daqui nas outras chamadas.
+
+        Também diz como a pessoa entrou no Conecta (`metodoLogin`) e o que ela pode usar
+        (`recursos`, D22): a carteira em PDF e a ouvidoria só ficam disponíveis com login gov.br.
       responses:
         '200':
           description: Pessoa logada e dependentes
@@ -87,6 +96,27 @@ paths:
                           nome: Heitor Nascimento Ferreira
                           dataNascimento: '2026-05-07'
                         parentesco: MAE
+                    metodoLogin: GOV_BR
+                    recursos:
+                      carteiraPdf: true
+                      ouvidoria: true
+                loginComEmail:
+                  summary: A mesma Valentina, mas entrou com e-mail (sem carteira em PDF e sem ouvidoria)
+                  value:
+                    pessoa:
+                      id: 4
+                      nome: Valentina Oliveira Ferreira
+                      dataNascimento: '2005-11-12'
+                    dependentes:
+                      - pessoa:
+                          id: 5
+                          nome: Heitor Nascimento Ferreira
+                          dataNascimento: '2026-05-07'
+                        parentesco: MAE
+                    metodoLogin: EMAIL
+                    recursos:
+                      carteiraPdf: false
+                      ouvidoria: false
         '401':
           $ref: '#/components/responses/NaoAutenticado'
 
@@ -922,7 +952,122 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutenticado'
 
+  /v1/pessoas/{idPessoa}/carteira.pdf:
+    get:
+      tags: [Só com login gov.br]
+      operationId: baixarCarteiraPdf
+      summary: Carteira de vacinação em PDF (só com login gov.br)
+      description: |
+        Gera na hora a carteira de vacinação da pessoa em PDF (RF09, D22): nome, data de nascimento e
+        as doses registradas (vacina, dose, data, lote, fabricante, unidade e se veio de transcrição),
+        da mais recente para a mais antiga, com a data de emissão. Vale para a própria pessoa e para
+        os dependentes vinculados, como o resto da API.
+
+        - **Só com login gov.br:** quem entrou com e-mail ou outra forma recebe **403**
+          `/problemas/login-gov-br-necessario` (D22).
+        - **Privacidade (RNF04):** o PDF não traz CPF, CNS, CID nem dado do profissional que aplicou a dose.
+        - O PDF diz que **não substitui o documento oficial** do Ministério da Saúde (Meu SUS Digital)
+          e, nos ambientes de demonstração, que os dados são sintéticos.
+        - Nada é gravado: o PDF não fica guardado no servidor (somente leitura, RNF05).
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Carteira em PDF
+          headers:
+            Content-Disposition:
+              description: '`attachment; filename="carteira-vacinacao-{idPessoa}.pdf"`'
+              schema:
+                type: string
+            Cache-Control:
+              description: '`no-store` (documento com dado de saúde)'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          description: |
+            Sem login gov.br (`/problemas/login-gov-br-necessario`) ou sem acesso à pessoa pedida
+            (`about:blank`, como nos outros endpoints). O teste de login vem primeiro.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+              examples:
+                semGovBr:
+                  $ref: '#/components/examples/LoginGovBrNecessario'
+                semAcesso:
+                  value:
+                    type: about:blank
+                    title: Sem acesso
+                    status: 403
+                    detail: Você só pode ver os seus dados e os das pessoas que estão sob a sua responsabilidade.
+
+  /v1/ouvidoria:
+    get:
+      tags: [Só com login gov.br]
+      operationId: obterOuvidoria
+      summary: Canais de ouvidoria (só com login gov.br)
+      description: |
+        Canais de ouvidoria para quando a unidade de saúde se recusa a atualizar (transcrever) a
+        caderneta ou há outro problema no atendimento de vacinação (RF23, D22). O texto e os canais vêm
+        prontos; o front mostra sem mudar a redação.
+
+        - **Só com login gov.br:** quem entrou com e-mail ou outra forma recebe **403**
+          `/problemas/login-gov-br-necessario` (D22).
+        - **[provisório]** Por enquanto só a Ouvidoria do SUS (Disque Saúde 136). Os canais da
+          ouvidoria municipal do Recife serão confirmados com a SESAU.
+        - O app **não registra** a manifestação: só mostra os canais (somente leitura, RNF05).
+      responses:
+        '200':
+          description: Canais de ouvidoria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ouvidoria'
+              examples:
+                padrao:
+                  summary: Canais atuais (provisório)
+                  value:
+                    orientacao: >-
+                      Se a unidade de saúde se recusar a atualizar a sua caderneta, ou se você tiver
+                      outro problema no atendimento de vacinação, você pode registrar uma
+                      manifestação na ouvidoria.
+                    canais:
+                      - nome: Ouvidoria do SUS (Disque Saúde)
+                        descricao: Atendimento do Ministério da Saúde. A ligação é gratuita.
+                        telefone: '136'
+                        site: null
+                    avisos:
+                      - codigo: OUVIDORIA_EM_ALINHAMENTO
+                        mensagem: Os canais da ouvidoria da Prefeitura do Recife ainda estão em alinhamento com a Secretaria de Saúde.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          description: Sem login gov.br
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+              examples:
+                semGovBr:
+                  $ref: '#/components/examples/LoginGovBrNecessario'
+
 components:
+  examples:
+    LoginGovBrNecessario:
+      summary: Entrou com e-mail (ou outra forma), não com gov.br
+      value:
+        type: /problemas/login-gov-br-necessario
+        title: Login gov.br necessário
+        status: 403
+        detail: Para usar este serviço, entre no Conecta Recife com a sua conta gov.br.
+
   securitySchemes:
     tokenConecta:
       type: http
@@ -931,7 +1076,9 @@ components:
       description: |
         Token do login do Conecta Recife (SSO, D15). O formato real ainda não está definido.
         No perfil `dev`, o backend aceita um token falso que indica qual pessoa sintética está
-        logada (docs/15, seção 1).
+        logada (docs/15, seção 1): `dev-pessoa-<id>` simula login com **gov.br** e
+        `dev-pessoa-<id>-email` simula login com **e-mail** (D22). O token real precisa informar o
+        método de login **[pendente: SSO da Emprel]**.
 
   parameters:
     IdPessoa:
@@ -1039,8 +1186,12 @@ components:
 
     Eu:
       type: object
-      required: [pessoa, dependentes]
+      required: [pessoa, dependentes, metodoLogin, recursos]
       properties:
+        metodoLogin:
+          $ref: '#/components/schemas/MetodoLogin'
+        recursos:
+          $ref: '#/components/schemas/Recursos'
         pessoa:
           $ref: '#/components/schemas/PessoaResumo'
         dependentes:
@@ -1048,6 +1199,54 @@ components:
           description: Pessoas vinculadas à pessoa logada como responsável (vínculos sem data de fim)
           items:
             $ref: '#/components/schemas/Dependente'
+
+    MetodoLogin:
+      type: string
+      description: |
+        Como a pessoa entrou no Conecta Recife (D22). `GOV_BR`: conta gov.br. `EMAIL`: e-mail e
+        senha do Conecta. `OUTRO`: qualquer outra forma (ex.: rede social). **[provisório]** O nível
+        da conta gov.br (bronze, prata, ouro) ainda não é considerado.
+      enum: [GOV_BR, EMAIL, OUTRO]
+
+    Recursos:
+      type: object
+      description: O que a pessoa logada pode usar, conforme o método de login (D22)
+      required: [carteiraPdf, ouvidoria]
+      properties:
+        carteiraPdf:
+          type: boolean
+          description: '`true` só com login gov.br: pode baixar `GET /v1/pessoas/{idPessoa}/carteira.pdf`'
+        ouvidoria:
+          type: boolean
+          description: '`true` só com login gov.br: pode ver `GET /v1/ouvidoria`'
+
+    Ouvidoria:
+      type: object
+      required: [orientacao, canais, avisos]
+      properties:
+        orientacao:
+          type: string
+          description: Texto que explica quando procurar a ouvidoria
+        canais:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanalOuvidoria'
+        avisos:
+          $ref: '#/components/schemas/Avisos'
+
+    CanalOuvidoria:
+      type: object
+      required: [nome, descricao, telefone, site]
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        telefone:
+          type: [string, 'null']
+        site:
+          type: [string, 'null']
+          format: uri
 
     VacinaResumo:
       type: object
@@ -1247,7 +1446,10 @@ components:
           idade recomendada dela; a dose fica `AINDA_NAO_DISPONIVEL`.
         - `ATUALIZAR_CADERNETA`: passou da idade recomendada, mas o intervalo mínimo depois da dose
           anterior ainda não foi cumprido.
-      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE, DOSE_ANTERIOR_SEM_REGISTRO, ATUALIZAR_CADERNETA]
+
+        Só em `GET /v1/ouvidoria`:
+        - `OUVIDORIA_EM_ALINHAMENTO`: os canais da ouvidoria do Recife ainda estão em alinhamento com a SESAU (D22).
+      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE, DOSE_ANTERIOR_SEM_REGISTRO, ATUALIZAR_CADERNETA, OUVIDORIA_EM_ALINHAMENTO]
 
     Aviso:
       type: object

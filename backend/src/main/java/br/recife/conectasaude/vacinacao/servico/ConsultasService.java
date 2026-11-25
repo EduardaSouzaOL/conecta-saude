@@ -14,6 +14,7 @@ import br.recife.conectasaude.vacinacao.dados.Vacina;
 import br.recife.conectasaude.vacinacao.dados.VacinaRepository;
 import br.recife.conectasaude.vacinacao.dados.VinculoResponsavelRepository;
 import br.recife.conectasaude.vacinacao.regra.ElegibilidadeCampanha;
+import br.recife.conectasaude.vacinacao.seguranca.MetodoLogin;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -57,14 +58,16 @@ public class ConsultasService {
         this.relogio = relogio;
     }
 
-    public Respostas.Eu eu(int idPessoaLogada) {
+    public Respostas.Eu eu(int idPessoaLogada, MetodoLogin metodoLogin) {
         Pessoa eu = pessoas.findById(idPessoaLogada).orElseThrow(NaoEncontradoException::new);
         List<Respostas.Dependente> dependentes = vinculos.findByIdResponsavelAndDataFimIsNullOrderByIdPessoa(idPessoaLogada)
                 .stream()
                 .map(v -> new Respostas.Dependente(SituacaoVacinalService.Mapeamento.pessoa(v.getDependente()),
                         v.getParentesco()))
                 .toList();
-        return new Respostas.Eu(SituacaoVacinalService.Mapeamento.pessoa(eu), dependentes);
+        boolean govBr = metodoLogin == MetodoLogin.GOV_BR;
+        return new Respostas.Eu(SituacaoVacinalService.Mapeamento.pessoa(eu), dependentes, metodoLogin.name(),
+                new Respostas.Recursos(govBr, govBr));
     }
 
     public Respostas.ListaUnidades unidades(Integer idVacina, Double lat, Double lng) {

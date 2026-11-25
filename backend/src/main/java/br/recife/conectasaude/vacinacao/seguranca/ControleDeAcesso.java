@@ -23,13 +23,35 @@ public class ControleDeAcesso {
 
     /** Id da pessoa logada (posto pelo {@link FiltroAutenticacao}). */
     public int idPessoaLogada() {
-        RequestAttributes atributos = RequestContextHolder.currentRequestAttributes();
-        HttpServletRequest request = ((ServletRequestAttributes) atributos).getRequest();
-        Object id = request.getAttribute(FiltroAutenticacao.ATRIBUTO_PESSOA);
+        Object id = requisicao().getAttribute(FiltroAutenticacao.ATRIBUTO_PESSOA);
         if (id == null) {
             throw new NaoAutenticadoException();
         }
         return (Integer) id;
+    }
+
+    /** Como a pessoa logada entrou no Conecta (posto pelo {@link FiltroAutenticacao}). */
+    public MetodoLogin metodoLogin() {
+        Object metodo = requisicao().getAttribute(FiltroAutenticacao.ATRIBUTO_METODO_LOGIN);
+        if (metodo == null) {
+            throw new NaoAutenticadoException();
+        }
+        return (MetodoLogin) metodo;
+    }
+
+    /**
+     * Carteira em PDF e ouvidoria só para quem entrou com gov.br (D22); senão lança
+     * {@link LoginGovBrNecessarioException}. Vem antes do teste de acesso à pessoa.
+     */
+    public void exigirLoginGovBr() {
+        if (metodoLogin() != MetodoLogin.GOV_BR) {
+            throw new LoginGovBrNecessarioException();
+        }
+    }
+
+    private static HttpServletRequest requisicao() {
+        RequestAttributes atributos = RequestContextHolder.currentRequestAttributes();
+        return ((ServletRequestAttributes) atributos).getRequest();
     }
 
     /** Garante que a pessoa logada pode ver {@code idPessoa}; senão lança {@link AcessoNegadoException}. */
@@ -44,6 +66,12 @@ public class ControleDeAcesso {
     public static class AcessoNegadoException extends RuntimeException {
         public AcessoNegadoException() {
             super("acesso negado", null, false, false);
+        }
+    }
+
+    public static class LoginGovBrNecessarioException extends RuntimeException {
+        public LoginGovBrNecessarioException() {
+            super("login gov.br necessário", null, false, false);
         }
     }
 

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class ValidadorTokenSemSso implements ValidadorToken {
 
     @Override
-    public Optional<Integer> idPessoa(String token) {
+    public Optional<PessoaLogada> pessoaLogada(String token) {
         return Optional.empty();
     }
 }

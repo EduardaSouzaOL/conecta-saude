@@ -17,7 +17,14 @@ public final class Respostas {
 
     public record Dependente(PessoaResumo pessoa, String parentesco) {}
 
-    public record Eu(PessoaResumo pessoa, List<Dependente> dependentes) {}
+    /** {@code metodoLogin} e {@code recursos}: o que a pessoa pode usar conforme o login (D22). */
+    public record Eu(PessoaResumo pessoa, List<Dependente> dependentes, String metodoLogin, Recursos recursos) {}
+
+    public record Recursos(boolean carteiraPdf, boolean ouvidoria) {}
+
+    public record CanalOuvidoria(String nome, String descricao, String telefone, String site) {}
+
+    public record Ouvidoria(String orientacao, List<CanalOuvidoria> canais, List<Aviso> avisos) {}
 
     public record VacinaResumo(int id, String nome) {}
 

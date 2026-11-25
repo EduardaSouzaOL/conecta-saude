@@ -1,7 +1,9 @@
 package br.recife.conectasaude.vacinacao.api;
 
 import br.recife.conectasaude.vacinacao.seguranca.ControleDeAcesso.AcessoNegadoException;
+import br.recife.conectasaude.vacinacao.seguranca.ControleDeAcesso.LoginGovBrNecessarioException;
 import br.recife.conectasaude.vacinacao.seguranca.ControleDeAcesso.NaoAutenticadoException;
+import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -39,6 +41,15 @@ public class TratadorDeErros {
     ResponseEntity<ProblemDetail> semAcesso() {
         return problema(HttpStatus.FORBIDDEN, "Sem acesso",
                 "Você só pode ver os seus dados e os das pessoas que estão sob a sua responsabilidade.");
+    }
+
+    /** D22: carteira em PDF e ouvidoria só com login gov.br. */
+    @ExceptionHandler(LoginGovBrNecessarioException.class)
+    ResponseEntity<ProblemDetail> loginGovBrNecessario() {
+        ResponseEntity<ProblemDetail> resposta = problema(HttpStatus.FORBIDDEN, "Login gov.br necessário",
+                "Para usar este serviço, entre no Conecta Recife com a sua conta gov.br.");
+        resposta.getBody().setType(URI.create("/problemas/login-gov-br-necessario"));
+        return resposta;
     }
 
     @ExceptionHandler({NaoEncontradoException.class, NoResourceFoundException.class})

@@ -11,7 +11,8 @@ public enum Aviso {
     ATRASO_REGISTRO("Uma vacina tomada pode levar até 14 dias para aparecer aqui."),
     DOSE_FORA_DA_IDADE("Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer."),
     DOSE_ANTERIOR_SEM_REGISTRO("Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde."),
-    ATUALIZAR_CADERNETA("Procure uma unidade de saúde para atualizar sua caderneta.");
+    ATUALIZAR_CADERNETA("Procure uma unidade de saúde para atualizar sua caderneta."),
+    OUVIDORIA_EM_ALINHAMENTO("Os canais da ouvidoria da Prefeitura do Recife ainda estão em alinhamento com a Secretaria de Saúde.");
 
     private final String mensagem;
 

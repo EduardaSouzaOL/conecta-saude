@@ -44,7 +44,11 @@ class ContratoTest extends BancoDeTeste {
     }
 
     JsonNode chamar(String caminho, int idPessoaLogada) throws Exception {
-        String corpo = mvc.perform(get(caminho).header("Authorization", "Bearer dev-pessoa-" + idPessoaLogada))
+        return chamarComToken(caminho, "dev-pessoa-" + idPessoaLogada);
+    }
+
+    JsonNode chamarComToken(String caminho, String token) throws Exception {
+        String corpo = mvc.perform(get(caminho).header("Authorization", "Bearer " + token))
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(corpo);
     }
@@ -131,6 +135,33 @@ class ContratoTest extends BancoDeTeste {
         JsonNode real = chamar("/v1/eu", 4);
         assertConformeSchema(real, "Eu");
         assertThat(real).isEqualTo(exemplo("/v1/eu", "responsavelComUmFilho"));
+
+        // D22: a mesma pessoa logada com e-mail não tem carteira em PDF nem ouvidoria
+        JsonNode comEmail = chamarComToken("/v1/eu", "dev-pessoa-4-email");
+        assertConformeSchema(comEmail, "Eu");
+        JsonNode exEmail = exemplo("/v1/eu", "loginComEmail");
+        assertThat(exEmail.isMissingNode()).as("exemplo loginComEmail no contrato").isFalse();
+        assertThat(comEmail).isEqualTo(exEmail);
+    }
+
+    @Test
+    void ouvidoriaBateComOExemplo() throws Exception {
+        JsonNode real = chamar("/v1/ouvidoria", 4);
+        assertConformeSchema(real, "Ouvidoria");
+        assertThat(real).isEqualTo(exemplo("/v1/ouvidoria", "padrao"));
+    }
+
+    /** O 403 de login gov.br é igual ao exemplo do contrato (D22). */
+    @Test
+    void erroDeLoginGovBrBateComOExemplo() throws Exception {
+        JsonNode esperado = contrato.path("components").path("examples").path("LoginGovBrNecessario").path("value");
+        assertThat(esperado.isMissingNode()).isFalse();
+        for (String caminho : List.of("/v1/ouvidoria", "/v1/pessoas/4/carteira.pdf")) {
+            ObjectNode real = (ObjectNode) chamarComToken(caminho, "dev-pessoa-4-email");
+            assertConformeSchema(real, "Problema");
+            real.remove("instance"); // o Spring acrescenta o caminho chamado; o exemplo não traz
+            assertThat(real).as(caminho).isEqualTo(esperado);
+        }
     }
 
     /** Os exemplos de lembretes são listas completas: a resposta inteira tem que ser igual. */
