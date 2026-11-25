@@ -13,16 +13,19 @@ import java.util.Objects;
  * grava nada, não envia push e não refaz a regra de situação.
  *
  * <p>Regras e textos de {@code contrato/openapi.yaml} (schemas {@code Lembrete} e
- * {@code MotivoLembrete}), <b>provisórios, a confirmar com a Duda</b>:
+ * {@code MotivoLembrete}), pelo PNI/MS (D21); só a janela do "em breve" é <b>provisória, a confirmar
+ * com a Duda</b>:
  * <ul>
  *   <li>dose {@code ATRASADA}: {@link Motivo#DOSE_ATRASADA};</li>
  *   <li>dose {@code PODE_TOMAR}: {@link Motivo#DOSE_DISPONIVEL};</li>
  *   <li>dose {@code AINDA_NAO_DISPONIVEL} com data disponível até {@value #JANELA_EM_BREVE_DIAS} dias
  *       depois de hoje (inclusive): {@link Motivo#DOSE_DISPONIVEL_EM_BREVE};</li>
- *   <li>cada campanha vigente, um lembrete por pessoa, sem elegibilidade: {@link Motivo#CAMPANHA_VIGENTE}.</li>
+ *   <li>cada campanha vigente para a qual a pessoa é elegível ({@link ElegibilidadeCampanha}, {@code true}),
+ *       um lembrete por pessoa: {@link Motivo#CAMPANHA_VIGENTE}.</li>
  * </ul>
  * Doses {@code EM_DIA}, doses fora da idade (não estão em {@link ResultadoSituacao#doses()}) e doses
- * sem data disponível não geram lembrete. Nunca "não posso tomar" (RN03).
+ * sem data disponível não geram lembrete. Os textos usam {@link DoseCalendario#nomeDose()}, com artigo
+ * e concordância pelo gênero ({@link NomeDose#masculino}). Nunca "não posso tomar" (RN03).
  */
 public final class GeradorLembretes {
 
@@ -50,13 +53,19 @@ public final class GeradorLembretes {
     /**
      * Pessoa coberta pela lista, na ordem da lista (a logada primeiro, depois os dependentes).
      *
+     * @param dataNascimento para a faixa etária das campanhas
      * @param logada {@code true} se é a pessoa logada (textos com "você")
      * @param situacao situação vacinal calculada da pessoa na mesma data de referência
      */
-    public record Pessoa(int id, String nome, boolean logada, ResultadoSituacao situacao) {}
+    public record Pessoa(int id, String nome, LocalDate dataNascimento, boolean logada, ResultadoSituacao situacao) {}
 
-    /** Campanha vigente na data de referência. */
-    public record Campanha(int id, String nome, String publicoAlvo, LocalDate dataInicio, LocalDate dataFim) {}
+    /**
+     * Campanha vigente na data de referência.
+     *
+     * @param criterio faixas etárias, vacinas e se é seletiva ({@link ElegibilidadeCampanha})
+     */
+    public record Campanha(int id, String nome, LocalDate dataInicio, LocalDate dataFim,
+            ElegibilidadeCampanha.Criterio criterio) {}
 
     /**
      * Lembrete calculado. {@code idVacina}, {@code nomeVacina} e {@code idDose} só em {@link Tipo#DOSE};
@@ -113,7 +122,11 @@ public final class GeradorLembretes {
                 }
             }
             for (Campanha c : campanhasVigentes) {
-                itens.add(new Item(lembreteCampanha(pessoa, c), p, c.id()));
+                Boolean elegivel = ElegibilidadeCampanha.avaliar(c.criterio(), pessoa.dataNascimento(), dataReferencia,
+                        pessoa.situacao());
+                if (Boolean.TRUE.equals(elegivel)) {
+                    itens.add(new Item(lembreteCampanha(pessoa, c), p, c.id()));
+                }
             }
         }
         return itens.stream().sorted(ORDEM).map(Item::lembrete).toList();
@@ -122,24 +135,28 @@ public final class GeradorLembretes {
     private static Lembrete lembreteDose(Pessoa pessoa, DoseCalculada dose, Motivo motivo, LocalDate data) {
         DoseCalendario c = dose.dose();
         String nome = primeiroNome(pessoa.nome());
-        String ordinal = c.numeroDose() + "ª dose da vacina " + c.nomeVacina();
+        String nomeDose = c.nomeDose();
+        boolean m = NomeDose.masculino(nomeDose);
+        String doseDaVacina = nomeDose + " da vacina " + c.nomeVacina();
         boolean eu = pessoa.logada();
         String titulo;
         String mensagem;
         switch (motivo) {
             case DOSE_ATRASADA -> {
-                titulo = eu ? "A sua " + ordinal + " está atrasada" : "A " + ordinal + " de " + nome + " está atrasada";
+                String atrasada = m ? "atrasado" : "atrasada";
+                titulo = eu ? (m ? "O seu " : "A sua ") + doseDaVacina + " está " + atrasada
+                        : (m ? "O " : "A ") + doseDaVacina + " de " + nome + " está " + atrasada;
                 mensagem = (eu ? "Procure uma unidade de saúde para tomar." : "Procure uma unidade de saúde com " + nome + ".")
                         + " Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.";
             }
             case DOSE_DISPONIVEL -> {
-                titulo = eu ? "Hora da sua " + ordinal : "Hora da " + ordinal + " de " + nome;
+                titulo = eu ? "Hora " + (m ? "do seu " : "da sua ") + doseDaVacina : "Hora " + (m ? "do " : "da ") + doseDaVacina + " de " + nome;
                 mensagem = eu ? "Você já pode tomar esta dose. Procure uma unidade de saúde. Confirme na unidade."
                         : nome + " já pode tomar esta dose. Procure uma unidade de saúde com " + nome
                                 + ". Confirme na unidade.";
             }
             case DOSE_DISPONIVEL_EM_BREVE -> {
-                titulo = eu ? "Em breve: sua " + ordinal : "Em breve: " + ordinal + " de " + nome;
+                titulo = eu ? "Em breve: " + (m ? "seu " : "sua ") + doseDaVacina : "Em breve: " + doseDaVacina + " de " + nome;
                 mensagem = "A partir de " + DATA_BR.format(data) + ", " + (eu ? "você" : nome)
                         + " já pode tomar esta dose. Confirme na unidade.";
             }
@@ -151,8 +168,13 @@ public final class GeradorLembretes {
     }
 
     private static Lembrete lembreteCampanha(Pessoa pessoa, Campanha c) {
-        String mensagem = "Público: " + c.publicoAlvo() + ". Vai até " + DATA_BR.format(c.dataFim()) + ". Veja se é para "
-                + (pessoa.logada() ? "você" : primeiroNome(pessoa.nome())) + " e confirme na unidade.";
+        String nome = primeiroNome(pessoa.nome());
+        boolean eu = pessoa.logada();
+        String inicio = c.criterio().seletiva()
+                ? (eu ? "A sua caderneta" : "A caderneta de " + nome) + " tem vacina para colocar em dia."
+                : (eu ? "Você" : nome) + " faz parte do público desta campanha.";
+        String mensagem = inicio + " A campanha vai até " + DATA_BR.format(c.dataFim()) + ". Procure uma unidade de saúde"
+                + (eu ? "" : " com " + nome) + ". Confirme na unidade.";
         return new Lembrete("campanha-" + pessoa.id() + "-" + c.id(), Tipo.CAMPANHA, Motivo.CAMPANHA_VIGENTE,
                 pessoa.id(), c.dataInicio(), "Está acontecendo: " + c.nome(), mensagem, textoNotificacao(pessoa),
                 null, null, null, c.id());

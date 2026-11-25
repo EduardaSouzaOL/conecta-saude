@@ -663,13 +663,32 @@ def main():
     s2 += inserts("unidade_vacina", ["id_unidade", "id_vacina", "disponibilidade", "observacao",
                                      "data_atualizacao"], uv)
     s2 += inserts("campanha", ["id_campanha", "nome", "descricao", "data_inicio", "data_fim",
-                               "publico_alvo", "status"],
+                               "publico_alvo", "status", "seletiva"],
                   [(1, "Campanha de Influenza 2026", "Vacinação anual contra a gripe",
                     date(2026, 3, 25), date(2026, 6, 30),
                     "Crianças de 6 meses a menores de 6 anos, idosos 60+, gestantes e demais grupos prioritários",
-                    "ENCERRADA"),
+                    "ENCERRADA", False),
                    (2, "Multivacinação 2026", "Atualização da caderneta de crianças e adolescentes menores de 15 anos",
-                    date(2026, 11, 9), date(2026, 12, 12), "Menores de 15 anos", "ATIVA")])
+                    date(2026, 11, 9), date(2026, 12, 12), "Menores de 15 anos", "ATIVA", True)])
+    # seletiva: TRUE = só quem tem dose a fazer das vacinas da campanha ([MS-MULTI-2026]);
+    # FALSE = todos na faixa etária (influenza anual).
+    # [RNF07] Faixa etária de cada campanha como dado (decisão de 25/11/2026: regras do PNI/MS).
+    # Períodos ISO 8601 a partir do nascimento; limite = fora da faixa a partir desse dia
+    # (P15Y: no dia do 15º aniversário já está fora), mesma convenção da dose_esquema (docs/16).
+    # Público não etário (gestantes, grupos prioritários) NÃO vira faixa: a API não calcula
+    # elegibilidade por critério não etário.
+    FONTE_MULTI_2026 = ("[MS-MULTI-2026] Ministério da Saúde, \"Estratégia para a atualização das cadernetas "
+                        "de vacinação das crianças e dos adolescentes menores de 15 anos – Multivacinação 2026\": "
+                        "público-alvo menores de 15 anos (14 anos, 11 meses e 29 dias); vacinação seletiva")
+    FONTE_INFLU_2026 = ("[a conferir no informe] publico_alvo da campanha / Informe da Campanha Nacional de "
+                        "Vacinação contra a Influenza 2026 (MS)")
+    s2 += "\n-- [RNF07] faixas etárias das campanhas (ISO 8601; limite = fora a partir de nascimento + período)\n"
+    s2 += "-- gestantes e demais grupos prioritários não são faixa etária: a API não calcula essa elegibilidade\n"
+    s2 += inserts("campanha_faixa_etaria", ["id_faixa_etaria", "id_campanha", "idade_minima_periodo",
+                                            "idade_limite_periodo", "fonte_regra"],
+                  [(1, 1, "P6M", "P6Y", FONTE_INFLU_2026 + ": crianças de 6 meses a menores de 6 anos"),
+                   (2, 1, "P60Y", None, FONTE_INFLU_2026 + ": pessoas de 60 anos ou mais"),
+                   (3, 2, "P0D", "P15Y", FONTE_MULTI_2026)])
     s2 += inserts("campanha_vacina", ["id_campanha", "id_vacina"],
                   [(1, vac_id["Influenza"])] + [(2, vac_id[v["nome"]]) for v in VACINAS
                                                if v["nome"] not in ("Influenza", "Dupla adulto (dT)")])
@@ -999,7 +1018,7 @@ def main():
     os.makedirs(os.path.join(pasta, "exemplos-fhir"), exist_ok=True)
     def wcsv(nome, cols, rows):
         with open(os.path.join(pasta, nome), "w", encoding="utf-8", newline="") as f:
-            w = csv.writer(f, delimiter=";")
+            w = csv.writer(f, delimiter=";", lineterminator="\n")
             w.writerow(cols)
             for r in rows:
                 w.writerow(["" if v is None else (int(v) if isinstance(v, bool) else v) for v in r])

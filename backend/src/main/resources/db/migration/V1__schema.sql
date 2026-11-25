@@ -459,6 +459,10 @@ CREATE TABLE campanha (
     data_fim DATE NOT NULL,
     publico_alvo TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PLANEJADA',
+    -- TRUE = vacinação seletiva: só é público quem tem dose a fazer das vacinas da
+    -- campanha (ex.: Multivacinação 2026, [MS-MULTI-2026]); FALSE = todos na faixa
+    -- etária (campanha_faixa_etaria) são público (ex.: campanha anual de influenza).
+    seletiva BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT ck_campanha_periodo
         CHECK (data_fim >= data_inicio),
     CONSTRAINT ck_campanha_status
@@ -473,6 +477,28 @@ CREATE TABLE campanha_vacina (
         FOREIGN KEY (id_campanha) REFERENCES campanha(id_campanha),
     CONSTRAINT fk_cv_vacina
         FOREIGN KEY (id_vacina) REFERENCES vacina(id_vacina)
+) ENGINE=InnoDB;
+
+-- [RNF07] Faixa etária de cada campanha como DADO (decisão de 25/11/2026: os
+-- lembretes seguem as regras do PNI/MS). publico_alvo continua como texto para
+-- mostrar; quem é elegível POR IDADE vem daqui. Uma campanha pode ter várias
+-- faixas (ex.: influenza, 6 meses a menores de 6 anos E 60 anos ou mais).
+-- Mesma convenção da dose_esquema (docs/16), períodos ISO 8601 contados a partir
+-- do nascimento:
+--   idade_minima_periodo: elegível A PARTIR de nascimento + período ('P0D', 'P6M', 'P60Y');
+--   idade_limite_periodo: fora da faixa A PARTIR de nascimento + período ('P15Y' =
+--                         no dia do 15º aniversário já está fora); NULL = sem limite.
+-- Público que NÃO é definido por idade (gestantes, puérperas, grupos prioritários,
+-- condições clínicas) NÃO entra como faixa: a API não calcula elegibilidade por
+-- critério não etário (e não guarda motivo de indicação nem grupo de atendimento).
+CREATE TABLE campanha_faixa_etaria (
+    id_faixa_etaria INT AUTO_INCREMENT PRIMARY KEY,
+    id_campanha INT NOT NULL,
+    idade_minima_periodo VARCHAR(12) NOT NULL,
+    idade_limite_periodo VARCHAR(12) NULL,
+    fonte_regra VARCHAR(300) NOT NULL,       -- citação de onde vem a faixa
+    CONSTRAINT fk_cfe_campanha
+        FOREIGN KEY (id_campanha) REFERENCES campanha(id_campanha)
 ) ENGINE=InnoDB;
 
 CREATE TABLE campanha_unidade (

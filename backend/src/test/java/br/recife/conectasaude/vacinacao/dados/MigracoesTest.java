@@ -22,6 +22,7 @@ class MigracoesTest extends BancoDeTeste {
         assertThat(contar("vacina")).isEqualTo(16);
         assertThat(contar("unidade_saude")).isEqualTo(12);
         assertThat(contar("campanha")).isEqualTo(2);
+        assertThat(contar("campanha_faixa_etaria")).isEqualTo(3);
         assertThat(contar("fabricante_imunobiologico")).isEqualTo(81);
     }
 

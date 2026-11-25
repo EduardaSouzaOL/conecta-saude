@@ -13,12 +13,14 @@ import br.recife.conectasaude.vacinacao.dados.UnidadeVacinaRepository;
 import br.recife.conectasaude.vacinacao.dados.Vacina;
 import br.recife.conectasaude.vacinacao.dados.VacinaRepository;
 import br.recife.conectasaude.vacinacao.dados.VinculoResponsavelRepository;
+import br.recife.conectasaude.vacinacao.regra.ElegibilidadeCampanha;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,17 +39,21 @@ public class ConsultasService {
     private final UnidadeVacinaRepository unidadeVacinas;
     private final CampanhaRepository campanhas;
     private final VacinaRepository vacinas;
+    private final CriteriosCampanha criterios;
+    private final SituacaoVacinalService situacao;
     private final Clock relogio;
 
     public ConsultasService(PessoaRepository pessoas, VinculoResponsavelRepository vinculos,
             UnidadeSaudeRepository unidades, UnidadeVacinaRepository unidadeVacinas, CampanhaRepository campanhas,
-            VacinaRepository vacinas, Clock relogio) {
+            VacinaRepository vacinas, CriteriosCampanha criterios, SituacaoVacinalService situacao, Clock relogio) {
         this.pessoas = pessoas;
         this.vinculos = vinculos;
         this.unidades = unidades;
         this.unidadeVacinas = unidadeVacinas;
         this.campanhas = campanhas;
         this.vacinas = vacinas;
+        this.criterios = criterios;
+        this.situacao = situacao;
         this.relogio = relogio;
     }
 
@@ -93,15 +99,46 @@ public class ConsultasService {
                 u.getCnes(), u.getTelefone(), null, vacinasDaUnidade, AVISO_PORTA_ABERTA);
     }
 
-    /** {@code elegivel} vem sempre {@code null}: a regra de elegibilidade ainda não existe (pergunta 7). */
-    public Respostas.ListaCampanhas campanhas(boolean vigentes) {
-        List<Campanha> lista = vigentes ? campanhas.buscarVigentes(LocalDate.now(relogio)) : campanhas.findAllByOrderById();
+    /**
+     * {@code elegivel} pela {@link ElegibilidadeCampanha} (D21), a mesma regra do lembrete
+     * {@code CAMPANHA_VIGENTE}; {@code null} sem {@code idPessoa} (o acesso já foi conferido pelo
+     * controller) ou quando a campanha não tem faixa etária cadastrada.
+     */
+    public Respostas.ListaCampanhas campanhas(boolean vigentes, Integer idPessoa) {
+        LocalDate hoje = LocalDate.now(relogio);
+        List<Campanha> lista = vigentes ? campanhas.buscarVigentes(hoje) : campanhas.findAllByOrderById();
+        Map<Integer, ElegibilidadeCampanha.Criterio> criterioPorCampanha = idPessoa == null ? Map.of() : criterios.de(lista);
+        // a situação vacinal só é calculada se alguma campanha tem faixa etária
+        Supplier<SituacaoVacinalService.Contexto> pessoa = idPessoa == null ? null : memorizar(() -> situacao.contexto(idPessoa, hoje));
         return new Respostas.ListaCampanhas(lista.stream()
                 .map(c -> new Respostas.Campanha(c.getId(), c.getNome(), c.getDescricao(), c.getDataInicio(),
-                        c.getDataFim(), c.getPublicoAlvo(), c.getStatus(),
+                        c.getDataFim(), c.getPublicoAlvo(), c.getStatus(), c.isSeletiva(),
                         c.getVacinas().stream().map(v -> new Respostas.VacinaResumo(v.getId(), v.getNome())).toList(),
-                        null))
+                        elegivel(criterioPorCampanha.get(c.getId()), pessoa, hoje)))
                 .toList());
+    }
+
+    private static Boolean elegivel(ElegibilidadeCampanha.Criterio criterio, Supplier<SituacaoVacinalService.Contexto> pessoa,
+            LocalDate hoje) {
+        if (pessoa == null || criterio == null || criterio.faixas().isEmpty()) {
+            return null;
+        }
+        SituacaoVacinalService.Contexto ctx = pessoa.get();
+        return ElegibilidadeCampanha.avaliar(criterio, ctx.pessoa().getDataNascimento(), hoje, ctx.resultado());
+    }
+
+    private static <T> Supplier<T> memorizar(Supplier<T> fonte) {
+        return new Supplier<>() {
+            private T valor;
+
+            @Override
+            public T get() {
+                if (valor == null) {
+                    valor = fonte.get();
+                }
+                return valor;
+            }
+        };
     }
 
     public Respostas.ListaVacinas vacinas() {

@@ -1,9 +1,11 @@
 package br.recife.conectasaude.vacinacao.dados;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import br.recife.conectasaude.vacinacao.BancoDeTeste;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ class RepositoriosTest extends BancoDeTeste {
     @Autowired UnidadeSaudeRepository unidades;
     @Autowired UnidadeVacinaRepository unidadeVacinas;
     @Autowired CampanhaRepository campanhas;
+    @Autowired CampanhaFaixaEtariaRepository faixasCampanha;
     @Autowired FabricanteImunobiologicoRepository fabricantes;
     @Autowired ImportacaoDadosRepository importacoes;
 
@@ -111,6 +114,37 @@ class RepositoriosTest extends BancoDeTeste {
                 .extracting(UnidadeVacina::getDisponibilidade).isEqualTo("INDISPONIVEL");
         assertThat(campanhas.buscarVigentes(LocalDate.of(2026, 11, 24)))
                 .extracting(Campanha::getNome).containsExactly("Multivacinação 2026");
+        // Multivacinação é seletiva ([MS-MULTI-2026]); a influenza anual não.
+        assertThat(campanhas.findAllByOrderById())
+                .extracting(Campanha::getNome, Campanha::isSeletiva)
+                .containsExactly(tuple("Campanha de Influenza 2026", false), tuple("Multivacinação 2026", true));
         assertThat(importacoes.findFirstByIdFonteAndStatusOrderByDataImportacaoDesc(1, "CONCLUIDA")).isPresent();
+    }
+
+    @Test
+    void faixasEtariasDasCampanhas() {
+        // RNF07: Multivacinação 2026 = menores de 15 anos (0 a < P15Y), estratégia do MS.
+        List<CampanhaFaixaEtaria> multi = faixasCampanha.findByIdCampanhaOrderById(2);
+        assertThat(multi).singleElement().satisfies(f -> {
+            assertThat(f.getIdadeMinimaPeriodo()).isEqualTo("P0D");
+            assertThat(f.getIdadeLimitePeriodo()).isEqualTo("P15Y");
+            assertThat(f.getFonteRegra()).startsWith("[MS-MULTI-2026]").contains("Multivacinação 2026");
+        });
+        // P15Y é limite: no dia do 15º aniversário já está fora (14 anos, 11 meses e 29 dias ainda entra).
+        LocalDate nascimento = LocalDate.of(2011, 11, 25);
+        LocalDate limite = nascimento.plus(Period.parse(multi.get(0).getIdadeLimitePeriodo()));
+        assertThat(limite).isEqualTo(LocalDate.of(2026, 11, 25));
+
+        // Influenza 2026: duas faixas etárias; gestantes e grupos prioritários não viram faixa.
+        assertThat(faixasCampanha.findByIdCampanhaOrderById(1))
+                .extracting(CampanhaFaixaEtaria::getIdadeMinimaPeriodo, CampanhaFaixaEtaria::getIdadeLimitePeriodo)
+                .containsExactly(tuple("P6M", "P6Y"),
+                        tuple("P60Y", null));
+        assertThat(faixasCampanha.findByIdCampanhaOrderById(1))
+                .allSatisfy(f -> assertThat(f.getFonteRegra()).contains("[a conferir no informe]"));
+
+        assertThat(faixasCampanha.findByIdCampanhaInOrderByIdCampanhaAscIdAsc(List.of(2, 1)))
+                .extracting(CampanhaFaixaEtaria::getId).containsExactly(1, 2, 3);
+        assertThat(faixasCampanha.findByIdCampanhaOrderById(99)).isEmpty();
     }
 }
