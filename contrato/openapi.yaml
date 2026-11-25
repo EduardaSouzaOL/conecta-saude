@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.6.0
+  version: 0.6.1
   summary: Situação vacinal, histórico de doses, lembretes, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
-    Contrato **v0.6** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    Contrato **v0.6.1** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
     para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
 
     Regras que valem para toda a API:
@@ -106,8 +106,9 @@ paths:
         pelo `id` do lembrete.
 
         Regras de geração e de ordem: ver `Lembrete` e `MotivoLembrete`. As regras seguem o PNI e
-        o Ministério da Saúde (D21); só a janela de 30 dias de "em breve" é escolha nossa
-        **[provisório, a confirmar com a Duda]**.
+        o Ministério da Saúde (D21). A janela de "em breve" é de 7 dias (D21, Adan, 25/11/2026):
+        o Ministério não define antecedência, e os lembretes que funcionam em estudos são
+        enviados de 1 a 7 dias antes (Currie et al., BMC Public Health 2024).
       responses:
         '200':
           description: Lembretes da pessoa logada e dos dependentes
@@ -122,8 +123,9 @@ paths:
                     Lista completa (não é recorte), derivada da situação vacinal das duas pessoas
                     em 24/11/2026. Valentina tem a tríplice viral D2 atrasada; as doses dela em
                     `dosesForaDaIdade` e a dT sem `dataDisponivel` não geram lembrete. Heitor tem 4
-                    doses atrasadas e a VIP D3, que fica disponível em 07/12/2026 (dentro dos
-                    próximos 30 dias). A Meningo C D2 dele não gera lembrete próprio porque não tem
+                    doses atrasadas. A VIP D3 dele fica disponível em 07/12/2026, fora da janela de
+                    7 dias (até 01/12/2026), e não gera lembrete "em breve": aparece só na aba
+                    "Próximas". A Meningo C D2 dele não gera lembrete próprio porque não tem
                     `dataDisponivel` (falta a D1): o lembrete é o da Meningo C D1, atrasada. A
                     Multivacinação 2026 (público de 0 a 14 anos, 11 meses e 29 dias) gera lembrete só
                     para o Heitor, que está na faixa etária e tem doses atrasadas de vacinas da
@@ -190,17 +192,6 @@ paths:
                         textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
                         vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
                         idDose: 8
-                        idCampanha: null
-                      - id: dose-5-11-em-breve
-                        tipo: DOSE
-                        motivo: DOSE_DISPONIVEL_EM_BREVE
-                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
-                        data: '2026-12-07'
-                        titulo: 'Em breve: 3ª dose da vacina Poliomielite inativada (VIP) de Heitor'
-                        mensagem: A partir de 07/12/2026, Heitor já pode tomar esta dose. Confirme na unidade.
-                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
-                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
-                        idDose: 11
                         idCampanha: null
                       - id: campanha-5-2
                         tipo: CAMPANHA
@@ -545,7 +536,8 @@ paths:
                     Bernardo em 24/11/2026. O exemplo `bebeDeQuatroMeses` da situação vacinal é
                     um recorte e não mostra a Rotavírus D2 e a Pneumo 10 D2, que também estão
                     atrasadas. A Meningo C D2 já pode tomar. A Penta D2 fica disponível amanhã
-                    (25/11/2026), por isso entra como "em breve". A Penta D3 e a VIP D3 não têm
+                    (25/11/2026), dentro da janela de 7 dias (até 01/12/2026), por isso entra como
+                    "em breve". A Penta D3 e a VIP D3 não têm
                     `dataDisponivel` (falta a dose anterior) e não geram lembrete próprio. A
                     Multivacinação 2026 gera lembrete porque o Bernardo está na faixa etária da
                     campanha e tem doses atrasadas e disponíveis de vacinas dela (D21).
@@ -1618,9 +1610,8 @@ components:
     MotivoLembrete:
       type: string
       description: |
-        Por que o lembrete existe (D20). As regras seguem o PNI e o Ministério da Saúde (D21),
-        menos a janela de 30 dias de "em breve", que é escolha nossa **[provisório, a confirmar
-        com a Duda]**. Vem da situação vacinal da pessoa
+        Por que o lembrete existe (D20). As regras seguem o PNI e o Ministério da Saúde (D21).
+        Vem da situação vacinal da pessoa
         (`GET /v1/pessoas/{idPessoa}/situacao-vacinal`, mesma `dataReferencia`) e das campanhas
         vigentes:
         - `DOSE_ATRASADA`: cada dose de `doses` com situação `ATRASADA`. Não há limite de tempo de
@@ -1629,8 +1620,11 @@ components:
           dela, a dose sai de `doses` e vai para `dosesForaDaIdade`, que não gera lembrete.
         - `DOSE_DISPONIVEL`: cada dose de `doses` com situação `PODE_TOMAR`.
         - `DOSE_DISPONIVEL_EM_BREVE`: cada dose de `doses` com situação `AINDA_NAO_DISPONIVEL` e
-          `dataDisponivel` não nula, até 30 dias depois da `dataReferencia` (inclusive)
-          **[provisório]**.
+          `dataDisponivel` não nula, até 7 dias depois da `dataReferencia` (inclusive; com
+          `dataReferencia` 24/11/2026, até 01/12/2026). O Ministério da Saúde não define
+          antecedência para lembrete; a revisão sistemática de Currie et al. (BMC Public Health
+          2024;24:1753) mostra lembretes eficazes enviados de 1 a 7 dias antes e nenhum ensaio com
+          30 dias (D21, Adan, 25/11/2026). Doses mais distantes aparecem só na aba "Próximas" do front.
         - `CAMPANHA_VIGENTE`: cada campanha vigente na `dataReferencia` (as mesmas de
           `GET /v1/campanhas?vigentes=true`) **para a qual a pessoa é elegível**, com a regra de
           `Campanha.elegivel` (`true`): a pessoa está numa faixa etária da campanha e, se a
@@ -1641,7 +1635,7 @@ components:
           gestantes ou de grupos) não gera lembrete.
 
         Não geram lembrete: doses `EM_DIA`; doses em `dosesForaDaIdade` (o app só orienta
-        "converse na unidade"); doses `AINDA_NAO_DISPONIVEL` fora da janela de 30 dias; e doses
+        "converse na unidade"); doses `AINDA_NAO_DISPONIVEL` fora da janela de 7 dias; e doses
         `AINDA_NAO_DISPONIVEL` sem `dataDisponivel` porque falta a dose anterior. Nesse último
         caso o lembrete é o da **dose anterior**, que aparece como atrasada ou disponível
         enquanto estiver na idade: o esquema não é reiniciado e "sem D1 não há D2" (Regras de
@@ -1677,7 +1671,7 @@ components:
         | `DOSE_DISPONIVEL` | "Hora {da\|do} {dose} da vacina {vacina} de {nome}" / "Hora {da sua\|do seu} {dose} da vacina {vacina}" | "{nome} já pode tomar esta dose. Procure uma unidade de saúde com {nome}. Confirme na unidade." / "Você já pode tomar esta dose. Procure uma unidade de saúde. Confirme na unidade." |
         | `DOSE_DISPONIVEL_EM_BREVE` | "Em breve: {dose} da vacina {vacina} de {nome}" / "Em breve: {sua\|seu} {dose} da vacina {vacina}" | "A partir de {data}, {nome} já pode tomar esta dose. Confirme na unidade." / "A partir de {data}, você já pode tomar esta dose. Confirme na unidade." |
         | `CAMPANHA_VIGENTE`, campanha seletiva | "Está acontecendo: {campanha.nome}" (igual nos dois casos) | "A caderneta de {nome} tem vacina para colocar em dia. A campanha vai até {campanha.dataFim}. Procure uma unidade de saúde com {nome}. Confirme na unidade." / "A sua caderneta tem vacina para colocar em dia. A campanha vai até {campanha.dataFim}. Procure uma unidade de saúde. Confirme na unidade." |
-        | `CAMPANHA_VIGENTE`, campanha não seletiva | "Está acontecendo: {campanha.nome}" (igual nos dois casos) | "{nome} faz parte do público desta campanha. A campanha vai até {campanha.dataFim}. Procure uma unidade de saúde com {nome}. Confirme na unidade." / "Você faz parte do público desta campanha. A campanha vai até {campanha.dataFim}. Procure uma unidade de saúde. Confirme na unidade." **[provisório]** |
+        | `CAMPANHA_VIGENTE`, campanha não seletiva | "Está acontecendo: {campanha.nome}" (igual nos dois casos) | "{nome} faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta levar {nome} e a caderneta a uma unidade de saúde até {campanha.dataFim}. Confirme na unidade." / "Você faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até {campanha.dataFim}. Confirme na unidade." |
 
         Exemplos de título: "Hora da 2ª dose da vacina Meningocócica C conjugada de Bernardo";
         "Hora do 1º reforço da vacina DTP (tríplice bacteriana) de Heitor"; "O seu reforço da

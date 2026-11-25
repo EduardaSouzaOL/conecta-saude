@@ -362,14 +362,14 @@ INSERT INTO unidade_vacina (id_unidade, id_vacina, disponibilidade, observacao, 
 (12, 1, 'DISPONIVEL', NULL, '2026-11-03 08:00:00'),
 (12, 2, 'DISPONIVEL', NULL, '2026-11-03 08:00:00');
 INSERT INTO campanha (id_campanha, nome, descricao, data_inicio, data_fim, publico_alvo, status, seletiva) VALUES
-(1, 'Campanha de Influenza 2026', 'Vacinação anual contra a gripe', '2026-03-25', '2026-06-30', 'Crianças de 6 meses a menores de 6 anos, idosos 60+, gestantes e demais grupos prioritários', 'ENCERRADA', FALSE),
+(1, 'Campanha de Influenza 2026', 'Vacinação anual contra a gripe', '2026-03-28', '2026-05-30', 'Crianças de 6 meses a menores de 6 anos, idosos com 60 anos ou mais, gestantes, puérperas e demais grupos prioritários', 'ENCERRADA', FALSE),
 (2, 'Multivacinação 2026', 'Atualização da caderneta de crianças e adolescentes menores de 15 anos', '2026-11-09', '2026-12-12', 'Menores de 15 anos', 'ATIVA', TRUE);
 
 -- [RNF07] faixas etárias das campanhas (ISO 8601; limite = fora a partir de nascimento + período)
 -- gestantes e demais grupos prioritários não são faixa etária: a API não calcula essa elegibilidade
 INSERT INTO campanha_faixa_etaria (id_faixa_etaria, id_campanha, idade_minima_periodo, idade_limite_periodo, fonte_regra) VALUES
-(1, 1, 'P6M', 'P6Y', '[a conferir no informe] publico_alvo da campanha / Informe da Campanha Nacional de Vacinação contra a Influenza 2026 (MS): crianças de 6 meses a menores de 6 anos'),
-(2, 1, 'P60Y', NULL, '[a conferir no informe] publico_alvo da campanha / Informe da Campanha Nacional de Vacinação contra a Influenza 2026 (MS): pessoas de 60 anos ou mais'),
+(1, 1, 'P6M', 'P6Y', '[MS-INFLU-2026] Ministério da Saúde, "Estratégia de vacinação contra a influenza nas regiões Nordeste, Centro-Oeste, Sul e Sudeste – 2026": vacinação dos grupos prioritários de 28 de março a 30 de maio; crianças de 6 meses a menores de 6 anos de idade (5 anos, 11 meses e 29 dias)'),
+(2, 1, 'P60Y', NULL, '[MS-INFLU-2026] Ministério da Saúde, "Estratégia de vacinação contra a influenza nas regiões Nordeste, Centro-Oeste, Sul e Sudeste – 2026": vacinação dos grupos prioritários de 28 de março a 30 de maio; idosos com 60 anos ou mais de idade'),
 (3, 2, 'P0D', 'P15Y', '[MS-MULTI-2026] Ministério da Saúde, "Estratégia para a atualização das cadernetas de vacinação das crianças e dos adolescentes menores de 15 anos – Multivacinação 2026": público-alvo menores de 15 anos (14 anos, 11 meses e 29 dias); vacinação seletiva');
 INSERT INTO campanha_vacina (id_campanha, id_vacina) VALUES
 (1, 16),

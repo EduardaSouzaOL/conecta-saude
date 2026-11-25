@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-/** Geração dos lembretes do app (D20, D21): motivos, janela de 30 dias, elegibilidade, ordem, textos e ids. */
+/** Geração dos lembretes do app (D20, D21): motivos, janela de 7 dias, elegibilidade, ordem, textos e ids. */
 class GeradorLembretesTest {
 
     static final LocalDate HOJE = LocalDate.of(2026, 11, 24);
@@ -73,7 +73,7 @@ class GeradorLembretesTest {
         List<Lembrete> l = gerar(List.of(pessoa(5, "Heitor Nascimento Ferreira", false,
                 dose(14, 5, "Rotavírus humano", 1, Situacao.ATRASADA, HOJE.minusMonths(3)),
                 dose(20, 7, "Meningocócica C conjugada", 2, Situacao.PODE_TOMAR, HOJE.minusDays(2)),
-                dose(11, 4, "Poliomielite inativada (VIP)", 3, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(13)),
+                dose(11, 4, "Poliomielite inativada (VIP)", 3, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(5)),
                 dose(9, 4, "Poliomielite inativada (VIP)", 1, Situacao.EM_DIA, HOJE.minusMonths(4)))));
 
         assertThat(l).extracting(Lembrete::id)
@@ -86,18 +86,18 @@ class GeradorLembretesTest {
             assertThat(x.idPessoa()).isEqualTo(5);
         });
         // data: hoje para atrasada e disponível; dataDisponivel para "em breve"
-        assertThat(l).extracting(Lembrete::data).containsExactly(HOJE, HOJE, HOJE.plusDays(13));
+        assertThat(l).extracting(Lembrete::data).containsExactly(HOJE, HOJE, HOJE.plusDays(5));
         assertThat(l.get(0).idDose()).isEqualTo(14);
         assertThat(l.get(0).idVacina()).isEqualTo(5);
         assertThat(l.get(0).nomeVacina()).isEqualTo("Rotavírus humano");
     }
 
     @Test
-    void janelaDoEmBreveVaiAte30DiasInclusive() {
+    void janelaDoEmBreveVaiAte7DiasInclusive() {
         List<Lembrete> l = gerar(List.of(pessoa(5, "Heitor", false,
                 dose(1, 1, "A", 1, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(1)),
-                dose(2, 1, "A", 2, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(30)),
-                dose(3, 1, "A", 3, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(31)),
+                dose(2, 1, "A", 2, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(7)),
+                dose(3, 1, "A", 3, Situacao.AINDA_NAO_DISPONIVEL, HOJE.plusDays(8)),
                 dose(4, 1, "A", 4, Situacao.AINDA_NAO_DISPONIVEL, null))));
         assertThat(l).extracting(Lembrete::idDose).containsExactly(1, 2);
     }
@@ -156,10 +156,10 @@ class GeradorLembretesTest {
                 pessoa(5, "Heitor Nascimento Ferreira", BEBE, false)), influenza);
         assertThat(l).extracting(Lembrete::id).containsExactly("campanha-4-1", "campanha-5-1");
         assertThat(l.get(0).titulo()).isEqualTo("Está acontecendo: Influenza 2026");
-        assertThat(l.get(0).mensagem()).isEqualTo("Você faz parte do público desta campanha. A campanha vai até "
-                + "31/12/2026. Procure uma unidade de saúde. Confirme na unidade.");
-        assertThat(l.get(1).mensagem()).isEqualTo("Heitor faz parte do público desta campanha. A campanha vai até "
-                + "31/12/2026. Procure uma unidade de saúde com Heitor. Confirme na unidade.");
+        assertThat(l.get(0).mensagem()).isEqualTo("Você faz parte do público da Influenza 2026. Não é preciso ter "
+                + "dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até 31/12/2026. Confirme na unidade.");
+        assertThat(l.get(1).mensagem()).isEqualTo("Heitor faz parte do público da Influenza 2026. Não é preciso ter "
+                + "dose atrasada: basta levar Heitor e a caderneta a uma unidade de saúde até 31/12/2026. Confirme na unidade.");
     }
 
     @Test
@@ -233,7 +233,7 @@ class GeradorLembretesTest {
         List<Lembrete> l = gerar(List.of(pessoa(4, "Valentina Oliveira Ferreira", true,
                 dose(26, 10, "Tríplice viral (SCR)", 2, Situacao.ATRASADA, null),
                 dose(33, 15, "dT", 1, Situacao.PODE_TOMAR, HOJE),
-                dose(36, 16, "Influenza", 3, Situacao.AINDA_NAO_DISPONIVEL, LocalDate.of(2026, 12, 7)))));
+                dose(36, 16, "Influenza", 3, Situacao.AINDA_NAO_DISPONIVEL, LocalDate.of(2026, 11, 30)))));
 
         assertThat(l.get(0).titulo()).isEqualTo("A sua 2ª dose da vacina Tríplice viral (SCR) está atrasada");
         assertThat(l.get(0).mensagem()).isEqualTo("Procure uma unidade de saúde para tomar. Vacina é porta aberta: "
@@ -241,7 +241,7 @@ class GeradorLembretesTest {
         assertThat(l.get(1).titulo()).isEqualTo("Hora da sua 1ª dose da vacina dT");
         assertThat(l.get(1).mensagem()).isEqualTo("Você já pode tomar esta dose. Procure uma unidade de saúde. Confirme na unidade.");
         assertThat(l.get(2).titulo()).isEqualTo("Em breve: sua 3ª dose da vacina Influenza");
-        assertThat(l.get(2).mensagem()).isEqualTo("A partir de 07/12/2026, você já pode tomar esta dose. Confirme na unidade.");
+        assertThat(l.get(2).mensagem()).isEqualTo("A partir de 30/11/2026, você já pode tomar esta dose. Confirme na unidade.");
         assertThat(l).extracting(Lembrete::textoNotificacao)
                 .containsOnly("Há uma novidade na sua vacinação. Abra o Conecta Recife para ver.");
     }

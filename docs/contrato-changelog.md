@@ -2,9 +2,36 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.6.1 · 25/11/2026 · janela de "em breve" de 7 dias (D21)
+
+> Decisão do Adan (25/11/2026), complemento da D21: a janela de `DOSE_DISPONIVEL_EM_BREVE` passa de 30 para **7 dias** (inclusive). Responde a pergunta 18.
+
+**Mudança de regra, formato igual** (nenhum campo, schema ou enum mudou; só o cálculo de quais doses viram "em breve"). Quem consome não precisa mudar código, mas pode receber menos lembretes "em breve".
+
+### Fonte
+
+| Sigla | Fonte | O que usamos dela |
+|---|---|---|
+| **[CURRIE-2024]** | Currie et al., *BMC Public Health* 2024;24:1753, revisão sistemática sobre lembretes de vacinação ([PMC11218178](https://pmc.ncbi.nlm.nih.gov/articles/PMC11218178/)) | Lembretes eficazes enviados de 1 a 7 dias antes da dose (ex.: Domek 2016, 1 semana antes; Gibson 2017, 3 e 1 dia antes; Domek 2019, 3, 2 e 1 dia antes); nenhum ensaio com 30 dias **[dado]** |
+
+O Ministério da Saúde não define antecedência para lembrete **[dado]**. A aba "Próximas" do front já mostra todas as doses futuras, então o lembrete "em breve" não precisa cobrir um prazo longo.
+
+### O que mudou
+
+- `DOSE_DISPONIVEL_EM_BREVE`: dose `AINDA_NAO_DISPONIVEL` com `dataDisponivel` não nula **até 7 dias** depois da `dataReferencia` (inclusive). Era 30 dias. Com `dataReferencia` 24/11/2026, a janela vai até 01/12/2026.
+- Sai o **[provisório]** da janela em `MotivoLembrete` e na descrição de `GET /v1/eu/lembretes`; a fonte foi citada.
+- **Texto do lembrete de campanha não seletiva aprovado** pelo Adan em 25/11/2026; deixa de ser **[provisório]** (tabela de modelos em `Lembrete`). Título igual ("Está acontecendo: {campanha.nome}"). Mensagem: "{nome} faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta levar {nome} e a caderneta a uma unidade de saúde até {dataFim}. Confirme na unidade." (logada: "Você faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até {dataFim}. Confirme na unidade."), com `{dataFim}` em dd/mm/aaaa. Substitui o modelo provisório da 0.6.0. O texto da campanha seletiva não mudou. Só muda o texto gerado; formato igual.
+- `info.version` 0.6.0 → 0.6.1.
+
+### Exemplos (base sintética, 24/11/2026)
+
+- `GET /v1/eu/lembretes` (`valentinaEHeitor`): **sai** `dose-5-11-em-breve` (VIP D3 do Heitor, disponível em 07/12/2026, fora da janela). A dose continua na situação vacinal como `AINDA_NAO_DISPONIVEL` e aparece na aba "Próximas". **6 lembretes** (eram 7). Descrição do exemplo atualizada.
+- `GET /v1/pessoas/48/lembretes` (`bernardo`): **fica** `dose-48-7-em-breve` (Penta D2 do Bernardo, disponível em 25/11/2026, dentro da janela). Continua com 6 lembretes. Descrição do exemplo cita a janela.
+- Não havia outros lembretes "em breve" nos exemplos.
+
 ## 0.6.0 · 25/11/2026 · lembretes e elegibilidade pelo PNI/MS (D21)
 
-> Decisão D21 (Adan, 25/11/2026): as regras dos lembretes e da elegibilidade em campanha seguem o PNI e as fontes do Ministério da Saúde, não escolhas nossas. Responde as perguntas 16, 17, 19, 20 e 21. Só a 18 (janela de 30 dias de "em breve") continua aberta.
+> Decisão D21 (Adan, 25/11/2026): as regras dos lembretes e da elegibilidade em campanha seguem o PNI e as fontes do Ministério da Saúde, não escolhas nossas. Responde as perguntas 16, 17, 19, 20 e 21. Só a 18 (janela de 30 dias de "em breve") continuou aberta; foi respondida na 0.6.1 (7 dias).
 
 **Mudança compatível** (só acrescenta campos obrigatórios na resposta, `nomeDose` e `Campanha.seletiva`, e muda o cálculo de valores que já existiam). Quem lê a resposta e ignora campos novos não quebra.
 
@@ -208,6 +235,6 @@ Escolhas da v0:
 20. **Dose sem data por falta da anterior:** não gera lembrete próprio. O lembrete é o da **dose anterior**, que aparece como atrasada ou disponível enquanto estiver na idade. É coerente com "não reiniciar o esquema" [IN-CNV-2026] e com "sem D1 não há D2" [PNI-REG]. Ex.: a Meningo C D2 do Heitor (pessoa 5) não gera lembrete; a Meningo C D1, atrasada, gera. Sem mudança de comportamento.
 21. **Texto com o número da dose:** o título usa o novo campo `nomeDose`, com a descrição oficial da dose na RNDS (BRDose) [RNDS], no padrão do Calendário Nacional [IN-CNV-2026]: "1º reforço" para o reforço da VIP aos 15 meses (era "4ª dose") e "dose única" para o HPV (era "1ª dose").
 
-### Aberta (lembretes; para a Duda)
+### Respondida (lembretes, decisão do Adan em 25/11/2026, contrato 0.6.1)
 
-18. **Janela de "em breve":** 30 dias, contados a partir de hoje (inclusive o 30º dia). **Não há regra oficial** sobre isso; é escolha nossa. O número está bom?
+18. **Janela de "em breve":** ~~30 dias~~ **7 dias**, contados a partir de hoje (inclusive o 7º dia). O Ministério da Saúde não define antecedência **[dado]**; a revisão sistemática de Currie et al., *BMC Public Health* 2024;24:1753 ([PMC11218178](https://pmc.ncbi.nlm.nih.gov/articles/PMC11218178/)), mostra lembretes eficazes enviados de 1 a 7 dias antes (Domek 2016, 1 semana antes; Gibson 2017, 3 e 1 dia antes; Domek 2019, 3, 2 e 1 dia antes) e nenhum ensaio com 30 dias [CURRIE-2024] **[dado]**. As doses mais distantes já aparecem na aba "Próximas" do front. Efeito: a VIP D3 do Heitor (07/12/2026) deixa de gerar lembrete "em breve"; a Penta D2 do Bernardo (25/11/2026) continua.
