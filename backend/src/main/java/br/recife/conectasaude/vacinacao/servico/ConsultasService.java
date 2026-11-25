@@ -14,6 +14,7 @@ import br.recife.conectasaude.vacinacao.dados.Vacina;
 import br.recife.conectasaude.vacinacao.dados.VacinaRepository;
 import br.recife.conectasaude.vacinacao.dados.VinculoResponsavelRepository;
 import br.recife.conectasaude.vacinacao.regra.ElegibilidadeCampanha;
+import br.recife.conectasaude.vacinacao.seguranca.MetodoLogin;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -57,17 +58,25 @@ public class ConsultasService {
         this.relogio = relogio;
     }
 
-    public Respostas.Eu eu(int idPessoaLogada) {
+    public Respostas.Eu eu(int idPessoaLogada, MetodoLogin metodoLogin) {
         Pessoa eu = pessoas.findById(idPessoaLogada).orElseThrow(NaoEncontradoException::new);
+        LocalDate hoje = LocalDate.now(relogio);
         List<Respostas.Dependente> dependentes = vinculos.findByIdResponsavelAndDataFimIsNullOrderByIdPessoa(idPessoaLogada)
                 .stream()
+                .filter(v -> v.ativoParaDependenteEm(hoje))
                 .map(v -> new Respostas.Dependente(SituacaoVacinalService.Mapeamento.pessoa(v.getDependente()),
                         v.getParentesco()))
                 .toList();
-        return new Respostas.Eu(SituacaoVacinalService.Mapeamento.pessoa(eu), dependentes);
+        boolean govBr = metodoLogin == MetodoLogin.GOV_BR;
+        return new Respostas.Eu(SituacaoVacinalService.Mapeamento.pessoa(eu), dependentes, metodoLogin.name(),
+                new Respostas.Recursos(govBr, govBr));
     }
 
     public Respostas.ListaUnidades unidades(Integer idVacina, Double lat, Double lng) {
+        return unidades(idVacina, lat, lng, false);
+    }
+
+    public Respostas.ListaUnidades unidades(Integer idVacina, Double lat, Double lng, boolean somenteDisponiveis) {
         Map<Integer, String> disponibilidade = idVacina == null ? Map.of()
                 : unidadeVacinas.findByIdVacina(idVacina).stream()
                         .collect(Collectors.toMap(UnidadeVacina::getIdUnidade, UnidadeVacina::getDisponibilidade));
@@ -78,8 +87,9 @@ public class ConsultasService {
         List<Respostas.UnidadeNoMapa> lista = unidades.findByPossuiSalaVacinaTrueOrderById().stream()
                 .map(u -> new Respostas.UnidadeNoMapa(u.getId(), u.getNome(), u.getTipo(), u.getEndereco(),
                         u.getDistritoSanitario(), numero(u.getLatitude()), numero(u.getLongitude()),
-                        u.isPossuiSalaVacina(), distancia(u, lat, lng),
+                        u.isPossuiSalaVacina(), u.getTelefone(), u.getHorarioFuncionamento(), distancia(u, lat, lng),
                         idVacina == null ? null : disponibilidade.getOrDefault(u.getId(), "SEM_INFORMACAO")))
+                .filter(u -> !somenteDisponiveis || idVacina == null || "DISPONIVEL".equals(u.disponibilidadeVacina()))
                 .sorted(ordem)
                 .toList();
         return new Respostas.ListaUnidades(lista, AVISO_PORTA_ABERTA);
@@ -96,7 +106,7 @@ public class ConsultasService {
                 .toList();
         return new Respostas.DetalheUnidade(u.getId(), u.getNome(), u.getTipo(), u.getEndereco(),
                 u.getDistritoSanitario(), numero(u.getLatitude()), numero(u.getLongitude()), u.isPossuiSalaVacina(),
-                u.getCnes(), u.getTelefone(), null, vacinasDaUnidade, AVISO_PORTA_ABERTA);
+                u.getCnes(), u.getTelefone(), u.getHorarioFuncionamento(), vacinasDaUnidade, AVISO_PORTA_ABERTA);
     }
 
     /**

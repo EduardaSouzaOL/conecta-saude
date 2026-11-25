@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
  * @param dataAplicacao data da aplicação
  * @param transcricao {@code true} se veio da transcrição do cartão físico
  * @param dataRegistroNaFonte quando ficou disponível na fonte
+ * @param idUnidade id da unidade onde a dose foi aplicada; {@code null} se desconhecida
+ * @param nomeUnidade nome da unidade onde a dose foi aplicada; {@code null} se desconhecida
  */
 public record RegistroParaRegra(
         int idRegistro,
@@ -21,4 +23,13 @@ public record RegistroParaRegra(
         Integer idVacina,
         LocalDate dataAplicacao,
         boolean transcricao,
-        LocalDateTime dataRegistroNaFonte) {}
+        LocalDateTime dataRegistroNaFonte,
+        Integer idUnidade,
+        String nomeUnidade) {
+
+    public RegistroParaRegra(int idRegistro, Integer idDoseEsquema, String codigoImunobiologico,
+            Integer idVacina, LocalDate dataAplicacao, boolean transcricao, LocalDateTime dataRegistroNaFonte) {
+        this(idRegistro, idDoseEsquema, codigoImunobiologico, idVacina, dataAplicacao, transcricao,
+                dataRegistroNaFonte, null, null);
+    }
+}

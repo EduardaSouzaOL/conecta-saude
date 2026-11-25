@@ -88,6 +88,25 @@ class ApiTest extends BancoDeTeste {
                 .andExpect(jsonPath("$.dosesForaDaIdade[?(@.idDose == 19)]").exists());
         mvc.perform(comToken(get("/v1/pessoas/95/doses/19"), 94)).andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        // Mas o acompanhamento consolidado da vacina (SCR-06) abre sem 404, em PRAZO_ENCERRADO
+        mvc.perform(comToken(get("/v1/pessoas/95/vacinas/7"), 94)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusAba").value("ATRASADA"))
+                .andExpect(jsonPath("$.subsecaoAtrasada").value("PRAZO_ENCERRADO"))
+                .andExpect(jsonPath("$.podeVerOndeTomar").value(false))
+                .andExpect(jsonPath("$.protocolo.length()").value(2));
+    }
+
+    @Test
+    void unidadesSomenteDisponiveisERegistrosFiltradosPorVacina() throws Exception {
+        mvc.perform(get("/v1/unidades?vacina=4&somenteDisponiveis=true&lat=-8.12&lng=-34.93"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidades[*].disponibilidadeVacina").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("DISPONIVEL"))))
+                .andExpect(jsonPath("$.unidades[0].telefone").isNotEmpty())
+                .andExpect(jsonPath("$.unidades[0].horarioFuncionamento").isNotEmpty());
+        mvc.perform(comToken(get("/v1/pessoas/5/registros?vacina=5"), 4))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registros.length()").value(1))
+                .andExpect(jsonPath("$.registros[0].vacina.id").value(5));
     }
 
     @Test
@@ -155,6 +174,140 @@ class ApiTest extends BancoDeTeste {
                 .andExpect(header().string("Access-Control-Allow-Origin", front));
         mvc.perform(comToken(get("/v1/eu"), 4).header("Origin", front)).andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", front));
+    }
+
+    static MockHttpServletRequestBuilder comTokenEmail(MockHttpServletRequestBuilder req, int idPessoa) {
+        return req.header("Authorization", "Bearer dev-pessoa-" + idPessoa + "-email");
+    }
+
+    @Test
+    void euDizOMetodoDeLoginEOsRecursos() throws Exception {
+        mvc.perform(comToken(get("/v1/eu"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.metodoLogin").value("GOV_BR"))
+                .andExpect(jsonPath("$.recursos.carteiraPdf").value(true))
+                .andExpect(jsonPath("$.recursos.ouvidoria").value(true));
+        mvc.perform(comTokenEmail(get("/v1/eu"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoa.id").value(4))
+                .andExpect(jsonPath("$.metodoLogin").value("EMAIL"))
+                .andExpect(jsonPath("$.recursos.carteiraPdf").value(false))
+                .andExpect(jsonPath("$.recursos.ouvidoria").value(false));
+    }
+
+    @Test
+    void carteiraPdfEOuvidoriaSoComLoginGovBr() throws Exception {
+        for (String caminho : new String[] {"/v1/ouvidoria", "/v1/pessoas/4/carteira.pdf", "/v1/pessoas/5/carteira.pdf"}) {
+            mvc.perform(comTokenEmail(get(caminho), 4)).andExpect(status().isForbidden())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                    .andExpect(jsonPath("$.type").value("/problemas/login-gov-br-necessario"))
+                    .andExpect(jsonPath("$.title").value("Login gov.br necessário"));
+            mvc.perform(get(caminho)).andExpect(status().isUnauthorized());
+        }
+        // O teste de login vem antes do acesso: com e-mail, até pessoa sem vínculo dá o mesmo 403
+        mvc.perform(comTokenEmail(get("/v1/pessoas/48/carteira.pdf"), 4)).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.type").value("/problemas/login-gov-br-necessario"));
+        mvc.perform(comToken(get("/v1/ouvidoria"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.canais[0].telefone").value("0800 281 1520"))
+                .andExpect(jsonPath("$.canais[1].whatsapp").value("(81) 9117-1407"))
+                .andExpect(jsonPath("$.canais[2].telefone").value("136"));
+    }
+
+    @Test
+    void carteiraPdfDoResponsavelEDoDependente() throws Exception {
+        for (int id : new int[] {4, 5}) {
+            byte[] pdf = mvc.perform(comToken(get("/v1/pessoas/" + id + "/carteira.pdf"), 4))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("application/pdf"))
+                    .andExpect(header().string("Content-Disposition",
+                            "attachment; filename=\"carteira-vacinacao-" + id + ".pdf\""))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andReturn().getResponse().getContentAsByteArray();
+            String texto = textoDoPdf(pdf);
+            Pessoa p = pessoas.findById(id).orElseThrow();
+            assertThat(texto).contains("Carteira de vacinação", p.getNome(), "Meu SUS Digital", "sintéticos");
+            if (p.getCpf() != null) {
+                assertThat(texto).doesNotContain(p.getCpf());
+            }
+            if (p.getCns() != null) {
+                assertThat(texto).doesNotContain(p.getCns());
+            }
+            assertThat(texto).doesNotContainPattern("\\b(CPF|CNS|CID)\\b");
+        }
+        // Sem vínculo com a pessoa: o mesmo 403 de sempre
+        mvc.perform(comToken(get("/v1/pessoas/48/carteira.pdf"), 4)).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.title").value("Sem acesso"));
+        mvc.perform(comToken(get("/v1/pessoas/4/carteira.pdf"), 5)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void carteiraPdfTrazAsDosesRegistradas() throws Exception {
+        String texto = textoDoPdf(mvc.perform(comToken(get("/v1/pessoas/5/carteira.pdf"), 4))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray());
+        String registros = mvc.perform(comToken(get("/v1/pessoas/5/registros"), 4))
+                .andReturn().getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.JsonNode lista = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(registros).path("registros");
+        assertThat(lista.size()).isPositive();
+        for (com.fasterxml.jackson.databind.JsonNode r : lista) {
+            java.time.LocalDate data = java.time.LocalDate.parse(r.path("dataAplicacao").asText());
+            assertThat(texto).contains(data.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            if (!r.path("lote").isNull()) {
+                assertThat(texto).contains(r.path("lote").asText());
+            }
+        }
+    }
+
+    static String textoDoPdf(byte[] pdf) throws java.io.IOException {
+        assertThat(new String(pdf, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            return new org.apache.pdfbox.text.PDFTextStripper().getText(doc);
+        }
+    }
+
+    @Test
+    void modoVisitanteAbreSoDadoPublico() throws Exception {
+        // Sem token: unidades, vacinas, campanhas e a lista da demonstração
+        for (String caminho : new String[] {"/v1/unidades", "/v1/unidades?vacina=4&lat=-8.12&lng=-34.93",
+                "/v1/unidades/9", "/v1/vacinas", "/v1/campanhas", "/v1/campanhas?vigentes=true", "/v1/demo/pessoas"}) {
+            mvc.perform(get(caminho)).andExpect(status().isOk());
+        }
+        // Dado de pessoa continua exigindo login
+        for (String caminho : new String[] {"/v1/campanhas?idPessoa=5", "/v1/eu", "/v1/eu/lembretes",
+                "/v1/pessoas/5/situacao-vacinal", "/v1/pessoas/5/registros", "/v1/pessoas/5/carteira.pdf",
+                "/v1/ouvidoria"}) {
+            mvc.perform(get(caminho)).andExpect(status().isUnauthorized())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        }
+        // Com token inválido, mesmo rota pública dá 401; com token válido, idPessoa funciona
+        mvc.perform(get("/v1/unidades").header("Authorization", "Bearer token-qualquer"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(comToken(get("/v1/campanhas?idPessoa=5"), 4)).andExpect(status().isOk());
+        // Visitante não escreve nada
+        assertThat(mvc.perform(post("/v1/unidades")).andReturn().getResponse().getStatus()).isIn(401, 404, 405);
+    }
+
+    @Test
+    void entrarComoListaPessoasSemCpfNemCns() throws Exception {
+        String corpo = mvc.perform(get("/v1/demo/pessoas")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas.length()").value(8))
+                .andExpect(jsonPath("$.pessoas[0].id").value(4))
+                .andExpect(jsonPath("$.pessoas[0].tokenGovBr").value("dev-pessoa-4"))
+                .andExpect(jsonPath("$.pessoas[0].tokenEmail").value("dev-pessoa-4-email"))
+                .andExpect(jsonPath("$.pessoas[0].dependentes[0].id").value(5))
+                .andExpect(jsonPath("$.pessoas[*].cpf").isEmpty())
+                .andExpect(jsonPath("$.pessoas[*].cns").isEmpty())
+                .andReturn().getResponse().getContentAsString();
+        for (int id : new int[] {1, 4, 5, 26, 46, 48, 94, 95, 110, 111, 115, 116, 402}) {
+            Pessoa p = pessoas.findById(id).orElseThrow();
+            if (p.getCpf() != null) {
+                assertThat(corpo).doesNotContain(p.getCpf());
+            }
+            if (p.getCns() != null) {
+                assertThat(corpo).doesNotContain(p.getCns());
+            }
+        }
+        // O token da lista funciona
+        mvc.perform(get("/v1/eu").header("Authorization", "Bearer dev-pessoa-46")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.dependentes[*].pessoa.id").value(org.hamcrest.Matchers.hasItem(48)));
     }
 
     @Test

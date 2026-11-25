@@ -2,6 +2,69 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.9.0 · 25/11/2026 · visão por vacina, acompanhamento (SCR-06), dT 10 anos, HepB ≥ 7 anos e corte LGPD 18 anos (D24)
+
+> Decisão D24 (25/11/2026): adequação do contrato e do backend às telas da especificação funcional (`SCR-01`–`SCR-12`) e às normas oficiais do Ministério da Saúde (`IN-2026`, `MNP-2024`, `PNI-REG`, `PT-5.663`) e LGPD/ECA (art. 14, Enunciado CD/ANPD nº 1/2023).
+
+**Mudança compatível (aditiva):** nenhum campo, enum ou endpoint da `0.8.0` foi removido.
+
+### O que mudou
+- **9 correções internas da `0.8.0`:** versão na descrição (`0.9.0`), remoção de linha órfã em `CodigoAviso`, remoção do exemplo desatualizado da MenACWY em `SituacaoDose`, `idade_recomendada_dias` → `idade_recomendada_periodo` em `DosePrevista`, adição de `404` em `carteira.pdf`/`campanhas`/`eu`, alinhamento de `security`/`401` em `/v1/demo/pessoas`, adição de `required` em `UnidadeNoMapa` e remoção de `[provisório]` em `proximaDose` (`[MNP-2024]`, p. 140–141).
+- **`Unidade` / `GET /v1/unidades`:** `telefone` e `horarioFuncionamento` promovidos para o schema base `Unidade` (passam a vir também em `UnidadeNoMapa`, evitando N+1 em `SCR-07`). Novo query param opcional `somenteDisponiveis` (`boolean`, default `false`) para filtrar unidades com a vacina `DISPONIVEL` (`RULE-05`), mantendo `avisoPortaAberta`.
+- **`SituacaoVacinal`:** novos campos aditivos `dataUltimaSincronizacao` (de `importacao_dados`, para `SCR-04`), `resumoVacinas` (contadores por vacina, **sem** contar `PRAZO_ENCERRADO`), `vacinaDestaqueHome` (`RULE-04`: vacina atrasada em `AINDA_POSSO_TOMAR` mais antiga, ou `null`) e `vacinas[]` (cards `CMP-01`, trilha `CMP-02`, `tipoEsquema` `DOSES`/`PERIODICA`, `statusAba`, `subsecaoAtrasada`). `DosePrevista` e `DoseForaDaIdade` ganham `idEsquema`, e `RegistroResumo` ganha `unidade`.
+- **Novo `GET /v1/pessoas/{idPessoa}/vacinas/{idVacina}` (`DetalheVacina`):** linha do tempo consolidada da vacina (`SCR-06`), doenças prevenidas, registros e avisos — funciona inclusive para vacinas em `PRAZO_ENCERRADO` (sem `404`).
+- **`GET /v1/pessoas/{idPessoa}/registros`:** novo query param opcional `?vacina=` (para `SCR-11`, incluindo equivalentes como `SCRV`).
+- **Regras oficiais (`[IN-2026]` / D24):**
+  - **dT:** reforço de rotina ajustado de 5 → **10 anos** (`P10Y`, `tipoEsquema: PERIODICA`, `"Reforço a cada 10 anos"`); 5 anos fica apenas para exposição a risco na avaliação da UBS.
+  - **Hepatite B ≥ 7 anos:** incluída no cálculo (`P7Y`, 3 doses, dispensada se Penta D3 consta) como **`PODE_TOMAR`** (nunca `ATRASADA`).
+  - **Influenza:** mantida fora de `SituacaoVacinal` (Opção A) até a SESAU definir o período da temporada; segue em Campanhas e Histórico.
+- **LGPD/ECA para dependentes (D24):** vínculos em `pessoa_responsavel` passam a encerrar o acesso automaticamente quando o dependente completa **18 anos** (salvo parentesco `CURADOR`/`TUTOR`). Referência oficial do MS para dependentes/dados sensíveis: `gov.br` Prata/Ouro + 2FA.
+- `info.version` 0.8.0 → 0.9.0.
+
+## 0.8.0 · 25/11/2026 · modo visitante e tela "Entrar como" (demonstração)
+
+> Pedido da Duda (25/11/2026), para simular a entrada do Conecta como no protótipo do hackathon: "Entrar como" com pessoas fictícias e "Continuar sem entrar".
+
+**Mudança compatível** (endpoints que exigiam token passam a aceitar sem; um endpoint novo só em dev).
+
+- **Modo visitante:** `GET /v1/unidades`, `GET /v1/unidades/{idUnidade}`, `GET /v1/vacinas` e `GET /v1/campanhas` (sem `idPessoa`) respondem sem token. Com token, ele é conferido (inválido = 401). Todo dado de pessoa continua exigindo login.
+- **Novo `GET /v1/demo/pessoas`** (`listarPessoasDemo`), **só nos perfis dev e test**, sem token: 8 pessoas sintéticas com o caso de cada uma e os tokens de teste `tokenGovBr` e `tokenEmail`. Sem CPF, CNS ou dado de saúde. Quem aparece e o resumo vêm de `minha-vacinacao.demo.pessoas` no `application-dev.yml`.
+- Decisão registrada como **D23** no [08](08-decisoes.md).
+- `info.version` 0.7.1 → 0.8.0.
+
+## 0.7.1 · 25/11/2026 · correções pela Instrução Normativa 2026 e horário das unidades
+
+> Pesquisa no [18](18-pesquisa-regras-ministerio.md); aplicadas com o ok da Duda (D19: a fonte oficial vence).
+
+**Formato igual** (nenhum campo, schema ou enum mudou). Mudam valores calculados e um texto.
+
+- **`ATRASO_REGISTRO`:** "Uma vacina tomada pode levar até **15** dias para aparecer aqui." (era 14). Prazo da Portaria GM/MS nº 5.663/2024.
+- **Tríplice viral D2** sai da lista (vai para `dosesForaDaIdade`) aos 30 anos (era 60).
+- **MenACWY dos 12 meses:** não espera mais a Meningo C D2 ("independente do histórico", IN 2026). Limite de idade de 5 anos (era 15). No exemplo `criancaComDoseForaDaIdade` (pessoa 95), a dose 21 passa de `AINDA_NAO_DISPONIVEL` com `DOSE_ANTERIOR_SEM_REGISTRO` para `ATRASADA`.
+- **`horarioFuncionamento`** em `GET /v1/unidades/{idUnidade}` deixa de vir sempre `null` e de ser [provisório]: na base sintética, horário fixo por tipo de unidade, no formato da base aberta do Recife ("Segunda à sexta das 08:00 às 17:00"). Com unidades reais, a fonte é o campo `horario` da base "Rede de atenção à saúde no Recife", pelo CNES.
+- `info.version` 0.7.0 → 0.7.1.
+
+## 0.7.0 · 25/11/2026 · carteira em PDF e ouvidoria só com login gov.br (D22)
+
+> Decisão D22 (Duda, 25/11/2026): o canal de ouvidoria (RF23) e a carteira de vacinação em PDF (RF09) entram no piloto, **só para quem entrou no Conecta com login gov.br**. Quem entrou com e-mail comum não tem acesso. Ver [08](08-decisoes.md).
+
+**Mudança compatível para quem lê**, com dois endpoints novos. `Eu` ganhou dois campos obrigatórios (`metodoLogin`, `recursos`); quem ignora campos novos não quebra. Sobe a versão menor porque há endpoints novos e um tipo de erro novo.
+
+### O que mudou
+
+- `GET /v1/eu`: novos campos `metodoLogin` (`GOV_BR`, `EMAIL`, `OUTRO`) e `recursos` (`carteiraPdf`, `ouvidoria`, booleanos). Hoje os dois recursos são `true` só com `GOV_BR`. O front decide o que mostrar por `recursos`. Novo exemplo `loginComEmail`.
+- **Novo** `GET /v1/pessoas/{idPessoa}/carteira.pdf` (`baixarCarteiraPdf`): PDF gerado na hora com nome, data de nascimento, doses registradas (vacina, dose, data, lote, fabricante, unidade, transcrição) e data de emissão. Sem CPF, CNS, CID ou dado do profissional. Diz que não substitui o documento oficial (Meu SUS Digital). Cabeçalhos `Content-Disposition: attachment; filename="carteira-vacinacao-{idPessoa}.pdf"` e `Cache-Control: no-store`.
+- **Novo** `GET /v1/ouvidoria` (`obterOuvidoria`), schema `Ouvidoria` (`orientacao`, `canais[]`, `avisos`) e `CanalOuvidoria` (`nome`, `descricao`, `telefone`, `whatsapp`, `site`). Canais confirmados em 25/11/2026: Ouvidoria Municipal de Saúde do Recife (0800 281 1520), ConectaZap no WhatsApp ((81) 9117-1407) e OuvSUS (136).
+- **Novo erro** `403` com `type` `/problemas/login-gov-br-necessario` (exemplo `LoginGovBrNecessario`) nos dois endpoints novos, para quem não entrou com gov.br. O teste de login vem antes do teste de acesso à pessoa.
+- Token de teste: `dev-pessoa-<id>` = gov.br; `dev-pessoa-<id>-email` = e-mail. O token real precisa informar o método de login **[pendente: SSO da Emprel]**.
+- Nova tag "Só com login gov.br". `info.version` 0.6.1 → 0.7.0.
+
+### Em aberto
+
+- Nível de conta gov.br exigido (bronze, prata, ouro).
+- Como o token do Conecta informa o método de login (Emprel).
+- Alinhamento da carteira com o Meu SUS Digital.
+
 ## 0.6.1 · 25/11/2026 · janela de "em breve" de 7 dias (D21)
 
 > Decisão do Adan (25/11/2026), complemento da D21: a janela de `DOSE_DISPONIVEL_EM_BREVE` passa de 30 para **7 dias** (inclusive). Responde a pergunta 18.

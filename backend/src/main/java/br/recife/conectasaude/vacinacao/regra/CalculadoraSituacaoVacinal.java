@@ -39,7 +39,8 @@ import java.util.Optional;
  * Idades e intervalos são períodos de calendário ("1M15D", "6 meses", "4 anos"), como nas fontes.
  * Dose anterior: a oficial de outra vacina, quando a planilha manda (ex.: Penta D3 antes da DTP R1),
  * ou a de número anterior no mesmo esquema.
- * Esquema interrompido continua de onde parou [MNP]: o intervalo conta da dose anterior registrada.
+ * Esquema interrompido continua de onde parou ("não se reinicia o esquema vacinal", [MNP-2024], p. 119):
+ * o intervalo conta da dose anterior registrada.
  *
  * <p>Doses sem idade recomendada no calendário (influenza anual, hepatite B a partir dos 7 anos)
  * ficam fora do cálculo até a regra ser definida (pergunta 10 do changelog do contrato).
@@ -62,10 +63,20 @@ public final class CalculadoraSituacaoVacinal {
         List<DoseCalculada> doses = new ArrayList<>();
         List<DoseCalendario> foraDaIdade = new ArrayList<>();
         for (DoseCalendario dose : calendario) {
-            if (dose.idadeRecomendada() == null) {
-                continue;
-            }
             RegistroParaRegra registro = cumpridas.get(dose.idDose());
+            if (dose.idadeRecomendada() == null) {
+                if (!dose.calcularSemIdadeRecomendada()) {
+                    continue;
+                }
+                if (registro == null) {
+                    if (dose.idadeMinimaEsquema() != null && hoje.isBefore(nascimento.plus(dose.idadeMinimaEsquema()))) {
+                        continue;
+                    }
+                    if (dose.idsDoseDispensadora().stream().anyMatch(cumpridas::containsKey)) {
+                        continue;
+                    }
+                }
+            }
             // Passo 2 [PNI-REG]: sem registro e já no limite da idade máxima oficial da dose
             // ("< 5A": fora a partir do 5º aniversário), contado no calendário.
             if (registro == null && dose.idadeLimite() != null
@@ -76,7 +87,8 @@ public final class CalculadoraSituacaoVacinal {
             doses.add(calcularDose(dose, nascimento, hoje, registro, cumpridas));
         }
 
-        Comparator<DoseCalculada> porDataEId = Comparator.comparing(DoseCalculada::dataRecomendada)
+        Comparator<DoseCalculada> porDataEId = Comparator
+                .comparing(DoseCalculada::dataRecomendada, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparingInt(d -> d.dose().idDose());
         doses.sort(porDataEId);
         foraDaIdade.sort(Comparator.comparingInt(DoseCalendario::idDose));
@@ -105,7 +117,7 @@ public final class CalculadoraSituacaoVacinal {
 
     private DoseCalculada calcularDose(DoseCalendario dose, LocalDate nascimento, LocalDate hoje,
             RegistroParaRegra registro, Map<Integer, RegistroParaRegra> cumpridas) {
-        LocalDate recomendada = nascimento.plus(dose.idadeRecomendada());
+        LocalDate recomendada = dose.idadeRecomendada() == null ? null : nascimento.plus(dose.idadeRecomendada());
         // [PNI-REG] dose anterior oficial: a primeira candidata que tem registro.
         List<DoseCalendario> anteriores = anteriores(dose);
         RegistroParaRegra registroAnterior = anteriores.stream()
@@ -113,7 +125,9 @@ public final class CalculadoraSituacaoVacinal {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-        boolean faltaAnterior = !anteriores.isEmpty() && registroAnterior == null;
+        // [IN-2026] Algumas doses não exigem a anterior oficial (ex.: men ACWY aos 12 meses,
+        // "independente do histórico"): sem registro dela, a dose segue só pela idade.
+        boolean faltaAnterior = !anteriores.isEmpty() && registroAnterior == null && !dose.anteriorOpcional();
 
         // [PNI-REG] disponível = a mais tarde entre a idade mínima e o intervalo mínimo após a anterior,
         // com meses e anos de calendário.
@@ -149,11 +163,13 @@ public final class CalculadoraSituacaoVacinal {
         }
         // Passo 5 [PNI-REG]: intervalo mínimo depois da dose anterior ainda não cumprido.
         if (hoje.isBefore(disponivel)) {
-            List<Aviso> orientacoes = hoje.isAfter(recomendada) ? List.of(Aviso.ATUALIZAR_CADERNETA) : List.of();
+            List<Aviso> orientacoes = (recomendada != null && hoje.isAfter(recomendada))
+                    ? List.of(Aviso.ATUALIZAR_CADERNETA) : List.of();
             return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, disponivel, null, orientacoes);
         }
-        // Passos 6 e 7 [CNV-2026]: dose liberada; atrasada depois da idade recomendada.
-        Situacao situacao = hoje.isAfter(recomendada) ? Situacao.ATRASADA : Situacao.PODE_TOMAR;
+        // Passos 6 e 7 [CNV-2026]: dose liberada; atrasada apenas quando há idade recomendada e já passou.
+        // Doses sem idade recomendada (ex.: Hepatite B >= 7 anos, D24) ficam sempre PODE_TOMAR (nunca ATRASADA).
+        Situacao situacao = (recomendada != null && hoje.isAfter(recomendada)) ? Situacao.ATRASADA : Situacao.PODE_TOMAR;
         return new DoseCalculada(dose, situacao, recomendada, disponivel, null, List.of());
     }
 
@@ -204,7 +220,8 @@ public final class CalculadoraSituacaoVacinal {
                 }
             } else if (r.idVacina() != null) {
                 calendario.stream()
-                        .filter(d -> d.idVacina() == r.idVacina() && d.idadeRecomendada() != null)
+                        .filter(d -> d.idVacina() == r.idVacina()
+                                && (d.idadeRecomendada() != null || d.calcularSemIdadeRecomendada()))
                         .filter(d -> !cumpridas.containsKey(d.idDose()))
                         .findFirst()
                         .ifPresent(d -> cumpridas.put(d.idDose(), r));

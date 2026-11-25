@@ -22,7 +22,7 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 | RF06 | Mostrar um **painel-resumo** (ex.: "3 atrasadas, 12 disponíveis") para a pessoa entender sua situação de relance. Elogiado pela SESAU | Must |
 | RF07 | Mostrar a próxima dose prevista e quando ela fica disponível | Must |
 | RF08 | Exibir um **aviso de cartão desatualizado**: "Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar" com link para o mapa | Must |
-| RF09 | Disponibilizar a carteira em PDF, só para usuário autenticado | Could (depende de alinhamento com o Meu SUS Digital) |
+| RF09 | Disponibilizar a carteira em PDF, só para quem entrou com **login gov.br** (D22) | Must no piloto (D22); alinhamento com o Meu SUS Digital em aberto |
 
 ### Mapa de unidades
 
@@ -51,7 +51,7 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 | RF20 | Enviar notificações pelo app; WhatsApp/SMS como canal adicional, conforme integração disponível | Must (app) · Could (WhatsApp) |
 | RF21 | Guardar o histórico de notificações: destinatário, canal, data e situação do envio | Should |
 | RF22 | Exibir conteúdo educativo sobre dengue, zika, chikungunya, febre amarela e influenza (sintomas, transmissão, prevenção) | Should |
-| RF23 | Exibir canal de ouvidoria caso a unidade se recuse a fazer a transcrição | Could (ideia levantada na reunião; tema sensível) |
+| RF23 | Exibir canal de ouvidoria caso a unidade se recuse a fazer a transcrição, só para quem entrou com **login gov.br** (D22) | Must no piloto (D22); canais do Recife a confirmar com a SESAU |
 
 ### Integração e rastreabilidade
 
@@ -86,7 +86,7 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 | RN06 | A transcrição do cartão físico é feita por médico, enfermeiro ou técnico; basta foto ou cartão com vacina, dose, data e lote |
 | RN07 | A base de referência para a situação vacinal do cidadão deve consolidar **todas as fontes** (RNDS). Usar só o PEC e-SUS marcaria como atrasado quem tomou a dose na média/alta complexidade |
 | RN08 | Um lembrete sempre se refere a uma dose prevista **ou** a uma campanha |
-| RN09 | Download do PDF da carteira só para usuário autenticado (regra a validar) |
+| RN09 | Download do PDF da carteira e acesso à ouvidoria só para quem entrou com **login gov.br**; login por e-mail não tem acesso (D22). Nível da conta gov.br a definir |
 
 ## Telas do protótipo do cidadão (referência)
 

@@ -44,7 +44,11 @@ class ContratoTest extends BancoDeTeste {
     }
 
     JsonNode chamar(String caminho, int idPessoaLogada) throws Exception {
-        String corpo = mvc.perform(get(caminho).header("Authorization", "Bearer dev-pessoa-" + idPessoaLogada))
+        return chamarComToken(caminho, "dev-pessoa-" + idPessoaLogada);
+    }
+
+    JsonNode chamarComToken(String caminho, String token) throws Exception {
+        String corpo = mvc.perform(get(caminho).header("Authorization", "Bearer " + token))
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(corpo);
     }
@@ -96,12 +100,21 @@ class ContratoTest extends BancoDeTeste {
             JsonNode real = chamar("/v1/pessoas/" + caso[1] + "/situacao-vacinal", (int) caso[2]);
 
             assertConformeSchema(real, "SituacaoVacinal");
-            for (String campo : List.of("pessoa", "dataReferencia", "dataUltimaAtualizacao", "proximaDose", "avisos")) {
+            for (String campo : List.of("pessoa", "dataReferencia", "dataUltimaAtualizacao", "dataUltimaSincronizacao",
+                    "proximaDose", "avisos")) {
                 assertThat(real.path(campo)).as("%s.%s", caso[0], campo).isEqualTo(esperado.path(campo));
             }
             assertContemItens(real.path("doses"), esperado.path("doses"), "idDose");
             assertContemItens(real.path("dosesForaDaIdade"), esperado.path("dosesForaDaIdade"), "idDose");
+            assertContemItens(real.path("vacinas"), esperado.path("vacinas"), "vacina");
         }
+    }
+
+    @Test
+    void acompanhamentoDaVacinaBateComOExemplo() throws Exception {
+        JsonNode real = chamar("/v1/pessoas/5/vacinas/5", 4);
+        assertConformeSchema(real, "DetalheVacina");
+        assertThat(real).isEqualTo(exemplo("/v1/pessoas/{idPessoa}/vacinas/{idVacina}", "rotavirusHeitor"));
     }
 
     @Test
@@ -131,6 +144,41 @@ class ContratoTest extends BancoDeTeste {
         JsonNode real = chamar("/v1/eu", 4);
         assertConformeSchema(real, "Eu");
         assertThat(real).isEqualTo(exemplo("/v1/eu", "responsavelComUmFilho"));
+
+        // D22: a mesma pessoa logada com e-mail não tem carteira em PDF nem ouvidoria
+        JsonNode comEmail = chamarComToken("/v1/eu", "dev-pessoa-4-email");
+        assertConformeSchema(comEmail, "Eu");
+        JsonNode exEmail = exemplo("/v1/eu", "loginComEmail");
+        assertThat(exEmail.isMissingNode()).as("exemplo loginComEmail no contrato").isFalse();
+        assertThat(comEmail).isEqualTo(exEmail);
+    }
+
+    @Test
+    void entrarComoBateComOExemplo() throws Exception {
+        String corpo = mvc.perform(get("/v1/demo/pessoas")).andReturn().getResponse().getContentAsString();
+        JsonNode real = json.readTree(corpo);
+        assertConformeSchema(real, "ListaPessoasDemo");
+        assertThat(real).isEqualTo(exemplo("/v1/demo/pessoas", "padrao"));
+    }
+
+    @Test
+    void ouvidoriaBateComOExemplo() throws Exception {
+        JsonNode real = chamar("/v1/ouvidoria", 4);
+        assertConformeSchema(real, "Ouvidoria");
+        assertThat(real).isEqualTo(exemplo("/v1/ouvidoria", "padrao"));
+    }
+
+    /** O 403 de login gov.br é igual ao exemplo do contrato (D22). */
+    @Test
+    void erroDeLoginGovBrBateComOExemplo() throws Exception {
+        JsonNode esperado = contrato.path("components").path("examples").path("LoginGovBrNecessario").path("value");
+        assertThat(esperado.isMissingNode()).isFalse();
+        for (String caminho : List.of("/v1/ouvidoria", "/v1/pessoas/4/carteira.pdf")) {
+            ObjectNode real = (ObjectNode) chamarComToken(caminho, "dev-pessoa-4-email");
+            assertConformeSchema(real, "Problema");
+            real.remove("instance"); // o Spring acrescenta o caminho chamado; o exemplo não traz
+            assertThat(real).as(caminho).isEqualTo(esperado);
+        }
     }
 
     /** Os exemplos de lembretes são listas completas: a resposta inteira tem que ser igual. */
@@ -165,7 +213,7 @@ class ContratoTest extends BancoDeTeste {
         JsonNode exUnidade = exemplo("/v1/unidades/{idUnidade}", "ibura");
         assertContemItens(unidade.path("vacinas"), exUnidade.path("vacinas"), "vacina");
         assertThat(unidade.path("cnes")).isEqualTo(exUnidade.path("cnes"));
-        assertThat(unidade.path("horarioFuncionamento").isNull()).isTrue();
+        assertThat(unidade.path("horarioFuncionamento")).isEqualTo(exUnidade.path("horarioFuncionamento"));
 
 
         JsonNode vacinas = chamar("/v1/vacinas", 4);

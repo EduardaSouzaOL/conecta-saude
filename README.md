@@ -93,6 +93,13 @@ A pasta `frontend/` ainda não existe: veja [Status e próximos passos](#status-
 
    A pessoa 4 (Valentina) vê os próprios dados e os do filho Heitor (pessoa 5). Outra pessoa devolve **403**; sem token, **401**.
 
+   `dev-pessoa-<id>` simula login com **gov.br**; `dev-pessoa-<id>-email`, login com **e-mail**. A carteira em PDF e a ouvidoria só funcionam com gov.br (D22):
+
+   ```bash
+   curl -H "Authorization: Bearer dev-pessoa-4" -o carteira.pdf http://localhost:8080/v1/pessoas/5/carteira.pdf
+   curl -H "Authorization: Bearer dev-pessoa-4-email" http://localhost:8080/v1/ouvidoria   # 403
+   ```
+
 ### Testes
 
 ```bash
@@ -147,7 +154,7 @@ A situação de cada dose segue **fielmente as fontes oficiais** (decisão D19):
 
 Cada idade e intervalo está no banco, com a fonte citada. A regra completa, as escolhas de aplicação e os pontos que ainda precisam ser confirmados com a SESAU estão em [docs/16](docs/16-regra-situacao-vacinal.md).
 
-Enquanto a SESAU não confirma tudo, o app sempre mostra os avisos "Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade." e "Uma vacina tomada pode levar até 14 dias para aparecer aqui.".
+Enquanto a SESAU não confirma tudo, o app sempre mostra os avisos "Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade." e "Uma vacina tomada pode levar até 15 dias para aparecer aqui.".
 
 ## Agentes do Claude Code
 
