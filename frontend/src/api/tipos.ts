@@ -1,0 +1,23 @@
+import type { components } from './esquema';
+
+type S = components['schemas'];
+export type Eu = S['Eu'];
+export type PessoaResumo = S['PessoaResumo'];
+export type SituacaoVacinal = S['SituacaoVacinal'];
+export type DosePrevista = S['DosePrevista'];
+export type DoseForaDaIdade = S['DoseForaDaIdade'];
+export type SituacaoDose = S['SituacaoDose'];
+export type Aviso = S['Aviso'];
+export type DetalheDose = S['DetalheDose'];
+export type RegistroVacinacao = S['RegistroVacinacao'];
+export type ListaRegistros = S['ListaRegistros'];
+export type ListaLembretes = S['ListaLembretes'];
+export type Lembrete = S['Lembrete'];
+export type ListaUnidades = S['ListaUnidades'];
+export type UnidadeNoMapa = S['UnidadeNoMapa'];
+export type DetalheUnidade = S['DetalheUnidade'];
+export type Disponibilidade = S['Disponibilidade'];
+export type Campanha = S['Campanha'];
+export type ListaCampanhas = S['ListaCampanhas'];
+export type Vacina = S['Vacina'];
+export type ListaVacinas = S['ListaVacinas'];
