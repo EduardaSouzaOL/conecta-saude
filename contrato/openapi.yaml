@@ -1020,8 +1020,9 @@ paths:
 
         - **Só com login gov.br:** quem entrou com e-mail ou outra forma recebe **403**
           `/problemas/login-gov-br-necessario` (D22).
-        - **[provisório]** Por enquanto só a Ouvidoria do SUS (Disque Saúde 136). Os canais da
-          ouvidoria municipal do Recife serão confirmados com a SESAU.
+        - Canais (confirmados em 25/11/2026): Ouvidoria Municipal de Saúde do Recife (0800 281 1520),
+          WhatsApp ConectaZap ((81) 9117-1407, opção Atendimento e depois Ouvidoria SUS) e
+          Ouvidoria-Geral do SUS (OuvSUS, 136).
         - O app **não registra** a manifestação: só mostra os canais (somente leitura, RNF05).
       responses:
         '200':
@@ -1032,20 +1033,29 @@ paths:
                 $ref: '#/components/schemas/Ouvidoria'
               examples:
                 padrao:
-                  summary: Canais atuais (provisório)
+                  summary: Canais da ouvidoria
                   value:
                     orientacao: >-
                       Se a unidade de saúde se recusar a atualizar a sua caderneta, ou se você tiver
                       outro problema no atendimento de vacinação, você pode registrar uma
                       manifestação na ouvidoria.
                     canais:
-                      - nome: Ouvidoria do SUS (Disque Saúde)
+                      - nome: Ouvidoria Municipal de Saúde do Recife
+                        descricao: Para solicitação ou reclamação. A ligação é gratuita.
+                        telefone: 0800 281 1520
+                        whatsapp: null
+                        site: null
+                      - nome: ConectaZap (WhatsApp da Prefeitura do Recife)
+                        descricao: Escolha "Atendimento" e depois "Ouvidoria SUS".
+                        telefone: null
+                        whatsapp: (81) 9117-1407
+                        site: null
+                      - nome: Ouvidoria-Geral do SUS (OuvSUS)
                         descricao: Atendimento do Ministério da Saúde. A ligação é gratuita.
                         telefone: '136'
+                        whatsapp: null
                         site: null
-                    avisos:
-                      - codigo: OUVIDORIA_EM_ALINHAMENTO
-                        mensagem: Os canais da ouvidoria da Prefeitura do Recife ainda estão em alinhamento com a Secretaria de Saúde.
+                    avisos: []
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -1236,7 +1246,7 @@ components:
 
     CanalOuvidoria:
       type: object
-      required: [nome, descricao, telefone, site]
+      required: [nome, descricao, telefone, whatsapp, site]
       properties:
         nome:
           type: string
@@ -1244,6 +1254,10 @@ components:
           type: string
         telefone:
           type: [string, 'null']
+          description: Número para ligar, como deve aparecer na tela (o front monta o `tel:` só com os dígitos)
+        whatsapp:
+          type: [string, 'null']
+          description: Número de WhatsApp, como deve aparecer na tela (o front abre o WhatsApp com DDI 55 + os dígitos)
         site:
           type: [string, 'null']
           format: uri
@@ -1448,8 +1462,7 @@ components:
           anterior ainda não foi cumprido.
 
         Só em `GET /v1/ouvidoria`:
-        - `OUVIDORIA_EM_ALINHAMENTO`: os canais da ouvidoria do Recife ainda estão em alinhamento com a SESAU (D22).
-      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE, DOSE_ANTERIOR_SEM_REGISTRO, ATUALIZAR_CADERNETA, OUVIDORIA_EM_ALINHAMENTO]
+      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE, DOSE_ANTERIOR_SEM_REGISTRO, ATUALIZAR_CADERNETA]
 
     Aviso:
       type: object

@@ -58,7 +58,6 @@ Rótulos finais e ícones: **[aguarda Figma]**. Proibido em qualquer lugar: **"n
 | `DOSE_FORA_DA_IDADE` | `avisos` | Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer. |
 | `DOSE_ANTERIOR_SEM_REGISTRO` | `orientacoes` da dose | Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde. |
 | `ATUALIZAR_CADERNETA` | `orientacoes` da dose | Procure uma unidade de saúde para atualizar sua caderneta. |
-| `OUVIDORIA_EM_ALINHAMENTO` | `avisos` da ouvidoria | Os canais da ouvidoria da Prefeitura do Recife ainda estão em alinhamento com a Secretaria de Saúde. |
 
 Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde."
 
@@ -152,11 +151,11 @@ Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qua
 - [ ] Só para quem entrou com **gov.br**: a entrada "Ouvidoria" aparece quando `recursos.ouvidoria` é `true`. Onde fica a entrada (menu, fim da tela de situação, detalhe da dose com `ATUALIZAR_CADERNETA`): **[aguarda Figma]**.
 - [ ] Com `recursos.ouvidoria` `false` (entrou com e-mail), a tela **não abre**. Mostra a mesma mensagem: "Para usar este serviço, entre no Conecta Recife com a sua conta gov.br."
 - [ ] Mostra `orientacao`, cada canal de `canais` (`nome`, `descricao`) e os `avisos`, com o texto **como veio**.
-- [ ] Canal com `telefone` tem ação de **ligar** (`tel:`); canal com `site` abre o link fora do app. Campo `null` não aparece.
+- [ ] Canal com `telefone` tem ação de **ligar** (`tel:` só com os dígitos, ex.: `tel:08002811520`); canal com `whatsapp` tem ação de **abrir o WhatsApp** (`https://wa.me/55` + dígitos, ex.: `https://wa.me/558191171407`); canal com `site` abre o link fora do app. Campo `null` não aparece. Hoje são 3 canais: ouvidoria municipal do Recife (0800), ConectaZap (WhatsApp) e OuvSUS (136).
 - [ ] O app **não registra** a manifestação: só mostra os canais.
 
 ## 6. Fora do piloto ou em aberto
 
-- Carteira em PDF e ouvidoria entraram no piloto **só para login gov.br** (D22, 25/11/2026). Em aberto: nível de conta gov.br exigido, como o token do Conecta informa o método de login (Emprel), canais da ouvidoria do Recife (SESAU) e alinhamento da carteira com o Meu SUS Digital.
+- Carteira em PDF e ouvidoria entraram no piloto **só para login gov.br** (D22, 25/11/2026). Em aberto: nível de conta gov.br exigido, como o token do Conecta informa o método de login (Emprel) e alinhamento da carteira com o Meu SUS Digital.
 - Estoque por unidade (RF14): fora do MVP (D10); só a disponibilidade que a API manda.
 - Regras ainda a confirmar com a SESAU (influenza anual, idades máximas, folga de "atrasada"): ver o fim do [16](16-regra-situacao-vacinal.md). Não mudam o front, só o que a API devolve.

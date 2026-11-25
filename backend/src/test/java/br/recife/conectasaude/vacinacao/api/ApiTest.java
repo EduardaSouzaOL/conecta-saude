@@ -187,7 +187,9 @@ class ApiTest extends BancoDeTeste {
         mvc.perform(comTokenEmail(get("/v1/pessoas/48/carteira.pdf"), 4)).andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.type").value("/problemas/login-gov-br-necessario"));
         mvc.perform(comToken(get("/v1/ouvidoria"), 4)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.canais[0].telefone").value("136"));
+                .andExpect(jsonPath("$.canais[0].telefone").value("0800 281 1520"))
+                .andExpect(jsonPath("$.canais[1].whatsapp").value("(81) 9117-1407"))
+                .andExpect(jsonPath("$.canais[2].telefone").value("136"));
     }
 
     @Test

@@ -12,9 +12,8 @@ Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). M
 
 - `GET /v1/eu`: novos campos `metodoLogin` (`GOV_BR`, `EMAIL`, `OUTRO`) e `recursos` (`carteiraPdf`, `ouvidoria`, booleanos). Hoje os dois recursos são `true` só com `GOV_BR`. O front decide o que mostrar por `recursos`. Novo exemplo `loginComEmail`.
 - **Novo** `GET /v1/pessoas/{idPessoa}/carteira.pdf` (`baixarCarteiraPdf`): PDF gerado na hora com nome, data de nascimento, doses registradas (vacina, dose, data, lote, fabricante, unidade, transcrição) e data de emissão. Sem CPF, CNS, CID ou dado do profissional. Diz que não substitui o documento oficial (Meu SUS Digital). Cabeçalhos `Content-Disposition: attachment; filename="carteira-vacinacao-{idPessoa}.pdf"` e `Cache-Control: no-store`.
-- **Novo** `GET /v1/ouvidoria` (`obterOuvidoria`), schema `Ouvidoria` (`orientacao`, `canais[]`, `avisos`) e `CanalOuvidoria` (`nome`, `descricao`, `telefone`, `site`). **[provisório]** só o Disque Saúde 136 até a SESAU confirmar os canais do Recife.
+- **Novo** `GET /v1/ouvidoria` (`obterOuvidoria`), schema `Ouvidoria` (`orientacao`, `canais[]`, `avisos`) e `CanalOuvidoria` (`nome`, `descricao`, `telefone`, `whatsapp`, `site`). Canais confirmados em 25/11/2026: Ouvidoria Municipal de Saúde do Recife (0800 281 1520), ConectaZap no WhatsApp ((81) 9117-1407) e OuvSUS (136).
 - **Novo erro** `403` com `type` `/problemas/login-gov-br-necessario` (exemplo `LoginGovBrNecessario`) nos dois endpoints novos, para quem não entrou com gov.br. O teste de login vem antes do teste de acesso à pessoa.
-- `CodigoAviso`: novo `OUVIDORIA_EM_ALINHAMENTO`.
 - Token de teste: `dev-pessoa-<id>` = gov.br; `dev-pessoa-<id>-email` = e-mail. O token real precisa informar o método de login **[pendente: SSO da Emprel]**.
 - Nova tag "Só com login gov.br". `info.version` 0.6.1 → 0.7.0.
 
@@ -22,7 +21,6 @@ Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). M
 
 - Nível de conta gov.br exigido (bronze, prata, ouro).
 - Como o token do Conecta informa o método de login (Emprel).
-- Canais da ouvidoria da Prefeitura do Recife (SESAU).
 - Alinhamento da carteira com o Meu SUS Digital.
 
 ## 0.6.1 · 25/11/2026 · janela de "em breve" de 7 dias (D21)

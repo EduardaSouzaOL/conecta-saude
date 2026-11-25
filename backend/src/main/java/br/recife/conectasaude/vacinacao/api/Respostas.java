@@ -22,7 +22,7 @@ public final class Respostas {
 
     public record Recursos(boolean carteiraPdf, boolean ouvidoria) {}
 
-    public record CanalOuvidoria(String nome, String descricao, String telefone, String site) {}
+    public record CanalOuvidoria(String nome, String descricao, String telefone, String whatsapp, String site) {}
 
     public record Ouvidoria(String orientacao, List<CanalOuvidoria> canais, List<Aviso> avisos) {}
 
