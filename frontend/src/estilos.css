@@ -1,0 +1,295 @@
+/* Tokens (trocar aqui quando chegar o Figma final). Cores com contraste WCAG AA (RNF02). */
+:root {
+  color-scheme: light;
+  --cor-primaria: #0b5ed7;
+  --cor-primaria-escura: #0847a6;
+  --cor-gradiente: linear-gradient(120deg, #00b3a7 0%, #0b5ed7 100%);
+  --cor-texto: #101828;
+  --cor-texto-suave: #475467;
+  --cor-fundo: #f2f5fa;
+  --cor-superficie: #ffffff;
+  --cor-borda: #d0d5dd;
+  --cor-atrasada: #b42318;
+  --cor-atrasada-fundo: #fef3f2;
+  --cor-pode: #0b5ed7;
+  --cor-pode-fundo: #eff5ff;
+  --cor-emdia: #067647;
+  --cor-emdia-fundo: #ecfdf3;
+  --cor-proxima: #475467;
+  --cor-proxima-fundo: #f2f4f7;
+  --cor-aviso: #93370d;
+  --cor-aviso-fundo: #fffaeb;
+  --raio: 16px;
+  --raio-pequeno: 10px;
+  --sombra: 0 1px 2px rgb(16 24 40 / 6%), 0 4px 12px rgb(16 24 40 / 8%);
+  --alvo: 48px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--cor-texto);
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #dde3ec; -webkit-tap-highlight-color: transparent; }
+#root { height: 100%; }
+h1, h2, h3, p { margin: 0; }
+button, select, input { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid #f79009; outline-offset: 2px; }
+svg { flex-shrink: 0; }
+
+/* Moldura: no celular ocupa a tela toda; no computador vira um "aparelho" centralizado. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--cor-fundo);
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 600px) and (min-height: 700px) {
+  body { display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 30% 20%, #e9f1ff, #cfd8e6); }
+  #root { height: auto; }
+  .app {
+    width: 412px;
+    height: min(880px, calc(100dvh - 32px));
+    border-radius: 36px;
+    border: 10px solid #1d2939;
+    box-shadow: 0 24px 60px rgb(16 24 40 / 30%);
+  }
+}
+
+.faixa-demo {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 6px 16px; font-size: 13px; background: #1d2939; color: #fff;
+}
+.faixa-demo a { text-decoration: underline; min-height: 32px; display: inline-flex; align-items: center; }
+
+.conteudo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; }
+
+/* Barra inferior (ícone + texto, alvo ≥ 48px) */
+.barra-inferior {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 16px rgb(16 24 40 / 6%);
+}
+.aba {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 60px; font-size: 12px; color: var(--cor-texto-suave);
+}
+.aba-ativa { color: var(--cor-primaria); font-weight: 700; }
+.aba-ativa svg { stroke-width: 2.4; }
+
+/* Cabeçalho */
+.cabecalho { background: var(--cor-superficie); position: sticky; top: 0; z-index: 500; box-shadow: 0 1px 0 var(--cor-borda); }
+.cabecalho-linha { display: flex; align-items: center; gap: 4px; padding: 8px 8px; min-height: 60px; }
+.cabecalho h1 { flex: 1; font-size: 20px; font-weight: 700; text-align: center; outline: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cabecalho-espaco { width: var(--alvo); }
+.botao-icone {
+  width: var(--alvo); height: var(--alvo); display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; border-radius: 50%; color: var(--cor-primaria); cursor: pointer; position: relative;
+}
+.botao-icone:active { background: var(--cor-pode-fundo); }
+.sino .contador {
+  position: absolute; top: 6px; right: 4px; min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 10px; background: var(--cor-atrasada); color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.secao { padding: 16px 16px 0; }
+.saudacao { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+.titulo-secao { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+.titulo-secao-pequeno { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.linha-titulo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.intro { color: var(--cor-texto-suave); margin-bottom: 12px; }
+.detalhe { color: var(--cor-texto-suave); font-size: 14px; }
+.link { color: var(--cor-primaria); text-decoration: underline; font-weight: 600; }
+.atualizacao { font-size: 14px; color: var(--cor-texto-suave); margin: 12px 0; text-align: center; }
+
+/* Seletor de pessoa */
+.seletor-pessoa { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 10px; scrollbar-width: none; }
+.secao .seletor-pessoa { padding: 0 0 4px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px 4px 4px;
+  border-radius: 22px; border: 1px solid var(--cor-borda); background: var(--cor-superficie); cursor: pointer; white-space: nowrap; font-weight: 600;
+}
+.chip-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--cor-proxima-fundo); color: var(--cor-texto-suave);
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 700;
+}
+.chip-ativo { border-color: var(--cor-primaria); background: var(--cor-pode-fundo); color: var(--cor-primaria-escura); }
+.chip-ativo .chip-avatar { background: var(--cor-primaria); color: #fff; }
+
+/* Cartões */
+.lista-cartoes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.cartao { background: var(--cor-superficie); border-radius: var(--raio); padding: 16px; box-shadow: var(--sombra); display: block; }
+.cartao p + p { margin-top: 4px; }
+.cartao-link { display: flex; align-items: center; gap: 12px; min-height: var(--alvo); }
+.cartao-link > div { flex: 1; min-width: 0; }
+.cartao-link > svg:last-child { color: var(--cor-primaria); }
+.cartao-link strong { display: block; margin-bottom: 2px; }
+.cartao-link p { color: var(--cor-texto-suave); font-size: 15px; }
+.botao-cartao { width: 100%; border: 0; text-align: left; cursor: pointer; }
+.icone-cartao { color: var(--cor-primaria); width: 28px; height: 28px; }
+.icone-proxima { color: var(--cor-proxima); }
+.cartao-suave { background: var(--cor-proxima-fundo); box-shadow: none; }
+.cartao-destaque { background: var(--cor-gradiente); color: #fff; }
+.cartao-titulo-claro { font-size: 18px; }
+.cartao-sub-claro { opacity: .95; font-size: 14px; margin-top: 2px; }
+
+.resumo { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.resumo-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  background: var(--cor-superficie); color: var(--cor-texto); border-radius: var(--raio-pequeno); padding: 10px 2px; min-height: 76px;
+}
+.resumo-item strong { font-size: 26px; line-height: 1.1; }
+.resumo-item span { font-size: 12px; color: var(--cor-texto-suave); line-height: 1.2; }
+.resumo-atrasada strong { color: var(--cor-atrasada); }
+.resumo-pode strong { color: var(--cor-pode); }
+.resumo-emdia strong { color: var(--cor-emdia); }
+.resumo-proxima strong { color: var(--cor-proxima); }
+
+/* Selos de situação: sempre com texto (RNF02) */
+.selo { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+.selo-atrasada { color: var(--cor-atrasada); background: var(--cor-atrasada-fundo); }
+.selo-pode { color: var(--cor-pode); background: var(--cor-pode-fundo); }
+.selo-emdia { color: var(--cor-emdia); background: var(--cor-emdia-fundo); }
+.selo-proxima { color: var(--cor-proxima); background: var(--cor-proxima-fundo); }
+.selo-aviso { color: var(--cor-aviso); background: var(--cor-aviso-fundo); }
+.selo-novo { color: #fff; background: var(--cor-atrasada); margin-bottom: 4px; }
+
+/* Abas */
+.abas { display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 8px; gap: 4px; }
+.aba-topo {
+  flex: 0 0 auto; min-height: var(--alvo); padding: 0 12px; border: 0; background: transparent; cursor: pointer;
+  border-bottom: 3px solid transparent; color: var(--cor-texto-suave); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+}
+.aba-topo-ativa { color: var(--cor-primaria-escura); border-bottom-color: var(--cor-primaria); }
+.contagem { font-size: 12px; min-width: 22px; height: 22px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
+.contagem-atrasada { background: var(--cor-atrasada-fundo); color: var(--cor-atrasada); }
+.contagem-pode { background: var(--cor-pode-fundo); color: var(--cor-pode); }
+.contagem-emdia { background: var(--cor-emdia-fundo); color: var(--cor-emdia); }
+.contagem-proxima { background: var(--cor-proxima-fundo); color: var(--cor-proxima); }
+
+/* Cartão da vacina */
+.cartao-vacina { display: flex; flex-direction: column; gap: 12px; }
+.cartao-vacina-topo { display: flex; justify-content: space-between; align-items: center; min-height: 32px; color: var(--cor-texto); }
+.cartao-vacina-topo h3 { font-size: 18px; }
+.cartao-vacina-topo svg { color: var(--cor-primaria); }
+.doses-da-aba { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.dose-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 32px; }
+.dose-nome { font-weight: 600; }
+.dose-explicacao { color: var(--cor-texto-suave); font-size: 15px; margin-top: 4px; }
+.esquema-barras { list-style: none; padding: 0; margin: 6px 0 0; display: flex; gap: 6px; }
+.barra { flex: 1; height: 6px; border-radius: 3px; }
+.barra-atrasada { background: var(--cor-atrasada); }
+.barra-pode { background: var(--cor-pode); }
+.barra-emdia { background: #17b26a; }
+.barra-proxima { background: #c4cad4; }
+
+.orientacoes { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.orientacoes li { display: flex; gap: 8px; align-items: flex-start; background: var(--cor-aviso-fundo); color: var(--cor-aviso); padding: 8px 10px; border-radius: var(--raio-pequeno); font-size: 14px; }
+.orientacoes svg { width: 18px; height: 18px; margin-top: 1px; }
+
+/* Botões */
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--alvo);
+  padding: 0 18px; border-radius: 24px; font-weight: 700; cursor: pointer; border: 0; text-align: center;
+}
+.botao-primario { background: var(--cor-gradiente); color: #fff; width: 100%; }
+.botao-primario:active { filter: brightness(.92); }
+.botao-secundario { background: var(--cor-superficie); color: var(--cor-primaria); border: 1.5px solid var(--cor-primaria); }
+.botao-largo { width: 100%; margin-top: 12px; }
+.botao:disabled { opacity: .6; cursor: progress; }
+.acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.acoes .botao { min-height: 44px; font-size: 15px; }
+
+/* Avisos (todos, na ordem da API) */
+.avisos { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: var(--raio-pequeno); font-size: 15px; }
+.aviso svg { width: 20px; height: 20px; margin-top: 1px; }
+.aviso .link { display: inline-block; margin-top: 4px; min-height: 32px; }
+.aviso-info { background: var(--cor-pode-fundo); color: #10316b; }
+.aviso-info svg { color: var(--cor-primaria); }
+.aviso-atencao { background: var(--cor-aviso-fundo); color: var(--cor-aviso); }
+.avisos-compactos .aviso { font-size: 14px; padding: 10px; }
+.aviso-solto { margin-top: 12px; }
+
+/* Estados */
+.estado { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 24px; text-align: center; color: var(--cor-texto-suave); }
+.estado-erro svg { color: var(--cor-atrasada); width: 32px; height: 32px; }
+.estado-vazio { background: var(--cor-superficie); border-radius: var(--raio); padding: 24px; }
+.spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--cor-pode-fundo); border-top-color: var(--cor-primaria); animation: girar 0.8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+/* Fora da idade */
+.fora-da-idade { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.lista-simples { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+
+/* Detalhe da dose */
+.doencas { background: var(--cor-emdia-fundo); color: var(--cor-emdia); padding: 10px 12px; border-radius: var(--raio-pequeno); font-size: 15px; }
+.doencas span { font-weight: 700; }
+.linha-tempo { list-style: none; padding: 0; margin: 0; }
+.marco { display: flex; gap: 12px; position: relative; padding-bottom: 16px; }
+.marco:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 30px; bottom: 0; width: 2px; background: var(--cor-borda); }
+.marco-ponto { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #c4cad4; flex-shrink: 0; }
+.marco-ponto svg { width: 18px; height: 18px; }
+.marco-emdia .marco-ponto { background: #17b26a; }
+.marco-atrasada .marco-ponto { background: var(--cor-atrasada); }
+.marco-pode .marco-ponto { background: var(--cor-pode); }
+.marco-titulo { font-weight: 700; }
+.link-marco { color: var(--cor-primaria); text-decoration: underline; display: inline-flex; min-height: 32px; align-items: center; }
+.marco-atual .marco-corpo { background: var(--cor-superficie); box-shadow: var(--sombra); border-radius: var(--raio-pequeno); padding: 10px 12px; flex: 1; }
+.marco-corpo { padding-top: 3px; }
+.dados { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 10px 0; font-size: 15px; }
+.dados dt { color: var(--cor-texto-suave); }
+.dados dd { margin: 0; font-weight: 600; }
+.cartao .botao-primario { margin-top: 12px; }
+
+/* Mapa */
+.campo { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.campo select { min-height: var(--alvo); border-radius: var(--raio-pequeno); border: 1.5px solid var(--cor-borda); padding: 0 12px; background: var(--cor-superficie); }
+.erro-campo { color: var(--cor-atrasada); margin-top: 8px; font-size: 14px; }
+.mapa { height: 260px; border-radius: var(--raio); overflow: hidden; box-shadow: var(--sombra); background: #e4e9f0; z-index: 0; }
+.pino span { display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 35%); margin: 2px; }
+
+/* Unidade */
+.titulo-unidade { font-size: 20px; margin-bottom: 12px; }
+.info-unidade { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.info-unidade li { display: flex; gap: 10px; align-items: flex-start; }
+.info-unidade svg { color: var(--cor-primaria); width: 20px; height: 20px; margin-top: 2px; }
+.info-unidade a { min-height: 32px; display: inline-flex; align-items: center; }
+.lista-vacinas-unidade { list-style: none; padding: 0; margin: 0; background: var(--cor-superficie); border-radius: var(--raio); box-shadow: var(--sombra); }
+.lista-vacinas-unidade li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 12px 16px; border-bottom: 1px solid var(--cor-proxima-fundo); }
+.lista-vacinas-unidade li:last-child { border-bottom: 0; }
+.lista-vacinas-unidade .nome { font-weight: 600; }
+.lista-vacinas-unidade .detalhe { width: 100%; font-size: 13px; }
+.lista-vacinas-unidade .destacada { background: var(--cor-pode-fundo); }
+
+/* Lembretes */
+.lembrete { display: flex; gap: 12px; }
+.lembrete > div { flex: 1; }
+.lembrete-titulo { font-size: 16px; margin-bottom: 4px; }
+.lembrete p { color: var(--cor-texto-suave); font-size: 15px; }
+.lembrete-DOSE_ATRASADA .icone-cartao { color: var(--cor-atrasada); }
+.lembrete-DOSE_DISPONIVEL .icone-cartao { color: var(--cor-pode); }
+.lembrete-DOSE_DISPONIVEL_EM_BREVE .icone-cartao { color: var(--cor-proxima); }
+.lembrete-CAMPANHA_VIGENTE .icone-cartao { color: var(--cor-emdia); }
+.cartao-campanha { display: flex; gap: 12px; }
+.cartao-campanha p { color: var(--cor-texto-suave); font-size: 15px; }
+.cartao-campanha .selo { margin-top: 8px; }
+
+/* Histórico */
+.titulo-ano { font-size: 15px; color: var(--cor-texto-suave); margin: 16px 0 8px; font-weight: 700; }
+.registro-topo { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.registro p { color: var(--cor-texto-suave); font-size: 15px; }
+.registro .selo { margin-top: 6px; }
+
+.texto-corrido .passos { padding-left: 22px; display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; }
