@@ -17,6 +17,10 @@ public class DoseAnteriorOficial {
     @Column(name = "prioridade", nullable = false)
     private Integer prioridade;
 
+    /** {@code false}: a dose pode ser tomada sem a anterior; o intervalo só conta se ela existir. */
+    @Column(name = "exige_registro", nullable = false)
+    private Boolean exigeRegistro;
+
     @Column(name = "fonte_regra", length = 300)
     private String fonteRegra;
 
@@ -25,4 +29,5 @@ public class DoseAnteriorOficial {
     public Integer getIdDoseAnterior() { return idDoseAnterior; }
     public Integer getPrioridade() { return prioridade; }
     public String getFonteRegra() { return fonteRegra; }
+    public boolean isExigeRegistro() { return exigeRegistro == null || exigeRegistro; }
 }

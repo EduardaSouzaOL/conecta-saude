@@ -154,7 +154,7 @@ A situação de cada dose segue **fielmente as fontes oficiais** (decisão D19):
 
 Cada idade e intervalo está no banco, com a fonte citada. A regra completa, as escolhas de aplicação e os pontos que ainda precisam ser confirmados com a SESAU estão em [docs/16](docs/16-regra-situacao-vacinal.md).
 
-Enquanto a SESAU não confirma tudo, o app sempre mostra os avisos "Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade." e "Uma vacina tomada pode levar até 14 dias para aparecer aqui.".
+Enquanto a SESAU não confirma tudo, o app sempre mostra os avisos "Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade." e "Uma vacina tomada pode levar até 15 dias para aparecer aqui.".
 
 ## Agentes do Claude Code
 

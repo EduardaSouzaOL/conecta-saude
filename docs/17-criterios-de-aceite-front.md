@@ -1,6 +1,6 @@
 # 17 · Critérios de aceite do front ("Minha vacinação")
 
-> Criado em 25/11/2026 para quem vai implementar o front web (React + TypeScript + Vite, D12/D15). Base: **contrato da API v0.7.0** (`contrato/openapi.yaml` no repositório `EduardaSouzaOL/conecta-saude`, branch `main`), [03 · Requisitos](03-requisitos.md) e [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md).
+> Criado em 25/11/2026 para quem vai implementar o front web (React + TypeScript + Vite, D12/D15). Base: **contrato da API v0.7.1** (`contrato/openapi.yaml` no repositório `EduardaSouzaOL/conecta-saude`, branch `main`), [03 · Requisitos](03-requisitos.md) e [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md).
 >
 > Marcações: **[aguarda Figma]** = depende do protótipo (layout, cores, ícones, ordem visual, textos de rótulo finais). **[pendente]** = depende de decisão ou de dado que ainda não existe.
 >
@@ -54,7 +54,7 @@ Rótulos finais e ícones: **[aguarda Figma]**. Proibido em qualquer lugar: **"n
 | `REGRA_EM_ALINHAMENTO` | `avisos` | Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. |
 | `PREVISAO_DE_ROTINA` | `avisos` | Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade. |
 | `CARTAO_DESATUALIZADO` | `avisos` | Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. |
-| `ATRASO_REGISTRO` | `avisos` | Uma vacina tomada pode levar até 14 dias para aparecer aqui. |
+| `ATRASO_REGISTRO` | `avisos` | Uma vacina tomada pode levar até 15 dias para aparecer aqui. |
 | `DOSE_FORA_DA_IDADE` | `avisos` | Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer. |
 | `DOSE_ANTERIOR_SEM_REGISTRO` | `orientacoes` da dose | Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde. |
 | `ATUALIZAR_CADERNETA` | `orientacoes` da dose | Procure uma unidade de saúde para atualizar sua caderneta. |
@@ -118,7 +118,7 @@ Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qua
 ### 5.6 Detalhe da unidade (`/v1/unidades/{id}`)
 - [ ] Nome, tipo, endereço, distrito sanitário, telefone (com ação de ligar), se tem sala de vacina (RF11).
 - [ ] Lista de vacinas da unidade com disponibilidade e data de atualização.
-- [ ] `horarioFuncionamento` vem `null` hoje: mostrar "horário não informado". **[pendente: fonte do dado]**
+- [ ] Mostra `horarioFuncionamento` como veio (ex.: "Segunda à sexta das 08:00 às 17:00"). Se vier `null`, mostrar "horário não informado".
 - [ ] Ação "Como chegar" (abre o app de mapas do aparelho). **[aguarda Figma]**
 - [ ] Mostra `avisoPortaAberta`.
 

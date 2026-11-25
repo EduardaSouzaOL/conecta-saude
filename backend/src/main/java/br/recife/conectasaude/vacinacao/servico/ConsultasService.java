@@ -99,7 +99,7 @@ public class ConsultasService {
                 .toList();
         return new Respostas.DetalheUnidade(u.getId(), u.getNome(), u.getTipo(), u.getEndereco(),
                 u.getDistritoSanitario(), numero(u.getLatitude()), numero(u.getLongitude()), u.isPossuiSalaVacina(),
-                u.getCnes(), u.getTelefone(), null, vacinasDaUnidade, AVISO_PORTA_ABERTA);
+                u.getCnes(), u.getTelefone(), u.getHorarioFuncionamento(), vacinasDaUnidade, AVISO_PORTA_ABERTA);
     }
 
     /**

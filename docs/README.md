@@ -34,6 +34,7 @@ Esta pasta organiza o conteúdo do arquivo original `Hackathon - ARIES (1).md` (
 | 14 | [Integração com o Conecta Recife](14-integracao-conecta-recife.md) | Como o módulo entra no Conecta (processo, opções técnicas com Java, login, dados, LGPD, contato com a Emprel) |
 | 15 | [Proposta de agentes para implementação](15-proposta-agentes-implementacao.md) | Agentes do Claude Code para backend e frontend, ordem de trabalho sem esperar o Figma e como levar para o repositório |
 | 16 | [Regra de situação vacinal](16-regra-situacao-vacinal.md) | Como o app decide atrasada / já pode tomar / ainda não disponível, seguindo as fontes oficiais do PNI |
+| 18 | [Pesquisa: regras do Ministério da Saúde](18-pesquisa-regras-ministerio.md) | Respostas, com fonte, para as regras que estavam "a confirmar" (IN 2026, Manual de Normas 2024, Portaria 5.663/2024) |
 | 17 | [Critérios de aceite do front](17-criterios-de-aceite-front.md) | O que cada tela do front precisa fazer para ser aceita, a partir do contrato da API (inclui carteira em PDF e ouvidoria, D22) |
 | — | [Dúvidas para o alinhamento com a COP](duvidas-alinhamento-cop.md) | Perguntas em aberto por tema, para o alinhamento de 25/11/2026 |
 | A | [Anexo — histórico e ideias iniciais](anexo-historico-ideias-iniciais.md) | Como o projeto evoluiu do nicho climático para a vacinação |

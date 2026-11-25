@@ -196,7 +196,7 @@ class ContratoTest extends BancoDeTeste {
         JsonNode exUnidade = exemplo("/v1/unidades/{idUnidade}", "ibura");
         assertContemItens(unidade.path("vacinas"), exUnidade.path("vacinas"), "vacina");
         assertThat(unidade.path("cnes")).isEqualTo(exUnidade.path("cnes"));
-        assertThat(unidade.path("horarioFuncionamento").isNull()).isTrue();
+        assertThat(unidade.path("horarioFuncionamento")).isEqualTo(exUnidade.path("horarioFuncionamento"));
 
 
         JsonNode vacinas = chamar("/v1/vacinas", 4);

@@ -47,7 +47,13 @@ public class UnidadeSaude {
     @Column(name = "longitude", precision = 10, scale = 7)
     private BigDecimal longitude;
 
+    /** Horário da sala de vacina, texto livre (dados abertos do Recife, campo "horario"). */
+    @Column(name = "horario_funcionamento", length = 200)
+    private String horarioFuncionamento;
+
     protected UnidadeSaude() {}
+
+    public String getHorarioFuncionamento() { return horarioFuncionamento; }
 
     public Integer getId() { return id; }
     public String getNome() { return nome; }

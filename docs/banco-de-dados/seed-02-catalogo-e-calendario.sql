@@ -111,12 +111,12 @@ INSERT INTO dose_esquema (id_dose_esquema, id_esquema, numero_dose, intervalo_ap
 (18, 7, 3, 60, 365, '38', 365, 1825, 'P12M', 'P12M', 'P5Y', 'P60D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; VPC10 REF ≥ 12M a < 5A, 60 dias após D2', 'Reforço aos 12 meses'),
 (19, 8, 1, NULL, 91, '1', 61, 364, 'P3M', 'P2M', 'P1Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; MenC D1 ≥ 2M a < 1A', '3 meses'),
 (20, 8, 2, 30, 152, '2', 91, 364, 'P5M', 'P3M', 'P1Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; MenC D2 ≥ 3M a < 1A, 30 dias após D1', '5 meses'),
-(21, 9, 1, 60, 365, '38', 365, 5478, 'P12M', 'P1Y', 'P15Y', 'P60D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; MenACWY REF ≥ 1A a ≤ 14A, 60 dias após MenC D2', 'Reforço aos 12 meses'),
+(21, 9, 1, 60, 365, '38', 365, 1825, 'P12M', 'P1Y', 'P5Y', 'P60D', '[IN-2026] men ACWY aos 12 meses até 4a11m29d, independente do histórico de MenC; [PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; 60 dias após MenC D2 quando houver', 'Reforço aos 12 meses'),
 (22, 10, 1, NULL, 4018, '38', 4018, 5478, 'P11Y', 'P11Y', 'P15Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; MenACWY REF ≤ 14A; 11 a 14 anos pelo calendário; sem intervalo mínimo na planilha', 'Reforço (11 a 14 anos)'),
 (23, 11, 1, NULL, 274, '8', 274, 1825, 'P9M', 'P9M', 'P5Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; VFA D ≥ 9M a < 5A', '9 meses'),
 (24, 11, 2, 30, 1461, '38', 1461, 21914, 'P4Y', 'P4Y', 'P60Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; VFA REF ≥ 4A, 30 dias após D; idade máxima [CNV-2026]: faixa do esquema no calendário (a planilha não traz máximo)', 'Reforço aos 4 anos'),
 (25, 12, 1, NULL, 365, '1', 365, 21914, 'P12M', 'P1Y', 'P60Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; SCR D1 ≥ 1A; idade máxima [CNV-2026]: faixa do esquema no calendário (a planilha não traz máximo)', '12 meses'),
-(26, 12, 2, 15, 457, '2', 365, 21914, 'P15M', 'P1Y', 'P60Y', 'P15D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; SCR D2 ≥ 1A, 15 dias após D1; idade máxima [CNV-2026]: faixa do esquema no calendário (a planilha não traz máximo)', '15 meses'),
+(26, 12, 2, 15, 457, '2', 365, 10957, 'P15M', 'P1Y', 'P30Y', 'P15D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; SCR D2 ≥ 1A, 15 dias após D1; [IN-2026] 2 doses até 29 anos', '15 meses'),
 (27, 13, 1, NULL, 457, '1', 457, 2556, 'P15M', 'P15M', 'P7Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; VZ D1 ≥ 15M; idade máxima [CNV-2026]: faixa do esquema no calendário (a planilha não traz máximo)', '15 meses'),
 (28, 13, 2, 30, 1461, '2', 1461, 2556, 'P4Y', 'P4Y', 'P7Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; VZ D2 ≥ 4A, 30 dias após D1; idade máxima [CNV-2026]: faixa do esquema no calendário (a planilha não traz máximo)', '4 anos'),
 (29, 14, 1, NULL, 457, '9', 457, 1825, 'P15M', 'P15M', 'P5Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HAinf DU ≥ 15M a ≤ 4A', '15 meses'),
@@ -129,12 +129,12 @@ INSERT INTO dose_esquema (id_dose_esquema, id_esquema, numero_dose, intervalo_ap
 (36, 18, 3, NULL, NULL, '9', 244, NULL, NULL, 'P8M', NULL, NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; INF3 DU ≥ 8M (texto da planilha, a conferir)', 'Dose anual');
 
 -- [PNI-REG] dose anterior oficial quando não é a de número anterior no mesmo esquema
-INSERT INTO dose_anterior_oficial (id_dose_esquema, id_dose_anterior, prioridade, fonte_regra) VALUES
-(21, 20, 1, '[PNI-REG] Regras de entrada de dados 4: MenC D2 -> REF, intervalo mínimo 60 dias'),
-(30, 8, 1, '[PNI-REG] Regras de entrada de dados 4: Penta D3 -> R1, intervalo mínimo 6 meses'),
-(33, 31, 1, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R2)'),
-(33, 30, 2, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R1, sem R2)'),
-(33, 8, 3, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (Penta D3, sem R1 e R2)');
+INSERT INTO dose_anterior_oficial (id_dose_esquema, id_dose_anterior, prioridade, exige_registro, fonte_regra) VALUES
+(21, 20, 1, FALSE, '[PNI-REG] Regras de entrada de dados 4: MenC D2 -> REF, intervalo mínimo 60 dias; [IN-2026] só quando há MenC D2'),
+(30, 8, 1, TRUE, '[PNI-REG] Regras de entrada de dados 4: Penta D3 -> R1, intervalo mínimo 6 meses'),
+(33, 31, 1, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R2)'),
+(33, 30, 2, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R1, sem R2)'),
+(33, 8, 3, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (Penta D3, sem R1 e R2)');
 
 -- system http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico (recorte)
 -- códigos, siglas, nomes e status conferidos na planilha oficial de Nomenclaturas do PNI
@@ -168,19 +168,19 @@ INSERT INTO rnds_imunobiologico (codigo, sigla, descricao, id_vacina, ativo) VAL
 ('86', 'COVID-19 SINOVAC/BUTANTAN - CORONAVAC', 'vacina adsorvida covid-19 (inativada)', NULL, FALSE);
 INSERT INTO fonte_dados (id_fonte, nome, descricao, sistema_origem, status) VALUES
 (1, 'RNDS (simulada)', 'Registros de Imunobiológico Administrado sintéticos no formato da RNDS', 'RNDS – Rede Nacional de Dados em Saúde', 'ATIVA');
-INSERT INTO unidade_saude (id_unidade, nome, cnes, tipo_unidade, distrito_sanitario, possui_sala_vacina, endereco, telefone, latitude, longitude) VALUES
-(1, 'USF Fictícia Boa Vista', '9920029', 'USF', 'DS I', TRUE, 'Rua Fictícia da Boa Vista, 100 – Boa Vista', '(81) 3355-8621', -8.061, -34.888),
-(2, 'USF Fictícia Santo Amaro', '9972769', 'USF', 'DS I', TRUE, 'Rua Fictícia de Santo Amaro, 45 – Santo Amaro', '(81) 3355-5035', -8.048, -34.88),
-(3, 'USF Fictícia Água Fria', '9910980', 'USF', 'DS II', TRUE, 'Av. Fictícia de Água Fria, 900 – Água Fria', '(81) 3355-3320', -8.02, -34.899),
-(4, 'USF Fictícia Campo Grande', '9974085', 'USF', 'DS II', TRUE, 'Rua Fictícia, 77 – Campo Grande', '(81) 3355-5106', -8.036, -34.887),
-(5, 'Policlínica Fictícia Casa Amarela', '9911842', 'POLICLINICA', 'DS III', TRUE, 'Estrada Fictícia, 1500 – Casa Amarela', '(81) 3355-8372', -8.026, -34.918),
-(6, 'USF Fictícia Várzea', '9985349', 'USF', 'DS IV', TRUE, 'Av. Fictícia da Várzea, 320 – Várzea', '(81) 3355-5334', -8.042, -34.958),
-(7, 'USF Fictícia Afogados', '9945928', 'USF', 'DS V', TRUE, 'Rua Fictícia de Afogados, 210 – Afogados', '(81) 3355-6492', -8.077, -34.908),
-(8, 'USF Fictícia Boa Viagem', '9904020', 'USF', 'DS VI', TRUE, 'Av. Fictícia de Boa Viagem, 4000 – Boa Viagem', '(81) 3355-5654', -8.118, -34.897),
-(9, 'USF Fictícia Ibura', '9987676', 'USF', 'DS VI', TRUE, 'Rua Fictícia do Ibura, 15 – Ibura', '(81) 3355-9444', -8.127, -34.937),
-(10, 'USF Fictícia Nova Descoberta', '9963532', 'USF', 'DS VII', TRUE, 'Rua Fictícia, 300 – Nova Descoberta', '(81) 3355-3024', -8.005, -34.923),
-(11, 'USF Fictícia Cohab', '9937631', 'USF', 'DS VIII', TRUE, 'Rua Fictícia da Cohab, 50 – Cohab', '(81) 3355-7822', -8.14, -34.952),
-(12, 'Maternidade Fictícia Recife', '9929667', 'MATERNIDADE', 'DS IV', TRUE, 'Av. Fictícia, 1 – Cordeiro', '(81) 3355-2791', -8.049, -34.93);
+INSERT INTO unidade_saude (id_unidade, nome, cnes, tipo_unidade, distrito_sanitario, possui_sala_vacina, endereco, telefone, latitude, longitude, horario_funcionamento) VALUES
+(1, 'USF Fictícia Boa Vista', '9920029', 'USF', 'DS I', TRUE, 'Rua Fictícia da Boa Vista, 100 – Boa Vista', '(81) 3355-8621', -8.061, -34.888, 'Segunda à sexta das 08:00 às 17:00'),
+(2, 'USF Fictícia Santo Amaro', '9972769', 'USF', 'DS I', TRUE, 'Rua Fictícia de Santo Amaro, 45 – Santo Amaro', '(81) 3355-5035', -8.048, -34.88, 'Segunda à sexta das 08:00 às 17:00'),
+(3, 'USF Fictícia Água Fria', '9910980', 'USF', 'DS II', TRUE, 'Av. Fictícia de Água Fria, 900 – Água Fria', '(81) 3355-3320', -8.02, -34.899, 'Segunda à sexta das 08:00 às 17:00'),
+(4, 'USF Fictícia Campo Grande', '9974085', 'USF', 'DS II', TRUE, 'Rua Fictícia, 77 – Campo Grande', '(81) 3355-5106', -8.036, -34.887, 'Segunda à sexta das 08:00 às 17:00'),
+(5, 'Policlínica Fictícia Casa Amarela', '9911842', 'POLICLINICA', 'DS III', TRUE, 'Estrada Fictícia, 1500 – Casa Amarela', '(81) 3355-8372', -8.026, -34.918, 'Segunda à sexta das 07:00 às 19:00'),
+(6, 'USF Fictícia Várzea', '9985349', 'USF', 'DS IV', TRUE, 'Av. Fictícia da Várzea, 320 – Várzea', '(81) 3355-5334', -8.042, -34.958, 'Segunda à sexta das 08:00 às 17:00'),
+(7, 'USF Fictícia Afogados', '9945928', 'USF', 'DS V', TRUE, 'Rua Fictícia de Afogados, 210 – Afogados', '(81) 3355-6492', -8.077, -34.908, 'Segunda à sexta das 08:00 às 17:00'),
+(8, 'USF Fictícia Boa Viagem', '9904020', 'USF', 'DS VI', TRUE, 'Av. Fictícia de Boa Viagem, 4000 – Boa Viagem', '(81) 3355-5654', -8.118, -34.897, 'Segunda à sexta das 08:00 às 17:00'),
+(9, 'USF Fictícia Ibura', '9987676', 'USF', 'DS VI', TRUE, 'Rua Fictícia do Ibura, 15 – Ibura', '(81) 3355-9444', -8.127, -34.937, 'Segunda à sexta das 08:00 às 17:00'),
+(10, 'USF Fictícia Nova Descoberta', '9963532', 'USF', 'DS VII', TRUE, 'Rua Fictícia, 300 – Nova Descoberta', '(81) 3355-3024', -8.005, -34.923, 'Segunda à sexta das 08:00 às 17:00'),
+(11, 'USF Fictícia Cohab', '9937631', 'USF', 'DS VIII', TRUE, 'Rua Fictícia da Cohab, 50 – Cohab', '(81) 3355-7822', -8.14, -34.952, 'Segunda à sexta das 08:00 às 17:00'),
+(12, 'Maternidade Fictícia Recife', '9929667', 'MATERNIDADE', 'DS IV', TRUE, 'Av. Fictícia, 1 – Cordeiro', '(81) 3355-2791', -8.049, -34.93, '24 horas');
 INSERT INTO unidade_vacina (id_unidade, id_vacina, disponibilidade, observacao, data_atualizacao) VALUES
 (1, 1, 'TEMPORARIAMENTE_INDISPONIVEL', NULL, '2026-11-03 08:00:00'),
 (1, 2, 'DISPONIVEL', NULL, '2026-11-03 08:00:00'),
