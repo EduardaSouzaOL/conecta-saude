@@ -39,7 +39,8 @@ import java.util.Optional;
  * Idades e intervalos são períodos de calendário ("1M15D", "6 meses", "4 anos"), como nas fontes.
  * Dose anterior: a oficial de outra vacina, quando a planilha manda (ex.: Penta D3 antes da DTP R1),
  * ou a de número anterior no mesmo esquema.
- * Esquema interrompido continua de onde parou [MNP]: o intervalo conta da dose anterior registrada.
+ * Esquema interrompido continua de onde parou ("não se reinicia o esquema vacinal", [MNP-2024], p. 119):
+ * o intervalo conta da dose anterior registrada.
  *
  * <p>Doses sem idade recomendada no calendário (influenza anual, hepatite B a partir dos 7 anos)
  * ficam fora do cálculo até a regra ser definida (pergunta 10 do changelog do contrato).
@@ -113,7 +114,9 @@ public final class CalculadoraSituacaoVacinal {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-        boolean faltaAnterior = !anteriores.isEmpty() && registroAnterior == null;
+        // [IN-2026] Algumas doses não exigem a anterior oficial (ex.: men ACWY aos 12 meses,
+        // "independente do histórico"): sem registro dela, a dose segue só pela idade.
+        boolean faltaAnterior = !anteriores.isEmpty() && registroAnterior == null && !dose.anteriorOpcional();
 
         // [PNI-REG] disponível = a mais tarde entre a idade mínima e o intervalo mínimo após a anterior,
         // com meses e anos de calendário.

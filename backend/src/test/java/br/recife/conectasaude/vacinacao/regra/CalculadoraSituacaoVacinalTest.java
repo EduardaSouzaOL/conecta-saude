@@ -348,7 +348,7 @@ class CalculadoraSituacaoVacinalTest {
             assertThat(r.avisos()).containsExactly(Aviso.REGRA_EM_ALINHAMENTO, Aviso.PREVISAO_DE_ROTINA,
                     Aviso.CARTAO_DESATUALIZADO, Aviso.ATRASO_REGISTRO);
             assertThat(Aviso.ATRASO_REGISTRO.mensagem())
-                    .isEqualTo("Uma vacina tomada pode levar até 14 dias para aparecer aqui.");
+                    .isEqualTo("Uma vacina tomada pode levar até 15 dias para aparecer aqui.");
         }
 
         @Test

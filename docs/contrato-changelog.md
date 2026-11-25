@@ -2,6 +2,18 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.7.1 · 25/11/2026 · correções pela Instrução Normativa 2026 e horário das unidades
+
+> Pesquisa no [18](18-pesquisa-regras-ministerio.md); aplicadas com o ok da Duda (D19: a fonte oficial vence).
+
+**Formato igual** (nenhum campo, schema ou enum mudou). Mudam valores calculados e um texto.
+
+- **`ATRASO_REGISTRO`:** "Uma vacina tomada pode levar até **15** dias para aparecer aqui." (era 14). Prazo da Portaria GM/MS nº 5.663/2024.
+- **Tríplice viral D2** sai da lista (vai para `dosesForaDaIdade`) aos 30 anos (era 60).
+- **MenACWY dos 12 meses:** não espera mais a Meningo C D2 ("independente do histórico", IN 2026). Limite de idade de 5 anos (era 15). No exemplo `criancaComDoseForaDaIdade` (pessoa 95), a dose 21 passa de `AINDA_NAO_DISPONIVEL` com `DOSE_ANTERIOR_SEM_REGISTRO` para `ATRASADA`.
+- **`horarioFuncionamento`** em `GET /v1/unidades/{idUnidade}` deixa de vir sempre `null` e de ser [provisório]: na base sintética, horário fixo por tipo de unidade, no formato da base aberta do Recife ("Segunda à sexta das 08:00 às 17:00"). Com unidades reais, a fonte é o campo `horario` da base "Rede de atenção à saúde no Recife", pelo CNES.
+- `info.version` 0.7.0 → 0.7.1.
+
 ## 0.7.0 · 25/11/2026 · carteira em PDF e ouvidoria só com login gov.br (D22)
 
 > Decisão D22 (Duda, 25/11/2026): o canal de ouvidoria (RF23) e a carteira de vacinação em PDF (RF09) entram no piloto, **só para quem entrou no Conecta com login gov.br**. Quem entrou com e-mail comum não tem acesso. Ver [08](08-decisoes.md).

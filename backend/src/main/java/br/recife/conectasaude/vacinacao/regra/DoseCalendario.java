@@ -24,6 +24,8 @@ import java.util.List;
  * @param intervaloMinimo intervalo mínimo depois da dose anterior [PNI-REG]; {@code null} = sem intervalo
  * @param idsDoseAnteriorOficial dose anterior oficial de outra vacina, por prioridade (vale a primeira
  *     com registro); vazia = a dose de número anterior no mesmo esquema
+ * @param anteriorOpcional {@code true}: a dose oficial anterior não é exigida; o intervalo só conta
+ *     quando ela tem registro (ex.: men ACWY aos 12 meses, "independente do histórico", IN 2026)
  */
 public record DoseCalendario(
         int idDose,
@@ -39,7 +41,18 @@ public record DoseCalendario(
         Period idadeMinima,
         Period idadeLimite,
         Period intervaloMinimo,
-        List<Integer> idsDoseAnteriorOficial) {
+        List<Integer> idsDoseAnteriorOficial,
+        boolean anteriorOpcional) {
+
+    /** Dose cuja anterior oficial, quando houver, é exigida. */
+    public DoseCalendario(int idDose, int idEsquema, String nomeEsquema, int idVacina, String nomeVacina,
+            int numeroDose, String descricao, Integer intervaloMinimoDias, String codigoDoseRnds,
+            Period idadeRecomendada, Period idadeMinima, Period idadeLimite, Period intervaloMinimo,
+            List<Integer> idsDoseAnteriorOficial) {
+        this(idDose, idEsquema, nomeEsquema, idVacina, nomeVacina, numeroDose, descricao, intervaloMinimoDias,
+                codigoDoseRnds, idadeRecomendada, idadeMinima, idadeLimite, intervaloMinimo, idsDoseAnteriorOficial,
+                false);
+    }
 
     public DoseCalendario {
         idsDoseAnteriorOficial = idsDoseAnteriorOficial == null ? List.of() : List.copyOf(idsDoseAnteriorOficial);

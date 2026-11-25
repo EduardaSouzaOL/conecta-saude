@@ -167,7 +167,9 @@ public class SituacaoVacinalService {
                 d.getNumeroDose(), d.getDescricao(), d.getIntervaloAposAnteriorDias(), d.getCodigoDoseRnds(),
                 periodo(d.getIdadeRecomendadaPeriodo()), periodo(d.getIdadeMinimaPeriodo()),
                 periodo(d.getIdadeLimitePeriodo()), periodo(d.getIntervaloMinimoPeriodo()),
-                d.getDosesAnterioresOficiais().stream().map(DoseAnteriorOficial::getIdDoseAnterior).toList());
+                d.getDosesAnterioresOficiais().stream().map(DoseAnteriorOficial::getIdDoseAnterior).toList(),
+                !d.getDosesAnterioresOficiais().isEmpty()
+                        && d.getDosesAnterioresOficiais().stream().noneMatch(DoseAnteriorOficial::isExigeRegistro));
     }
 
     /** Período ISO 8601 do banco (P1M15D, P6M, P4Y); {@code null} se a coluna está vazia. */

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.7.0
+  version: 0.7.1
   summary: Situação vacinal, histórico de doses, lembretes, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
     Contrato **v0.7.0** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
@@ -237,7 +237,7 @@ paths:
                     avisos:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
 
@@ -259,7 +259,7 @@ paths:
         tem registro: `AINDA_NAO_DISPONIVEL`; (4) antes da idade mínima oficial: `AINDA_NAO_DISPONIVEL`;
         (5) antes do intervalo mínimo depois da dose anterior: `AINDA_NAO_DISPONIVEL`; (6) depois da
         idade recomendada: `ATRASADA`; (7) senão: `PODE_TOMAR`. Reforço segue a mesma regra (idade
-        mínima + intervalo mínimo). Não há situação "em processamento": a demora de até 14 dias
+        mínima + intervalo mínimo). Não há situação "em processamento": a demora de até 15 dias
         para o registro aparecer é só o aviso `ATRASO_REGISTRO`. Cada dose pode trazer
         `orientacoes` (dose anterior sem registro; atualizar a caderneta), que o front mostra junto dela.
       parameters:
@@ -316,7 +316,7 @@ paths:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
                       - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
                 bebeDeQuatroMeses:
                   summary: Bernardo (pessoa 48, nascido em 13/07/2026), recorte com "já pode tomar"
                   description: |
@@ -346,7 +346,7 @@ paths:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
                       - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
                 criancaComDoseForaDaIdade:
                   summary: Heitor (pessoa 95, nascido em 19/06/2025), recorte com dose fora da idade
                   description: |
@@ -355,9 +355,9 @@ paths:
                     `dosesForaDaIdade`, com o aviso "converse na unidade". A VIP D3 e a Rotavírus
                     D2 foram tomadas, mas não chegaram ao sistema, e aparecem como atrasadas. O
                     1º reforço da DTP ficou liberado 6 meses depois da Penta D3 (30/06/2026), como
-                    manda a regra oficial. O reforço da MenACWY fica "ainda não disponível", com a
-                    orientação `DOSE_ANTERIOR_SEM_REGISTRO`, porque a dose anterior oficial dele é a
-                    Meningo C D2, que não tem registro. O 2º reforço da VIP e o reforço da febre
+                    manda a regra oficial. O reforço da MenACWY fica atrasado: pela Instrução Normativa 2026, a ACWY dos
+                    12 meses vale "independente do histórico vacinal anterior aos 12 meses", então não
+                    espera a Meningo C D2. O 2º reforço da VIP e o reforço da febre
                     amarela só ficam disponíveis aos 4 anos, que é a idade mínima oficial dessas doses.
                   value:
                     pessoa:
@@ -366,13 +366,13 @@ paths:
                       dataNascimento: '2025-06-19'
                     dataReferencia: '2026-11-24'
                     dataUltimaAtualizacao: '2026-10-18T08:23:00-03:00'
-                    resumo: { atrasadas: 3, podeTomar: 0, emDia: 2, aindaNaoDisponiveis: 3 }
+                    resumo: { atrasadas: 4, podeTomar: 0, emDia: 2, aindaNaoDisponiveis: 2 }
                     proximaDose:
                       { idDose: 13, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 5, nomeDose: 2º reforço, descricao: 2º reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2029-06-19', registro: null, orientacoes: [] }
                     doses:
                       - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, nomeDose: 2ª dose, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2025-10-19', dataDisponivel: '2025-10-04', registro: null, orientacoes: [] }
                       - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, nomeDose: 3ª dose, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2025-12-19', dataDisponivel: '2025-12-28', registro: null, orientacoes: [] }
-                      - { idDose: 21, vacina: { id: 8, nome: Meningocócica ACWY }, numeroDose: 1, nomeDose: reforço, descricao: Reforço aos 12 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-06-19', dataDisponivel: null, registro: null, orientacoes: [{ codigo: DOSE_ANTERIOR_SEM_REGISTRO, mensagem: 'Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde.' }] }
+                      - { idDose: 21, vacina: { id: 8, nome: Meningocócica ACWY }, numeroDose: 1, nomeDose: reforço, descricao: Reforço aos 12 meses, situacao: ATRASADA, dataRecomendada: '2026-06-19', dataDisponivel: '2026-06-19', registro: null, orientacoes: [] }
                       - { idDose: 26, vacina: { id: 10, nome: Tríplice viral (SCR) }, numeroDose: 2, nomeDose: 2ª dose, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-07-17', registro: { idRegistro: 1266, dataAplicacao: '2026-09-20', transcricao: false }, orientacoes: [] }
                       - { idDose: 27, vacina: { id: 11, nome: Varicela }, numeroDose: 1, nomeDose: 1ª dose, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-09-19', registro: { idRegistro: 1267, dataAplicacao: '2026-10-01', transcricao: false }, orientacoes: [] }
                       - { idDose: 30, vacina: { id: 13, nome: DTP (tríplice bacteriana) }, numeroDose: 1, nomeDose: 1º reforço, descricao: 1º reforço aos 15 meses, situacao: ATRASADA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-06-30', registro: null, orientacoes: [] }
@@ -385,7 +385,7 @@ paths:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
                       - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
                       - { codigo: DOSE_FORA_DA_IDADE, mensagem: 'Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
@@ -528,7 +528,7 @@ paths:
                     avisos:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -646,7 +646,7 @@ paths:
                     avisos:
                       - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 15 dias para aparecer aqui.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -767,7 +767,7 @@ paths:
                     possuiSalaVacina: true
                     cnes: '9987676'
                     telefone: (81) 3355-9444
-                    horarioFuncionamento: null
+                    horarioFuncionamento: Segunda à sexta das 08:00 às 17:00
                     vacinas:
                       - vacina: { id: 1, nome: BCG }
                         disponibilidade: TEMPORARIAMENTE_INDISPONIVEL
@@ -1284,7 +1284,7 @@ components:
       type: string
       description: |
         Situação de uma dose prevista (RF05). São só estas 4; não existe "não posso tomar"
-        (RN03) nem "em processamento" (D17: a demora de até 14 dias para o registro aparecer
+        (RN03) nem "em processamento" (D17: a demora de até 15 dias para o registro aparecer
         vira só o aviso `ATRASO_REGISTRO`).
 
         **Regra oficial (D19, em alinhamento com a SESAU).** Detalhes e fontes em
@@ -1452,7 +1452,7 @@ components:
           (D17). Sempre presente enquanto as regras forem provisórias.
         - `PREVISAO_DE_ROTINA`: o aprazamento oficial é do profissional; confirme na unidade (RN02).
         - `CARTAO_DESATUALIZADO`: dose no cartão físico que não aparece aqui (RF08).
-        - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 14 dias para aparecer (RNF09, D17).
+        - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 15 dias para aparecer (RNF09, D17). Prazo da Portaria GM/MS nº 5.663/2024: até 24 horas nas salas com internet e até 15 dias nas salas sem internet.
         - `DOSE_FORA_DA_IDADE`: há doses em `dosesForaDaIdade`; converse na unidade (D17).
 
         Só em `orientacoes` de uma dose (docs/16):
@@ -1719,7 +1719,10 @@ components:
               type: [string, 'null']
             horarioFuncionamento:
               type: [string, 'null']
-              description: '**[provisório]** Ainda não existe no banco; vem `null` até a fonte ser definida'
+              description: |
+                Horário da sala de vacina, em texto, como vem da fonte (ex.: "Segunda à sexta das 08:00 às 17:00",
+                "24 horas"). Fonte: base aberta "Rede de atenção à saúde no Recife" (dados.recife.pe.gov.br, campo
+                `horario`), ligada pelo CNES. Na base sintética, horário fixo por tipo de unidade. `null` = sem informação.
             vacinas:
               type: array
               items:

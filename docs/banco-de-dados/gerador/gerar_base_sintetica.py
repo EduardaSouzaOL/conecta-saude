@@ -343,13 +343,16 @@ REGRA_OFICIAL = {
     ("Pneumocócica 10-valente", 0, 3): (meses(12), anos(5) - 1, "=", _R + "; VPC10 REF ≥ 12M a < 5A, 60 dias após D2"),
     ("Meningocócica C conjugada", 0, 1): (meses(2), anos(1) - 1, "=", _R + "; MenC D1 ≥ 2M a < 1A"),
     ("Meningocócica C conjugada", 0, 2): (meses(3), anos(1) - 1, "=", _R + "; MenC D2 ≥ 3M a < 1A, 30 dias após D1"),
-    ("Meningocócica ACWY", 0, 1): (meses(12), anos(15) - 1, "=", _R + "; MenACWY REF ≥ 1A a ≤ 14A, 60 dias após MenC D2"),
+    # [IN-2026]: dos 12 meses a 4a11m29d, ACWY "independente do histórico vacinal anterior aos 12 meses";
+    # o "≤ 14A" da planilha inclui os adolescentes, que têm esquema próprio (docs/18)
+    ("Meningocócica ACWY", 0, 1): (meses(12), anos(5) - 1, "=", "[IN-2026] men ACWY aos 12 meses até 4a11m29d, independente do histórico de MenC; " + _R + "; 60 dias após MenC D2 quando houver"),
     # Adolescentes: faixa do calendário (11 a 14 anos); a planilha não traz intervalo mínimo para este REF
     ("Meningocócica ACWY", 1, 1): (anos(11), anos(15) - 1, None, _R + "; MenACWY REF ≤ 14A; 11 a 14 anos pelo calendário; sem intervalo mínimo na planilha"),
     ("Febre amarela", 0, 1): (meses(9), anos(5) - 1, "=", _R + "; VFA D ≥ 9M a < 5A"),
     ("Febre amarela", 0, 2): (anos(4), anos(60) - 1, "=", _R + "; VFA REF ≥ 4A, 30 dias após D" + _C),
     ("Tríplice viral (SCR)", 0, 1): (anos(1), anos(60) - 1, "=", _R + "; SCR D1 ≥ 1A" + _C),
-    ("Tríplice viral (SCR)", 0, 2): (anos(1), anos(60) - 1, "=", _R + "; SCR D2 ≥ 1A, 15 dias após D1" + _C),
+    # [IN-2026]: 2 doses de 12 meses a 29 anos; de 30 a 59 anos, 1 dose basta (docs/18)
+    ("Tríplice viral (SCR)", 0, 2): (anos(1), anos(30) - 1, "=", _R + "; SCR D2 ≥ 1A, 15 dias após D1; [IN-2026] 2 doses até 29 anos"),
     ("Varicela", 0, 1): (meses(15), anos(7) - 1, "=", _R + "; VZ D1 ≥ 15M" + _C),
     ("Varicela", 0, 2): (anos(4), anos(7) - 1, "=", _R + "; VZ D2 ≥ 4A, 30 dias após D1" + _C),
     ("Hepatite A", 0, 1): (meses(15), anos(5) - 1, "=", _R + "; HAinf DU ≥ 15M a ≤ 4A"),
@@ -391,12 +394,12 @@ PERIODOS = {
     ("Pneumocócica 10-valente", 0, 3): ("P12M", "P12M", "P5Y", "P60D"),
     ("Meningocócica C conjugada", 0, 1): ("P3M", "P2M", "P1Y", None),
     ("Meningocócica C conjugada", 0, 2): ("P5M", "P3M", "P1Y", "P30D"),
-    ("Meningocócica ACWY", 0, 1): ("P12M", "P1Y", "P15Y", "P60D"),
+    ("Meningocócica ACWY", 0, 1): ("P12M", "P1Y", "P5Y", "P60D"),
     ("Meningocócica ACWY", 1, 1): ("P11Y", "P11Y", "P15Y", None),
     ("Febre amarela", 0, 1): ("P9M", "P9M", "P5Y", None),
     ("Febre amarela", 0, 2): ("P4Y", "P4Y", "P60Y", "P30D"),
     ("Tríplice viral (SCR)", 0, 1): ("P12M", "P1Y", "P60Y", None),
-    ("Tríplice viral (SCR)", 0, 2): ("P15M", "P1Y", "P60Y", "P15D"),
+    ("Tríplice viral (SCR)", 0, 2): ("P15M", "P1Y", "P30Y", "P15D"),
     ("Varicela", 0, 1): ("P15M", "P15M", "P7Y", None),
     ("Varicela", 0, 2): ("P4Y", "P4Y", "P7Y", "P30D"),
     ("Hepatite A", 0, 1): ("P15M", "P15M", "P5Y", None),
@@ -411,11 +414,12 @@ PERIODOS = {
 
 # [PNI-REG] Dose anterior OFICIAL quando não é a de número anterior no mesmo esquema
 # (coluna "próxima dose" da planilha). (dose) -> [(dose anterior, fonte)], em ordem
-# de prioridade: vale a primeira que tem registro.
+# de prioridade: vale a primeira que tem registro. Doses em DOSE_ANTERIOR_OPCIONAL não
+# exigem o registro da anterior: o intervalo só conta quando ela existe.
 _PD = "[PNI-REG] Regras de entrada de dados 4: "
 ANTERIOR_OFICIAL = {
     ("Meningocócica ACWY", 0, 1): [
-        (("Meningocócica C conjugada", 0, 2), _PD + "MenC D2 -> REF, intervalo mínimo 60 dias")],
+        (("Meningocócica C conjugada", 0, 2), _PD + "MenC D2 -> REF, intervalo mínimo 60 dias; [IN-2026] só quando há MenC D2")],
     ("DTP (tríplice bacteriana)", 0, 1): [
         (("Penta (DTP/Hib/HB)", 0, 3), _PD + "Penta D3 -> R1, intervalo mínimo 6 meses")],
     # dT: 5 anos depois da última dose com componente tetânico do esquema da criança
@@ -424,6 +428,9 @@ ANTERIOR_OFICIAL = {
         (("DTP (tríplice bacteriana)", 0, 1), _PD + "dT D3 -> REF, intervalo mínimo 5 anos (DTP R1, sem R2)"),
         (("Penta (DTP/Hib/HB)", 0, 3), _PD + "dT D3 -> REF, intervalo mínimo 5 anos (Penta D3, sem R1 e R2)")],
 }
+
+# [IN-2026] ACWY dos 12 meses "independente do histórico vacinal anterior aos 12 meses".
+DOSE_ANTERIOR_OPCIONAL = {("Meningocócica ACWY", 0, 1)}
 
 # Cobertura "real" (tomou de fato) e probabilidade de registro na RNDS dado
 # que tomou. (ASSUMIDO) valores realistas.
@@ -506,6 +513,16 @@ SOBRENOMES = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa
               "Barbosa", "Cavalcanti", "Albuquerque", "Araújo", "Melo", "Nascimento", "Rocha",
               "Monteiro", "Gomes", "Batista", "Freitas", "Vasconcelos", "Teixeira", "Moura",
               "Leite", "Bezerra", "Andrade"]
+
+# (ASSUMIDO) horário da sala de vacina por tipo de unidade, no formato do campo "horario"
+# da base aberta "Rede de atenção à saúde no Recife" (dados.recife.pe.gov.br, 04/03/2026),
+# onde o caso mais comum é "Segunda à sexta das 08:00 às 17:00". Fixo por tipo: não usa a
+# semente, para não mudar o resto da base. Com unidades reais, vem dessa base pelo CNES (docs/18).
+HORARIO_SALA = {
+    "USF": "Segunda à sexta das 08:00 às 17:00",
+    "POLICLINICA": "Segunda à sexta das 07:00 às 19:00",
+    "MATERNIDADE": "24 horas",
+}
 
 # (ASSUMIDO) unidades FICTÍCIAS, com bairros reais de Recife e CNES inventado (prefixo 99)
 UNIDADES = [
@@ -620,8 +637,9 @@ def main():
                                    "idade_minima_periodo", "idade_limite_periodo",
                                    "intervalo_minimo_periodo", "fonte_regra", "descricao"], dose_rows)
     s2 += "\n-- [PNI-REG] dose anterior oficial quando não é a de número anterior no mesmo esquema\n"
-    s2 += inserts("dose_anterior_oficial", ["id_dose_esquema", "id_dose_anterior", "prioridade", "fonte_regra"],
-                  [(dose_idx[d][0], dose_idx[ant][0], pri, fonte)
+    s2 += inserts("dose_anterior_oficial", ["id_dose_esquema", "id_dose_anterior", "prioridade",
+                                            "exige_registro", "fonte_regra"],
+                  [(dose_idx[d][0], dose_idx[ant][0], pri, d not in DOSE_ANTERIOR_OPCIONAL, fonte)
                    for d, lista in ANTERIOR_OFICIAL.items()
                    for pri, (ant, fonte) in enumerate(lista, start=1)])
     # de-para código RNDS -> vacina
@@ -645,9 +663,10 @@ def main():
                 cnes_set.add(cnes)
                 break
         uni_rows.append((i, nome, cnes, tipo, ds, True, end,
-                         f"(81) 3355-{rng.randint(1000, 9999)}", lat, lon))
+                         f"(81) 3355-{rng.randint(1000, 9999)}", lat, lon, HORARIO_SALA[tipo]))
     s2 += inserts("unidade_saude", ["id_unidade", "nome", "cnes", "tipo_unidade", "distrito_sanitario",
-                                    "possui_sala_vacina", "endereco", "telefone", "latitude", "longitude"],
+                                    "possui_sala_vacina", "endereco", "telefone", "latitude", "longitude",
+                                    "horario_funcionamento"],
                   uni_rows)
     uv = []
     for u in uni_rows:

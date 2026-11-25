@@ -93,6 +93,7 @@ CREATE TABLE unidade_saude (
     telefone VARCHAR(20) NULL,
     latitude DECIMAL(10,7) NULL,
     longitude DECIMAL(10,7) NULL,
+    horario_funcionamento VARCHAR(200) NULL, -- horário da sala de vacina, texto livre (fonte: dados abertos do Recife, campo "horario")
     CONSTRAINT uq_unidade_cnes UNIQUE (cnes),
     CONSTRAINT ck_unidade_latitude
         CHECK (latitude IS NULL OR latitude BETWEEN -90 AND 90),
@@ -325,6 +326,7 @@ CREATE TABLE dose_anterior_oficial (
     id_dose_esquema INT NOT NULL,
     id_dose_anterior INT NOT NULL,
     prioridade INT NOT NULL,
+    exige_registro BOOLEAN NOT NULL DEFAULT TRUE, -- FALSE: a dose pode ser tomada sem a anterior; o intervalo só conta se ela existir (ex.: men ACWY, IN 2026)
     fonte_regra VARCHAR(300) NULL,
     CONSTRAINT pk_dose_anterior_oficial PRIMARY KEY (id_dose_esquema, id_dose_anterior),
     CONSTRAINT fk_dao_dose
