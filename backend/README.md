@@ -12,6 +12,16 @@ docker compose -f ../docker-compose.yml up -d
 
 As variáveis do banco (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`) são as mesmas do `.env`.
 
+## Login no perfil dev
+
+Enquanto o SSO do Conecta não existe, os perfis `dev` e `test` aceitam um **token falso** que diz qual pessoa sintética está logada:
+
+```bash
+curl -H "Authorization: Bearer dev-pessoa-4" http://localhost:8080/v1/eu   # Valentina, mãe do Heitor (5)
+```
+
+A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualquer outra). Fora de `dev`/`test`, nenhum token vale até o SSO real entrar em `seguranca.ValidadorToken`.
+
 ## Testes
 
 ```bash
@@ -28,7 +38,8 @@ As variáveis do banco (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USE
 |---|---|---|
 | `dados` | `dados-fhir` | Entidades JPA (`@Immutable`) e repositórios somente leitura |
 | `fonte` | `dados-fhir` | `FonteRegistrosVacinacao`, `FonteBancoSintetico`, leitura e validação de `Immunization` (HAPI FHIR) |
-| demais | `backend-java` | Regra de situação vacinal, serviços, controllers (ainda não existem) |
+| `regra` | `backend-java` | Regra de situação vacinal (D17 + D18, provisórias), Java puro |
+| `servico`, `api`, `seguranca` | `backend-java` | Serviços, endpoints do contrato, token falso (dev) e controle de acesso |
 
 ## Migrações
 

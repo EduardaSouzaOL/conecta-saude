@@ -15,3 +15,11 @@ spring:
     # V1 = schema, V2 = terminologias RNDS, V3 = catálogo e calendário.
     # Os dados sintéticos (V4) só entram nos perfis dev e test.
     locations: classpath:db/migration
+
+minha-vacinacao:
+  # Registros que valem por doses de outras vacinas (regra oficial do PNI), como dado (RNF07).
+  equivalencias:
+    - imunobiologico: "56"   # tetra viral (SCRV) = tríplice viral D2 + varicela D1
+      doses:
+        - { vacina: 10, numero-dose: 2 }
+        - { vacina: 11, numero-dose: 1 }

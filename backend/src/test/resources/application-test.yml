@@ -2,3 +2,7 @@
 spring:
   flyway:
     locations: classpath:db/migration,classpath:db/dados-sinteticos
+
+# "Hoje" fixo: a base sintética e os exemplos do contrato usam 24/11/2026.
+minha-vacinacao:
+  data-referencia: 2026-11-24
