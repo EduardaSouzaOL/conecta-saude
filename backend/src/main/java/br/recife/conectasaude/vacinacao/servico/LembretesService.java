@@ -49,11 +49,13 @@ public class LembretesService {
         this.relogio = relogio;
     }
 
-    /** A logada primeiro, depois os dependentes na ordem de {@code GET /v1/eu}. */
+    /** A logada primeiro, depois os dependentes ativos (corte 18 anos LGPD/ECA) na ordem de {@code GET /v1/eu}. */
     public Respostas.ListaLembretes daPessoaLogadaEDependentes(int idPessoaLogada) {
+        LocalDate hoje = LocalDate.now(relogio);
         List<Integer> ids = new ArrayList<>();
         ids.add(idPessoaLogada);
         vinculos.findByIdResponsavelAndDataFimIsNullOrderByIdPessoa(idPessoaLogada).stream()
+                .filter(v -> v.ativoParaDependenteEm(hoje))
                 .map(VinculoResponsavel::getIdPessoa)
                 .forEach(ids::add);
         return lembretes(ids, idPessoaLogada);

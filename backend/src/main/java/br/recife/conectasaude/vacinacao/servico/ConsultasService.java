@@ -60,8 +60,10 @@ public class ConsultasService {
 
     public Respostas.Eu eu(int idPessoaLogada, MetodoLogin metodoLogin) {
         Pessoa eu = pessoas.findById(idPessoaLogada).orElseThrow(NaoEncontradoException::new);
+        LocalDate hoje = LocalDate.now(relogio);
         List<Respostas.Dependente> dependentes = vinculos.findByIdResponsavelAndDataFimIsNullOrderByIdPessoa(idPessoaLogada)
                 .stream()
+                .filter(v -> v.ativoParaDependenteEm(hoje))
                 .map(v -> new Respostas.Dependente(SituacaoVacinalService.Mapeamento.pessoa(v.getDependente()),
                         v.getParentesco()))
                 .toList();
@@ -71,6 +73,10 @@ public class ConsultasService {
     }
 
     public Respostas.ListaUnidades unidades(Integer idVacina, Double lat, Double lng) {
+        return unidades(idVacina, lat, lng, false);
+    }
+
+    public Respostas.ListaUnidades unidades(Integer idVacina, Double lat, Double lng, boolean somenteDisponiveis) {
         Map<Integer, String> disponibilidade = idVacina == null ? Map.of()
                 : unidadeVacinas.findByIdVacina(idVacina).stream()
                         .collect(Collectors.toMap(UnidadeVacina::getIdUnidade, UnidadeVacina::getDisponibilidade));
@@ -81,8 +87,9 @@ public class ConsultasService {
         List<Respostas.UnidadeNoMapa> lista = unidades.findByPossuiSalaVacinaTrueOrderById().stream()
                 .map(u -> new Respostas.UnidadeNoMapa(u.getId(), u.getNome(), u.getTipo(), u.getEndereco(),
                         u.getDistritoSanitario(), numero(u.getLatitude()), numero(u.getLongitude()),
-                        u.isPossuiSalaVacina(), distancia(u, lat, lng),
+                        u.isPossuiSalaVacina(), u.getTelefone(), u.getHorarioFuncionamento(), distancia(u, lat, lng),
                         idVacina == null ? null : disponibilidade.getOrDefault(u.getId(), "SEM_INFORMACAO")))
+                .filter(u -> !somenteDisponiveis || idVacina == null || "DISPONIVEL".equals(u.disponibilidadeVacina()))
                 .sorted(ordem)
                 .toList();
         return new Respostas.ListaUnidades(lista, AVISO_PORTA_ABERTA);

@@ -2,6 +2,25 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.9.0 · 25/11/2026 · visão por vacina, acompanhamento (SCR-06), dT 10 anos, HepB ≥ 7 anos e corte LGPD 18 anos (D24)
+
+> Decisão D24 (25/11/2026): adequação do contrato e do backend às telas da especificação funcional (`SCR-01`–`SCR-12`) e às normas oficiais do Ministério da Saúde (`IN-2026`, `MNP-2024`, `PNI-REG`, `PT-5.663`) e LGPD/ECA (art. 14, Enunciado CD/ANPD nº 1/2023).
+
+**Mudança compatível (aditiva):** nenhum campo, enum ou endpoint da `0.8.0` foi removido.
+
+### O que mudou
+- **9 correções internas da `0.8.0`:** versão na descrição (`0.9.0`), remoção de linha órfã em `CodigoAviso`, remoção do exemplo desatualizado da MenACWY em `SituacaoDose`, `idade_recomendada_dias` → `idade_recomendada_periodo` em `DosePrevista`, adição de `404` em `carteira.pdf`/`campanhas`/`eu`, alinhamento de `security`/`401` em `/v1/demo/pessoas`, adição de `required` em `UnidadeNoMapa` e remoção de `[provisório]` em `proximaDose` (`[MNP-2024]`, p. 140–141).
+- **`Unidade` / `GET /v1/unidades`:** `telefone` e `horarioFuncionamento` promovidos para o schema base `Unidade` (passam a vir também em `UnidadeNoMapa`, evitando N+1 em `SCR-07`). Novo query param opcional `somenteDisponiveis` (`boolean`, default `false`) para filtrar unidades com a vacina `DISPONIVEL` (`RULE-05`), mantendo `avisoPortaAberta`.
+- **`SituacaoVacinal`:** novos campos aditivos `dataUltimaSincronizacao` (de `importacao_dados`, para `SCR-04`), `resumoVacinas` (contadores por vacina, **sem** contar `PRAZO_ENCERRADO`), `vacinaDestaqueHome` (`RULE-04`: vacina atrasada em `AINDA_POSSO_TOMAR` mais antiga, ou `null`) e `vacinas[]` (cards `CMP-01`, trilha `CMP-02`, `tipoEsquema` `DOSES`/`PERIODICA`, `statusAba`, `subsecaoAtrasada`). `DosePrevista` e `DoseForaDaIdade` ganham `idEsquema`, e `RegistroResumo` ganha `unidade`.
+- **Novo `GET /v1/pessoas/{idPessoa}/vacinas/{idVacina}` (`DetalheVacina`):** linha do tempo consolidada da vacina (`SCR-06`), doenças prevenidas, registros e avisos — funciona inclusive para vacinas em `PRAZO_ENCERRADO` (sem `404`).
+- **`GET /v1/pessoas/{idPessoa}/registros`:** novo query param opcional `?vacina=` (para `SCR-11`, incluindo equivalentes como `SCRV`).
+- **Regras oficiais (`[IN-2026]` / D24):**
+  - **dT:** reforço de rotina ajustado de 5 → **10 anos** (`P10Y`, `tipoEsquema: PERIODICA`, `"Reforço a cada 10 anos"`); 5 anos fica apenas para exposição a risco na avaliação da UBS.
+  - **Hepatite B ≥ 7 anos:** incluída no cálculo (`P7Y`, 3 doses, dispensada se Penta D3 consta) como **`PODE_TOMAR`** (nunca `ATRASADA`).
+  - **Influenza:** mantida fora de `SituacaoVacinal` (Opção A) até a SESAU definir o período da temporada; segue em Campanhas e Histórico.
+- **LGPD/ECA para dependentes (D24):** vínculos em `pessoa_responsavel` passam a encerrar o acesso automaticamente quando o dependente completa **18 anos** (salvo parentesco `CURADOR`/`TUTOR`). Referência oficial do MS para dependentes/dados sensíveis: `gov.br` Prata/Ouro + 2FA.
+- `info.version` 0.8.0 → 0.9.0.
+
 ## 0.8.0 · 25/11/2026 · modo visitante e tela "Entrar como" (demonstração)
 
 > Pedido da Duda (25/11/2026), para simular a entrada do Conecta como no protótipo do hackathon: "Entrar como" com pessoas fictícias e "Continuar sem entrar".

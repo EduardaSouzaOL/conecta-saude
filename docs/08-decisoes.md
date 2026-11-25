@@ -27,6 +27,7 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D21 | **Lembretes e elegibilidade em campanha seguem o PNI e o Ministério da Saúde**, não escolhas nossas: lembrete de campanha só para quem está na faixa etária e, em campanha **seletiva**, tem dose a fazer de vacina da campanha; dose atrasada lembra até a idade máxima oficial; dose sem a anterior não lembra (lembra a anterior); nome da dose pela RNDS; "em breve" só até 7 dias antes | ✅ Decidido (Adan) | 25/11/2026 |
 | D22 | **Canal de ouvidoria (RF23) e carteira de vacinação em PDF (RF09) entram no piloto**, disponíveis **só para quem entrou com login gov.br**; quem entrou com e-mail comum não tem acesso | ✅ Decidido (Duda) | 25/11/2026 |
 | D23 | **Modo visitante e tela "Entrar como" na demonstração**: mapa, unidades, campanhas e conteúdo educativo abrem sem login; o resto pede login. Na demonstração, a entrada é uma lista de pessoas fictícias, como no protótipo do Conecta | ✅ Decidido (Duda) | 25/11/2026 |
+| D24 | **Contrato `v0.9.0` (visão por vacina + `SCR-06`), regras `IN-2026` (dT 10 anos periódica, Hepatite B ≥ 7 anos nunca atrasada, Influenza fora da situação vacinal) e corte LGPD aos 18 anos para dependentes** | ✅ Decidido | 25/11/2026 |
 
 ## Detalhes
 
@@ -147,4 +148,13 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 - Se a carteira em PDF compete com o documento oficial do Meu SUS Digital (dúvida já levada à COP).
 
 **Complemento (Duda, 25/11/2026): opção de baixar no Meu SUS Digital.** Junto do botão da nossa carteira, o front oferece também a opção de baixar o documento **oficial** no **Meu SUS Digital** (app do Ministério da Saúde). São duas opções lado a lado: a nossa carteira em PDF continua **igual** (mesmo formato e conteúdo, gerada pela nossa API) e o Meu SUS Digital é só um link de saída. O app não coloca arquivo dentro do Meu SUS Digital nem lê dados dele (não há API pública); a pessoa baixa lá com a conta gov.br dela. A opção segue a mesma regra da D22 (só com login gov.br). Link e forma de abrir o app (loja, site ou link direto) **[a confirmar]** com a Emprel/SESAU.
+
+### D24 · Contrato v0.9.0, regras IN-2026 (dT, Hepatite B ≥ 7 anos, Influenza) e LGPD para dependentes
+**Decisão (25/11/2026):** evoluir o contrato de forma retrocompatível para `v0.9.0` atendendo às telas da especificação funcional (`SCR-01`–`SCR-12`), às normas do Ministério da Saúde (`IN-2026`, `MNP-2024`, `PT-5.663`) e à LGPD/ECA (art. 14 + Enunciado CD/ANPD nº 1/2023):
+- **dT (`IN-2026`):** reforço de rotina volta de 5 para **10 anos** (`P10Y`), marcado como `PERIODICA` (`"Reforço a cada 10 anos"`). O intervalo de 5 anos é exceção por exposição a risco, avaliada na UBS.
+- **Hepatite B ≥ 7 anos (`IN-2026`):** incluída no cálculo de situação vacinal (3 doses a partir dos 7 anos, dispensada quando Penta D3 já consta no registro) como `PODE_TOMAR` / `EM_DIA` / `AINDA_NAO_DISPONIVEL`, **nunca `ATRASADA`** (sem idade recomendada no calendário).
+- **Influenza (`IN-2026`):** mantida fora de `SituacaoVacinal` (Opção A) até definição do período oficial da temporada pela SESAU; permanece em Campanhas e Histórico.
+- **Visão por vacina (`SCR-02`, `SCR-04`, `SCR-05`, `SCR-06`):** `SituacaoVacinal` inclui `vacinas[]`, `resumoVacinas` (sem contar `PRAZO_ENCERRADO`), `vacinaDestaqueHome` (só `AINDA_POSSO_TOMAR`, mais antiga) e `dataUltimaSincronizacao` (`importacao_dados`); novo endpoint `GET /v1/pessoas/{idPessoa}/vacinas/{idVacina}`; `Unidade` passa a expor `telefone` e `horarioFuncionamento` já na listagem `/v1/unidades`, com filtro opcional `?somenteDisponiveis=true`.
+- **LGPD/ECA para dependentes:** o vínculo em `pessoa_responsavel` encerra o acesso do responsável automaticamente quando o dependente completa **18 anos** (salvo parentesco `CURADOR`/`TUTOR`). Referência oficial do MS (Caderneta Digital da Criança / Meu SUS Digital): conta `gov.br` **Prata ou Ouro** com 2FA para acesso a dados sensíveis e de dependentes.
+
 

@@ -50,6 +50,26 @@ public class VinculoResponsavel {
     public LocalDate getDataInicio() { return dataInicio; }
     public LocalDate getDataFim() { return dataFim; }
 
+    /**
+     * Vínculo vigente sob LGPD/ECA (D24): ativo (sem data de fim) e, salvo {@code CURADOR} ou
+     * {@code TUTOR}, o dependente ainda tem menos de 18 anos na {@code dataReferencia}.
+     */
+    public boolean ativoParaDependenteEm(LocalDate dataReferencia) {
+        LocalDate nascimento = dependente == null ? null : dependente.getDataNascimento();
+        return ativoParaDependente(dataFim, parentesco, nascimento, dataReferencia);
+    }
+
+    static boolean ativoParaDependente(LocalDate dataFim, String parentesco, LocalDate nascimento,
+            LocalDate dataReferencia) {
+        if (dataFim != null) {
+            return false;
+        }
+        if ("CURADOR".equalsIgnoreCase(parentesco) || "TUTOR".equalsIgnoreCase(parentesco)) {
+            return true;
+        }
+        return nascimento == null || nascimento.plusYears(18).isAfter(dataReferencia);
+    }
+
     /** Chave composta (id_pessoa, id_responsavel). */
     public static class Chave implements Serializable {
         private Integer idPessoa;

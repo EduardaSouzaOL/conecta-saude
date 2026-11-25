@@ -68,6 +68,7 @@ public class DemoController {
     private Respostas.PessoaDemo pessoaDemo(Pessoa p, String resumo, LocalDate hoje) {
         List<Respostas.PessoaResumo> dependentes = vinculos.findByIdResponsavelAndDataFimIsNullOrderByIdPessoa(p.getId())
                 .stream()
+                .filter(v -> v.ativoParaDependenteEm(hoje))
                 .map(v -> new Respostas.PessoaResumo(v.getDependente().getId(), v.getDependente().getNome(),
                         v.getDependente().getDataNascimento()))
                 .toList();

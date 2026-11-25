@@ -46,9 +46,9 @@ A planilha diz, em cada linha, qual é a **próxima dose** e o **intervalo míni
 |---|---|---|---|
 | MenACWY reforço (12 meses) | Meningo C D2, **só se houver** (`exige_registro = FALSE`) | 60 dias | `41;MenC;…;2;D2;≥ 3M a < 1A;60 dias;60 dias;38;REF`. [IN-2026]: dos 12 meses a 4a11m29d, ACWY "independente do histórico vacinal anterior aos 12 meses" |
 | DTP R1 | Penta D3 | 6 meses | `42;Penta;…;3;D3;≥ 3M15D a < 7A;9 Meses;6 Meses;6;R1` |
-| dT reforço | a última dose com componente tetânico: DTP R2; se não tiver, DTP R1; se não tiver, Penta D3 | 5 anos | `25;dT;…;3;D3;≥ 7A;10 anos;5 anos;38;REF` |
+| dT reforço | a última dose com componente tetânico: DTP R2; se não tiver, DTP R1; se não tiver, Penta D3 | 10 anos (rotina, `[IN-2026]`) | `25;dT;…;3;D3;≥ 7A;10 anos;5 anos;38;REF` (`[IN-2026]`: 5 anos apenas em exposição a risco) |
 
-Com mais de uma dose anterior possível (dT), vale a primeira da lista que tem registro, e o intervalo conta a partir dela. Quando a ligação tem `exige_registro = FALSE` (MenACWY dos 12 meses), a dose não espera a anterior: sem registro dela, segue só pela idade; com registro, respeita o intervalo. Assim, uma criança com DTP R2 aos 4 anos só tem a dT liberada aos 9 anos (4 + 5), e não aos 7.
+Com mais de uma dose anterior possível (dT), vale a primeira da lista que tem registro, e o intervalo conta a partir dela. Quando a ligação tem `exige_registro = FALSE` (MenACWY dos 12 meses), a dose não espera a anterior: sem registro dela, segue só pela idade; com registro, respeita o intervalo. Assim, uma criança com DTP R2 aos 4 anos tem o reforço de rotina da dT liberado aos 14 anos (4 + 10); a antecipação para 5 anos em caso de exposição a risco é avaliada pelo profissional na unidade (`[IN-2026]`, D24).
 
 ## Como o app conta as idades e os intervalos
 
@@ -64,7 +64,9 @@ No banco, os períodos ficam no formato ISO 8601 (`P1M15D`, `P6M`, `P4Y`) nas co
 - **Orientação do passo 3 só quando a dose anterior já venceu:** se a dose anterior ainda nem chegou na idade recomendada, não há o que procurar na unidade. Ex.: para um bebê de 6 meses, a tríplice viral D2 aparece como "ainda não disponível" sem orientação, porque a D1 é só aos 12 meses. A situação da dose (ainda não disponível) é a mesma nos dois casos.
 - **Atrasada a partir do dia seguinte à data recomendada:** a D17 diz "logo depois da idade recomendada", e a fonte oficial não fala em folga. No próprio dia recomendado a dose aparece como "já pode tomar".
 - **Próxima dose:** é a que fica disponível primeiro. Dose sem data (esperando a dose anterior) não entra, porque não há data para mostrar.
-- **Doses sem idade recomendada** no calendário (influenza anual, hepatite B a partir de 7 anos) continuam fora do cálculo até a regra ser definida.
+- **Doses sem idade recomendada** no calendário:
+  - **Hepatite B a partir de 7 anos** (`[IN-2026]`, D24): incluída no cálculo a partir dos 7 anos (dispensada se Penta D3 já consta no registro) como **já pode tomar** (`PODE_TOMAR`), respeitando o intervalo mínimo entre D1→D2 (30 dias) e D2→D3 (150 dias), **nunca atrasada** (pois não tem idade recomendada no calendário).
+  - **Influenza anual** (D24, Opção A): continua fora do cálculo de situação vacinal até a definição do período oficial da temporada pela SESAU (aparece em Campanhas e Histórico).
 
 ## O que mudou em relação a D17 e D18
 

@@ -325,9 +325,9 @@ def m15(n): return meses(n) + 15  # "nM15D"
 REGRA_OFICIAL = {
     ("BCG", 0, 1): (0, anos(5) - 1, "=", _R + "; BCG DU < 5A"),
     ("Hepatite B", 0, 1): (0, 30, "=", _R + "; HB D ≤ 30D"),
-    ("Hepatite B", 1, 1): (31, None, "=", _R + "; HB D1 > 30D"),
-    ("Hepatite B", 1, 2): (31, None, "=", _R + "; HB D2 > 30D, 30 dias após D1"),
-    ("Hepatite B", 1, 3): (31, None, "=", _R + "; HB D3 > 30D, 150 dias após D2"),
+    ("Hepatite B", 1, 1): (anos(7), None, "=", "[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); " + _R + "; HB D1 > 30D"),
+    ("Hepatite B", 1, 2): (anos(7), None, "=", "[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); " + _R + "; HB D2 > 30D, 30 dias após D1"),
+    ("Hepatite B", 1, 3): (anos(7), None, "=", "[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); " + _R + "; HB D3 > 30D, 150 dias após D2"),
     ("Penta (DTP/Hib/HB)", 0, 1): (m15(1), anos(7) - 1, "=", _R + "; Penta D1 ≥ 1M15D a < 7A"),
     ("Penta (DTP/Hib/HB)", 0, 2): (m15(2), anos(7) - 1, "=", _R + "; Penta D2 ≥ 2M15D a < 7A, 30 dias após D1"),
     ("Penta (DTP/Hib/HB)", 0, 3): (m15(3), anos(7) - 1, "=", _R + "; Penta D3 ≥ 3M15D a < 7A, 30 dias após D2"),
@@ -359,8 +359,8 @@ REGRA_OFICIAL = {
     ("DTP (tríplice bacteriana)", 0, 1): (anos(1), anos(7) - 1, meses(6), _R + "; DTP R1 ≥ 1A a < 7A, 6 meses após Penta D3"),
     ("DTP (tríplice bacteriana)", 0, 2): (anos(4), anos(7) - 1, "=", _R + "; DTP R2 ≥ 4A a < 7A, 180 dias após R1"),
     ("HPV quadrivalente", 0, 1): (anos(9), anos(15) - 1, "=", _R + "; HPV4 DU ≥ 9A a ≤ 14A"),
-    # dT: aprazamento 10 anos, intervalo MÍNIMO 5 anos após a dose anterior
-    ("Dupla adulto (dT)", 0, 1): (anos(7), None, anos(5), _R + "; dT REF ≥ 7A, aprazamento 10 anos, intervalo mínimo 5 anos após a última dose com componente tetânico (D3)"),
+    # [IN-2026] dT: reforço a cada 10 anos na rotina (5 anos é exceção por exposição a risco, D24)
+    ("Dupla adulto (dT)", 0, 1): (anos(7), None, anos(10), "[IN-2026] dT REF ≥ 7A, reforço a cada 10 anos na rotina (5 anos apenas em caso de exposição a risco); " + _R),
     ("Influenza", 0, 1): (meses(6), anos(9) - 1, "=", _R + "; INF3 D1 ≥ 6M a ≤ 8A"),
     ("Influenza", 0, 2): (meses(7), anos(9) - 1, "=", _R + "; INF3 D2 ≥ 7M a ≤ 8A, 30 dias após D1"),
     # A planilha traz "≥ 8M" para a DU; mantido como está, a conferir com a SESAU
@@ -376,9 +376,9 @@ REGRA_OFICIAL = {
 PERIODOS = {
     ("BCG", 0, 1): ("P0D", "P0D", "P5Y", None),
     ("Hepatite B", 0, 1): ("P0D", "P0D", "P31D", None),
-    ("Hepatite B", 1, 1): (None, "P31D", None, None),
-    ("Hepatite B", 1, 2): (None, "P31D", None, "P30D"),
-    ("Hepatite B", 1, 3): (None, "P31D", None, "P150D"),
+    ("Hepatite B", 1, 1): (None, "P7Y", None, None),
+    ("Hepatite B", 1, 2): (None, "P7Y", None, "P30D"),
+    ("Hepatite B", 1, 3): (None, "P7Y", None, "P150D"),
     ("Penta (DTP/Hib/HB)", 0, 1): ("P2M", "P1M15D", "P7Y", None),
     ("Penta (DTP/Hib/HB)", 0, 2): ("P4M", "P2M15D", "P7Y", "P30D"),
     ("Penta (DTP/Hib/HB)", 0, 3): ("P6M", "P3M15D", "P7Y", "P30D"),
@@ -406,7 +406,7 @@ PERIODOS = {
     ("DTP (tríplice bacteriana)", 0, 1): ("P15M", "P1Y", "P7Y", "P6M"),
     ("DTP (tríplice bacteriana)", 0, 2): ("P4Y", "P4Y", "P7Y", "P180D"),
     ("HPV quadrivalente", 0, 1): ("P9Y", "P9Y", "P15Y", None),
-    ("Dupla adulto (dT)", 0, 1): ("P14Y", "P7Y", None, "P5Y"),
+    ("Dupla adulto (dT)", 0, 1): ("P14Y", "P7Y", None, "P10Y"),
     ("Influenza", 0, 1): (None, "P6M", "P9Y", None),
     ("Influenza", 0, 2): (None, "P7M", "P9Y", "P30D"),
     ("Influenza", 0, 3): (None, "P8M", None, None),
@@ -422,12 +422,26 @@ ANTERIOR_OFICIAL = {
         (("Meningocócica C conjugada", 0, 2), _PD + "MenC D2 -> REF, intervalo mínimo 60 dias; [IN-2026] só quando há MenC D2")],
     ("DTP (tríplice bacteriana)", 0, 1): [
         (("Penta (DTP/Hib/HB)", 0, 3), _PD + "Penta D3 -> R1, intervalo mínimo 6 meses")],
-    # dT: 5 anos depois da última dose com componente tetânico do esquema da criança
+    # [IN-2026] dT: reforço 10 anos depois da última dose com componente tetânico (5 anos só em exposição a risco)
     ("Dupla adulto (dT)", 0, 1): [
-        (("DTP (tríplice bacteriana)", 0, 2), _PD + "dT D3 -> REF, intervalo mínimo 5 anos (DTP R2)"),
-        (("DTP (tríplice bacteriana)", 0, 1), _PD + "dT D3 -> REF, intervalo mínimo 5 anos (DTP R1, sem R2)"),
-        (("Penta (DTP/Hib/HB)", 0, 3), _PD + "dT D3 -> REF, intervalo mínimo 5 anos (Penta D3, sem R1 e R2)")],
+        (("DTP (tríplice bacteriana)", 0, 2), "[IN-2026] dT REF 10 anos após DTP R2 (5 anos apenas em exposição a risco)"),
+        (("DTP (tríplice bacteriana)", 0, 1), "[IN-2026] dT REF 10 anos após DTP R1, sem R2 (5 anos apenas em exposição a risco)"),
+        (("Penta (DTP/Hib/HB)", 0, 3), "[IN-2026] dT REF 10 anos após Penta D3, sem R1 e R2 (5 anos apenas em exposição a risco)")],
 }
+
+# Metadados adicionais por esquema: (vacina, n_esquema) -> (tipo_esquema, periodicidade_periodo,
+# periodicidade_texto, idade_minima_periodo, calcular_sem_idade_recomendada)
+META_ESQUEMA = {
+    ("Hepatite B", 1): ("DOSES", None, None, "P7Y", True),
+    ("Dupla adulto (dT)", 0): ("PERIODICA", "P10Y", "Reforço a cada 10 anos", None, False),
+    ("Influenza", 0): ("PERIODICA", "P1Y", "Dose anual", "P6M", False),
+}
+
+# [IN-2026] Esquemas de atualização dispensados quando uma dose infantil equivalente já foi registrada
+ESQUEMA_DISPENSADO = [
+    (("Hepatite B", 1), ("Penta (DTP/Hib/HB)", 0, 3),
+     "[IN-2026] Penta D3 completa a proteção infantil contra Hepatite B, dispensando o esquema de 3 doses >= 7 anos"),
+]
 
 # [IN-2026] ACWY dos 12 meses "independente do histórico vacinal anterior aos 12 meses".
 DOSE_ANTERIOR_OPCIONAL = {("Meningocócica ACWY", 0, 1)}
@@ -602,7 +616,7 @@ def main():
     s2 = CAB.format(titulo="catálogo de vacinas, calendário e unidades", semente=semente)
     vac_rows, doenca_rows, vd_rows, esq_rows, dose_rows = [], [], [], [], []
     doencas = {}
-    vac_id, dose_idx = {}, {}  # dose_idx[(vacina, n_esquema, numero)] = (id_dose, dose)
+    vac_id, esq_idx, dose_idx = {}, {}, {}  # dose_idx[(vacina, n_esquema, numero)] = (id_dose, dose)
     id_esq = id_dose = 0
     for i, v in enumerate(VACINAS, start=1):
         vac_id[v["nome"]] = i
@@ -614,7 +628,11 @@ def main():
             vd_rows.append((i, doencas[d]))
         for ne, (nome_e, imin, imax, doses) in enumerate(v["esquemas"]):
             id_esq += 1
-            esq_rows.append((id_esq, i, nome_e, imin, imax, "Idades em dias", "ATIVO"))
+            tipo_e, per_p, per_txt, imin_p, calc_sem_rec = META_ESQUEMA.get(
+                (v["nome"], ne), ("DOSES", None, None, None, False))
+            esq_rows.append((id_esq, i, nome_e, tipo_e, per_p, per_txt, imin, imax,
+                             imin_p, calc_sem_rec, "Idades em dias", "ATIVO"))
+            esq_idx[(v["nome"], ne)] = id_esq
             for (num, cdose, idade, intervalo, desc) in doses:
                 id_dose += 1
                 imin_d, imax_d, int_of, fonte = REGRA_OFICIAL[(v["nome"], ne, num)]
@@ -627,8 +645,10 @@ def main():
     s2 += inserts("doenca", ["id_doenca", "nome"], doenca_rows)
     s2 += inserts("vacina_doenca", ["id_vacina", "id_doenca"], vd_rows)
     s2 += "\n-- idade_minima / idade_maxima em DIAS\n"
-    s2 += inserts("esquema_vacinal", ["id_esquema", "id_vacina", "nome", "idade_minima",
-                                      "idade_maxima", "descricao", "status"], esq_rows)
+    s2 += inserts("esquema_vacinal", ["id_esquema", "id_vacina", "nome", "tipo_esquema",
+                                      "periodicidade_periodo", "periodicidade_texto",
+                                      "idade_minima", "idade_maxima", "idade_minima_periodo",
+                                      "calcular_sem_idade_recomendada", "descricao", "status"], esq_rows)
     s2 += "\n-- intervalo_apos_anterior, idade_recomendada_dias, idade_minima_dias e idade_maxima_dias em DIAS (aproximação);\n-- a regra usa os períodos ISO 8601 (*_periodo), com meses e anos de calendário\n"
     s2 += inserts("dose_esquema", ["id_dose_esquema", "id_esquema", "numero_dose",
                                    "intervalo_apos_anterior", "idade_recomendada_dias",
@@ -642,6 +662,10 @@ def main():
                   [(dose_idx[d][0], dose_idx[ant][0], pri, d not in DOSE_ANTERIOR_OPCIONAL, fonte)
                    for d, lista in ANTERIOR_OFICIAL.items()
                    for pri, (ant, fonte) in enumerate(lista, start=1)])
+    s2 += "\n-- [IN-2026] esquema de atualização dispensado quando dose infantil equivalente já consta\n"
+    s2 += inserts("esquema_dispensado_por_dose", ["id_esquema", "id_dose_esquema", "fonte_regra"],
+                  [(esq_idx[esq], dose_idx[dose_ref][0], fonte)
+                   for esq, dose_ref, fonte in ESQUEMA_DISPENSADO])
     # de-para código RNDS -> vacina
     cod2vac = {v["cod"]: vac_id[v["nome"]] for v in VACINAS}
     cod2vac["77"] = vac_id["Influenza"]

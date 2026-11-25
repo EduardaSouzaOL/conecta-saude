@@ -263,12 +263,19 @@ CREATE TABLE esquema_vacinal (
     id_esquema INT AUTO_INCREMENT PRIMARY KEY,
     id_vacina INT NOT NULL,
     nome VARCHAR(120) NOT NULL,
+    tipo_esquema VARCHAR(20) NOT NULL DEFAULT 'DOSES', -- DOSES ou PERIODICA (ex.: dT 10 anos, Influenza anual)
+    periodicidade_periodo VARCHAR(12) NULL,            -- ISO 8601 para PERIODICA (ex.: P10Y, P1Y)
+    periodicidade_texto VARCHAR(80) NULL,              -- texto simples (ex.: "Reforço a cada 10 anos")
     idade_minima INT NULL,
     idade_maxima INT NULL,
+    idade_minima_periodo VARCHAR(12) NULL,             -- ISO 8601: idade a partir da qual o esquema se aplica (ex.: P7Y)
+    calcular_sem_idade_recomendada BOOLEAN NOT NULL DEFAULT FALSE, -- TRUE: entra no cálculo como PODE_TOMAR (nunca ATRASADA), ex.: HepB >= 7 anos [IN-2026]
     descricao TEXT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ATIVO',
     CONSTRAINT fk_esquema_vacina
         FOREIGN KEY (id_vacina) REFERENCES vacina(id_vacina),
+    CONSTRAINT ck_esquema_tipo
+        CHECK (tipo_esquema IN ('DOSES', 'PERIODICA')),
     CONSTRAINT ck_esquema_idades
         CHECK (
             (idade_minima IS NULL OR idade_minima >= 0)
@@ -339,6 +346,19 @@ CREATE TABLE dose_anterior_oficial (
     CONSTRAINT uq_dao_prioridade UNIQUE (id_dose_esquema, prioridade),
     CONSTRAINT ck_dao_prioridade CHECK (prioridade > 0),
     CONSTRAINT ck_dao_diferente CHECK (id_dose_esquema <> id_dose_anterior)
+) ENGINE=InnoDB;
+
+-- [IN-2026] Dose que dispensa um esquema de atualização (ex.: Penta D3 já cumpre
+-- Hepatite B na infância, dispensando o esquema de 3 doses de Hepatite B >= 7 anos).
+CREATE TABLE esquema_dispensado_por_dose (
+    id_esquema INT NOT NULL,
+    id_dose_esquema INT NOT NULL,
+    fonte_regra VARCHAR(300) NULL,
+    CONSTRAINT pk_esquema_dispensado PRIMARY KEY (id_esquema, id_dose_esquema),
+    CONSTRAINT fk_edpd_esquema
+        FOREIGN KEY (id_esquema) REFERENCES esquema_vacinal(id_esquema),
+    CONSTRAINT fk_edpd_dose
+        FOREIGN KEY (id_dose_esquema) REFERENCES dose_esquema(id_dose_esquema)
 ) ENGINE=InnoDB;
 
 CREATE TABLE fonte_dados (
