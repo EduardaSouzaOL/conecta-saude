@@ -10,8 +10,10 @@
 - [ ] **Qual base vamos usar de fato, no protótipo e no futuro: RNDS, PEC ou um "espelho" do Meu SUS Digital?**
   Contexto: a reunião de 04/11 recomendou a RNDS porque o PEC não tem doses da média/alta complexidade e marcaria falsos atrasos. A decisão D06 ainda está como "recomendado, falta confirmar". Fonte: [04](04-ecossistema-e-integracoes.md), [08](08-decisoes.md).
 - [ ] **Qual é o caminho de acesso à RNDS (Emprel, Ministério) e quanto tempo isso costuma levar?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** quem concede é o Ministério, pelo Portal de Serviços do DATASUS (canal oficial das APIs do MS). O pedido exige conta gov.br, certificado digital A1 (ICP-Brasil), CNES, gestor responsável e serviços; por ir vinculado a um estabelecimento e a um gestor, quem pede na prática é a Prefeitura/SESAU, com a Emprel como integradora técnica. Não há prazo oficial publicado: perguntar à Emprel, que já passou pelo processo. Fontes: COSEMS-SC, BVS.
   Contexto: na Covid, a autorização demorou. Enquanto isso, usamos base sintética no formato da RNDS (D13). Fonte: [08](08-decisoes.md), [11](11-modelo-rnds-e-base-sintetica.md).
 - [ ] **Existe ambiente de homologação da RNDS em que possamos validar os nossos JSON FHIR (Immunization)?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** sim. O integrador pede a credencial de homologação no Portal de Serviços do DATASUS e a equipe técnica avalia; o pedido de produção passa por nova avaliação, com evidências dos testes de homologação anexadas (PDF ou PNG, até 10 MB). Os perfis da RNDS no Simplifier servem para validar o FHIR antes, mas não são o repositório oficial e alguns estão em draft. Fontes: COSEMS-SC, Simplifier.
   Contexto: os exemplos em `sintetico/exemplos-fhir/` não passaram pelo validador e a URL do perfil não foi confirmada. Faltam as extensões de grupo de atendimento e condição maternal. Fonte: [11](11-modelo-rnds-e-base-sintetica.md).
 - [ ] **Quais regras de segurança e privacidade valem para um módulo que lê dados de vacinação do cidadão?**
   Contexto: o protótipo é somente leitura, mas a versão real exibiria dados de saúde. Fonte: [04](04-ecossistema-e-integracoes.md).
@@ -19,6 +21,7 @@
 ## 2. Fabricantes e tabela operacional por UBS
 
 - [ ] **A SESAU tem (ou consegue extrair) a tabela operacional de fabricante × vacina × lote × UBS do Recife, sem dados pessoais?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** talvez não precise pedir: o OpenDataSUS publica os microdados do SI-PNI de 2026 mês a mês, com UF e município do estabelecimento. Bases anteriores costumam trazer CNES, fabricante e lote, mas isso **não foi conferido** para 2026: ver o dicionário de dados antes de pedir. O Recife publica microdados de vacinação só da Covid-19.
   Contexto: o cadastro nacional (BRFabricantePNI, 81 códigos) é público e já está no banco. O que falta é o uso efetivo por UBS. Hoje o fabricante de cada vacina na base sintética é suposição. A minuta do pedido via e-SAI está pronta. Fonte: [12](12-fabricantes-rnds-e-pedido-sesau.md), [11](11-modelo-rnds-e-base-sintetica.md) (premissa 1).
 - [ ] **Quem mantém essa tabela, onde ela fica e qual sistema é a origem (SI-PNI, e-SUS APS, sistema próprio)?**
   Contexto: não se confirmou que exista uma "Tabela de Fabricantes RNDS" municipal, nem o setor responsável. Fonte: [12](12-fabricantes-rnds-e-pedido-sesau.md) §8.
@@ -65,6 +68,7 @@
 ## 5. Conecta Recife, Emprel e canais
 
 - [ ] **Como um módulo novo entra no Conecta Recife (processo, requisitos técnicos, contato na Emprel)?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** não há processo público documentado. O Conecta é feito pela Emprel com a Secretaria de Ciência, Tecnologia e Inovação (SECTI); quem aprova deve ser a SECTI ou a Emprel, com a SESAU como dona do conteúdo de saúde. Nenhum contato técnico publicado. Fonte: Canaltech.
   Fonte: [04](04-ecossistema-e-integracoes.md), [09](09-proximos-passos-e-pendencias.md).
 - [x] **É viável push segmentado por bairro/região no Conecta?**
   **Resposta:** é viável com um motor de push próprio, mas não temos informação de como isso funciona hoje no Conecta. Fica como **próximo passo** do projeto (ver [09](09-proximos-passos-e-pendencias.md)).
@@ -123,6 +127,7 @@ Saíram da avaliação do [14 · Integração com o Conecta Recife](14-integraca
 - [ ] **A Emprel aceita o formato A + B: microsserviço Java com API e telas como módulo web aberto dentro do app? Os módulos atuais (ex.: Minha Saúde Conectada) já funcionam assim?**
   Contexto: a equipe escolheu A + B para o piloto (D14 e D15).
 - [ ] **Como o login do Conecta chega a uma página web dentro do app (token, SSO, domínio permitido)? O mapa do Conecta pode ser usado a partir dessa página?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** o Conselho Municipal de Saúde informa que o Conecta aceita CPF e senha ou conta gov.br. Não há documentação sobre como a sessão passa para um módulo (token ou SSO), nem nível de conta exigido para o Minha Saúde Conectada. Referência: no gov.br, serviços sensíveis costumam pedir prata ou ouro; para dados de saúde, prata no mínimo é **hipótese**, a confirmar com a Emprel. Fontes: site do Conselho, Folha de Pernambuco.
   Contexto: são os dois riscos da opção B. Fonte: [14](14-integracao-conecta-recife.md) §3 e §5.
 - [ ] **Proposta: a Emprel vê as telas nativas (opção C) como evolução natural depois do piloto, usando a mesma API? Em que prazo? Ou prefere começar já pela C?**
   Como apresentar: caminho em três etapas (piloto A + B → avaliação → telas nativas), com a frase "a API não muda; só a camada de telas muda". É proposta, não decisão (D16). Fonte: [14](14-integracao-conecta-recife.md) §3. Fonte: [14](14-integracao-conecta-recife.md) §3.
@@ -137,6 +142,7 @@ Saíram da avaliação do [14 · Integração com o Conecta Recife](14-integraca
 - [ ] **O Conecta tem vínculo responsável × dependente, para pais verem a vacinação dos filhos?**
   Fonte: [14](14-integracao-conecta-recife.md) §5.
 - [ ] **A iPES/HCE (que alimenta o Minha Saúde Conectada) já recebe as imunizações da RNDS? Dá para o módulo ler por ela?**
+  **Pesquisa prévia (Adan, 25/11/2026, fontes públicas):** provável, mas **não confirmado**. A iPES usa FHIR e openEHR, com modelos clínicos que incluem imunização, e lista projetos com SIPNI, RNDS Covid e e-SUS APS; no Recife, o Minha Saúde Conectada integrou mais de 10 sistemas. Nenhuma fonte diz que ela recebe hoje as vacinas da RNDS nem que um módulo externo pode ler por ela. Fonte: Portal Clínico.
   Contexto: pode ser um atalho para não depender de autorização nova do Ministério. Fonte: [14](14-integracao-conecta-recife.md) §6.
 - [ ] **A Central de Notificações do Conecta tem API para módulos, com segmentação por bairro?**
   Contexto: complementa a pergunta do push na seção 5. Fonte: [14](14-integracao-conecta-recife.md) §4.
