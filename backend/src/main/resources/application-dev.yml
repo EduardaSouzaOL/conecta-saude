@@ -1,0 +1,8 @@
+# Perfil de desenvolvimento: carrega também a base sintética (V4). Nunca usar com dados reais.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dados-sinteticos
+
+# Para a demonstração bater com os exemplos do contrato, descomente:
+# minha-vacinacao:
+#   data-referencia: 2026-11-24

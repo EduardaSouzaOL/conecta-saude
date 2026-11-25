@@ -1,0 +1,37 @@
+# Banco de desenvolvimento do "Minha vacinação" (MySQL 8).
+# Uso:
+#   1. copie .env.example para .env e ajuste os valores (o .env não vai para o git)
+#   2. docker compose up -d
+# O schema e os seeds entram pelas migrações Flyway do backend (docs/15, seção 1),
+# não por scripts de inicialização do container.
+name: conecta-saude
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: conecta-saude-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-conectasaude}
+      MYSQL_USER: ${MYSQL_USER:?defina MYSQL_USER no .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?defina MYSQL_PASSWORD no .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD no .env}
+      TZ: America/Recife
+    command:
+      # utf8mb4_unicode_ci em vez de utf8mb4_0900_ai_ci: evita recurso exclusivo do MySQL 8
+      # (o banco final da Emprel ainda não é conhecido; docs/15, seção 9).
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql-dados:
