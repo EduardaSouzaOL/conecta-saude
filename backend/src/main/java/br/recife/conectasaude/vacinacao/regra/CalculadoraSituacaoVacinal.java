@@ -26,8 +26,9 @@ import java.util.Optional;
  * <ol>
  *   <li>há registro que cumpre a dose: {@code EM_DIA};
  *   <li>a pessoa passou da idade máxima da dose: sai da lista, vai para "fora da idade" [PNI-REG];
- *   <li>a dose anterior do esquema não tem registro: {@code AINDA_NAO_DISPONIVEL} com a orientação
- *       {@code DOSE_ANTERIOR_SEM_REGISTRO} [PNI-REG: sequência, "sem D1 não há D2"];
+ *   <li>a dose anterior do esquema não tem registro: {@code AINDA_NAO_DISPONIVEL}, com a orientação
+ *       {@code DOSE_ANTERIOR_SEM_REGISTRO} quando a anterior já passou da idade recomendada dela
+ *       [PNI-REG: sequência, "sem D1 não há D2"];
  *   <li>a pessoa ainda não tem a idade mínima: {@code AINDA_NAO_DISPONIVEL} com a data [PNI-REG];
  *   <li>não passou o intervalo mínimo desde a dose anterior: {@code AINDA_NAO_DISPONIVEL} com a data;
  *       se já passou da idade recomendada, também {@code ATUALIZAR_CADERNETA} [PNI-REG];
@@ -125,9 +126,13 @@ public final class CalculadoraSituacaoVacinal {
             return new DoseCalculada(dose, Situacao.EM_DIA, recomendada, disponivel, registro, List.of());
         }
         // Passo 3 [PNI-REG]: a dose seguinte só existe depois da anterior ("sem D1 não há D2").
+        // A orientação só aparece quando a dose anterior já devia ter sido tomada (passou da idade
+        // recomendada dela); antes disso a dose seguinte é só "ainda não disponível".
         if (faltaAnterior) {
+            Integer idadeRecAnterior = anterior.get().idadeRecomendadaDias();
+            boolean anteriorVencida = idadeRecAnterior != null && hoje.isAfter(nascimento.plusDays(idadeRecAnterior));
             return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, null, null,
-                    List.of(Aviso.DOSE_ANTERIOR_SEM_REGISTRO));
+                    anteriorVencida ? List.of(Aviso.DOSE_ANTERIOR_SEM_REGISTRO) : List.of());
         }
         // Passo 4 [PNI-REG]: antes da idade mínima.
         if (hoje.isBefore(pelaIdade)) {

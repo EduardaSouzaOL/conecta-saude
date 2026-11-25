@@ -131,6 +131,15 @@ class CalculadoraSituacaoVacinalTest {
         }
 
         @Test
+        void passo3SemOrientacaoQuandoADoseAnteriorAindaNaoVenceu() {
+            // Bebê de 6 meses: a tríplice viral D1 é aos 12 meses; a D2 fica ainda não disponível, sem orientação.
+            DoseCalculada d2 = dose(calcular("2026-11-24"), 26);
+            assertThat(d2.situacao()).isEqualTo(Situacao.AINDA_NAO_DISPONIVEL);
+            assertThat(d2.dataDisponivel()).isNull();
+            assertThat(d2.orientacoes()).isEmpty();
+        }
+
+        @Test
         void passo4AntesDaIdadeMinimaOficial() {
             // [PNI-REG] Penta D1 ≥ 1M15D = 45 dias (21/06); recomendada aos 61 dias (07/07).
             DoseCalculada antes = dose(calcular("2026-06-20"), 6);

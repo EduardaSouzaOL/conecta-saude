@@ -18,7 +18,7 @@ Para cada dose do calendário da pessoa, na ordem do esquema, o app aplica o **p
 |---|---|---|---|
 | 1 | Há registro que cumpre a dose | **Em dia** (tomada) | registro oficial (RNDS) |
 | 2 | A pessoa já passou da **idade máxima** da dose | Sai da lista de pendentes e vai para "fora da idade", com a orientação "Converse na unidade de saúde" | [PNI-REG] |
-| 3 | A **dose anterior** do esquema não tem registro | **Ainda não disponível**, com a orientação "Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde." (`DOSE_ANTERIOR_SEM_REGISTRO`) | [PNI-REG]: sequência; o intervalo é contado a partir da dose anterior; "sem D1 não há D2" |
+| 3 | A **dose anterior** do esquema não tem registro | **Ainda não disponível**, com a orientação "Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde." (`DOSE_ANTERIOR_SEM_REGISTRO`) quando a dose anterior já passou da idade recomendada dela | [PNI-REG]: sequência; o intervalo é contado a partir da dose anterior; "sem D1 não há D2" |
 | 4 | A pessoa ainda não tem a **idade mínima** da dose | **Ainda não disponível**, com a data em que fica disponível | [PNI-REG] |
 | 5 | Ainda não passou o **intervalo mínimo** depois da dose anterior | **Ainda não disponível**, com a data em que fica disponível. Se a pessoa já passou da idade recomendada, também a orientação "Procure uma unidade de saúde para atualizar sua caderneta." (`ATUALIZAR_CADERNETA`) | [PNI-REG] |
 | 6 | Nenhum dos anteriores, e a pessoa já passou da **idade recomendada** | **Atrasada** | [CNV-2026] |
@@ -28,7 +28,7 @@ Para cada dose do calendário da pessoa, na ordem do esquema, o app aplica o **p
 - nascimento + idade mínima da dose;
 - data da dose anterior + intervalo mínimo.
 
-Se a dose anterior não tem registro (passo 3), não há data: a pessoa precisa procurar a unidade.
+Se a dose anterior não tem registro (passo 3), não há data: a dose seguinte espera a anterior.
 
 **Esquema interrompido não é reiniciado** [MNP]: quem atrasou continua da dose em que parou, respeitando o intervalo mínimo.
 
@@ -39,6 +39,9 @@ Se a dose anterior não tem registro (passo 3), não há data: a pessoa precisa 
 - **Idade máxima:** vale a da dose ([PNI-REG]). Quando a planilha não traz idade máxima para a dose, vale a idade máxima do esquema no calendário ([CNV-2026], tabela `esquema_vacinal`). Ponto a confirmar com a SESAU (ver abaixo).
 - **Atrasada:** a dose fica atrasada no dia **seguinte** à data recomendada (D17: "logo depois da idade recomendada"). No próprio dia recomendado ela aparece como "já pode tomar".
 - **Dose anterior:** é a dose anterior **do mesmo esquema** no banco. Intervalos que a planilha conta a partir de dose de **outra vacina** (por exemplo, MenACWY 60 dias depois da D2 da MenC; DTP R1 180 dias depois da D3 da Penta) ficam registrados em `fonte_regra`, mas o app ainda não os aplica.
+- **Orientação do passo 3:** só aparece quando a dose anterior já devia ter sido tomada. Ex.: para um bebê de 6 meses, a tríplice viral D2 aparece como "ainda não disponível" sem orientação, porque a D1 é só aos 12 meses.
+- **Próxima dose:** é a que fica disponível primeiro. Dose sem data (falta a anterior) não entra.
+- **Idades em dias:** "1M15D" virou 45 dias (1 mês = 30 dias + 15). Contado no calendário, daria 1 dia a mais em alguns meses.
 - **Doses sem idade recomendada** no calendário (influenza anual, hepatite B a partir de 7 anos) continuam fora do cálculo até a regra ser definida.
 
 ## O que mudou em relação a D17 e D18
@@ -66,3 +69,9 @@ Se a dose anterior não tem registro (passo 3), não há data: a pessoa precisa 
 2. **Sem idade máxima na planilha** para varicela e tríplice viral (e outras doses): por enquanto vale a idade máxima do esquema no calendário.
 3. **Tolerância para "atrasada":** hoje a dose fica atrasada logo no dia seguinte à data recomendada. A SESAU usa alguma folga?
 4. **Texto exato do [MNP]** sobre esquema interrompido.
+
+Também a conferir (encontrado ao aplicar a regra):
+
+5. **dT a partir de 7 anos:** a planilha diz "dT REF ≥ 7A". Como o intervalo de 5 anos conta de uma dose de **outra vacina** (a última DTP), que o app ainda não liga, a dT aparece como "já pode tomar" a partir dos 7 anos para quem não tem registro de dT. O calendário recomenda aos 14 anos.
+6. **Intervalos entre vacinas diferentes:** MenACWY 60 dias depois da MenC D2 e DTP R1 depois da Penta D3 ainda não são aplicados.
+7. **"6 meses" ou "180 dias":** a planilha diz 6 meses entre VIP D3 e R1 e entre Penta D3 e DTP R1; o banco usa 180 dias.
