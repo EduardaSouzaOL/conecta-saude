@@ -20,6 +20,7 @@ O Ministério da Saúde não define antecedência para lembrete **[dado]**. A ab
 
 - `DOSE_DISPONIVEL_EM_BREVE`: dose `AINDA_NAO_DISPONIVEL` com `dataDisponivel` não nula **até 7 dias** depois da `dataReferencia` (inclusive). Era 30 dias. Com `dataReferencia` 24/11/2026, a janela vai até 01/12/2026.
 - Sai o **[provisório]** da janela em `MotivoLembrete` e na descrição de `GET /v1/eu/lembretes`; a fonte foi citada.
+- **Texto do lembrete de campanha não seletiva aprovado** pelo Adan em 25/11/2026; deixa de ser **[provisório]** (tabela de modelos em `Lembrete`). Título igual ("Está acontecendo: {campanha.nome}"). Mensagem: "{nome} faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta levar {nome} e a caderneta a uma unidade de saúde até {dataFim}. Confirme na unidade." (logada: "Você faz parte do público da {campanha.nome}. Não é preciso ter dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até {dataFim}. Confirme na unidade."), com `{dataFim}` em dd/mm/aaaa. Substitui o modelo provisório da 0.6.0. O texto da campanha seletiva não mudou. Só muda o texto gerado; formato igual.
 - `info.version` 0.6.0 → 0.6.1.
 
 ### Exemplos (base sintética, 24/11/2026)

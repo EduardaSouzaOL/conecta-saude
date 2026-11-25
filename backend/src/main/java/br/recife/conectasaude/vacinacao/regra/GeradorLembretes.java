@@ -170,11 +170,15 @@ public final class GeradorLembretes {
     private static Lembrete lembreteCampanha(Pessoa pessoa, Campanha c) {
         String nome = primeiroNome(pessoa.nome());
         boolean eu = pessoa.logada();
-        String inicio = c.criterio().seletiva()
+        String fim = DATA_BR.format(c.dataFim());
+        String mensagem = c.criterio().seletiva()
                 ? (eu ? "A sua caderneta" : "A caderneta de " + nome) + " tem vacina para colocar em dia."
-                : (eu ? "Você" : nome) + " faz parte do público desta campanha.";
-        String mensagem = inicio + " A campanha vai até " + DATA_BR.format(c.dataFim()) + ". Procure uma unidade de saúde"
-                + (eu ? "" : " com " + nome) + ". Confirme na unidade.";
+                        + " A campanha vai até " + fim + ". Procure uma unidade de saúde"
+                        + (eu ? "" : " com " + nome) + ". Confirme na unidade."
+                : (eu ? "Você" : nome) + " faz parte do público da " + c.nome() + ". Não é preciso ter dose atrasada: "
+                        + (eu ? "basta ir a uma unidade de saúde com a sua caderneta"
+                              : "basta levar " + nome + " e a caderneta a uma unidade de saúde")
+                        + " até " + fim + ". Confirme na unidade.";
         return new Lembrete("campanha-" + pessoa.id() + "-" + c.id(), Tipo.CAMPANHA, Motivo.CAMPANHA_VIGENTE,
                 pessoa.id(), c.dataInicio(), "Está acontecendo: " + c.nome(), mensagem, textoNotificacao(pessoa),
                 null, null, null, c.id());

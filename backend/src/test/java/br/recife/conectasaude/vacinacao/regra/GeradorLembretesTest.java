@@ -156,10 +156,10 @@ class GeradorLembretesTest {
                 pessoa(5, "Heitor Nascimento Ferreira", BEBE, false)), influenza);
         assertThat(l).extracting(Lembrete::id).containsExactly("campanha-4-1", "campanha-5-1");
         assertThat(l.get(0).titulo()).isEqualTo("Está acontecendo: Influenza 2026");
-        assertThat(l.get(0).mensagem()).isEqualTo("Você faz parte do público desta campanha. A campanha vai até "
-                + "31/12/2026. Procure uma unidade de saúde. Confirme na unidade.");
-        assertThat(l.get(1).mensagem()).isEqualTo("Heitor faz parte do público desta campanha. A campanha vai até "
-                + "31/12/2026. Procure uma unidade de saúde com Heitor. Confirme na unidade.");
+        assertThat(l.get(0).mensagem()).isEqualTo("Você faz parte do público da Influenza 2026. Não é preciso ter "
+                + "dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até 31/12/2026. Confirme na unidade.");
+        assertThat(l.get(1).mensagem()).isEqualTo("Heitor faz parte do público da Influenza 2026. Não é preciso ter "
+                + "dose atrasada: basta levar Heitor e a caderneta a uma unidade de saúde até 31/12/2026. Confirme na unidade.");
     }
 
     @Test
