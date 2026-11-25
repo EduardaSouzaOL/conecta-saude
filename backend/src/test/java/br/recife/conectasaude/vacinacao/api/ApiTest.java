@@ -91,6 +91,55 @@ class ApiTest extends BancoDeTeste {
     }
 
     @Test
+    void lembretesSemTokenDa401() throws Exception {
+        mvc.perform(get("/v1/eu/lembretes")).andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        mvc.perform(get("/v1/eu/lembretes").header("Authorization", "Bearer token-qualquer"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/v1/pessoas/5/lembretes")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void lembretesSoDaPropriaPessoaEDosDependentes() throws Exception {
+        mvc.perform(comToken(get("/v1/pessoas/4/lembretes"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas.length()").value(1))
+                .andExpect(jsonPath("$.pessoas[0].pessoa.id").value(4));
+        mvc.perform(comToken(get("/v1/pessoas/5/lembretes"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas[0].pessoa.id").value(5))
+                .andExpect(jsonPath("$.lembretes[?(@.pessoa.id != 5)]").isEmpty());
+        // /v1/eu/lembretes: a logada e os dependentes dela, e mais ninguém
+        mvc.perform(comToken(get("/v1/eu/lembretes"), 4)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas[*].pessoa.id").value(org.hamcrest.Matchers.contains(4, 5)))
+                .andExpect(jsonPath("$.lembretes[?(@.pessoa.id != 4 && @.pessoa.id != 5)]").isEmpty())
+                .andExpect(jsonPath("$.pessoas[0].pessoa.cpf").doesNotExist())
+                .andExpect(jsonPath("$.pessoas[0].pessoa.cns").doesNotExist());
+        // Valentina (4) não é responsável pelo Bernardo (48); o dependente não vê o responsável
+        mvc.perform(comToken(get("/v1/pessoas/48/lembretes"), 4)).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.title").value("Sem acesso"));
+        mvc.perform(comToken(get("/v1/pessoas/4/lembretes"), 5)).andExpect(status().isForbidden());
+        mvc.perform(comToken(get("/v1/pessoas/99999/lembretes"), 4)).andExpect(status().isForbidden());
+        // O dependente logado só vê os próprios lembretes
+        mvc.perform(comToken(get("/v1/eu/lembretes"), 5)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas[*].pessoa.id").value(org.hamcrest.Matchers.contains(5)));
+    }
+
+    @Test
+    void lembretesDePessoaInexistenteDa404() throws Exception {
+        // Token de uma pessoa que não existe na base, pedindo os próprios lembretes
+        mvc.perform(comToken(get("/v1/pessoas/99999/lembretes"), 99999)).andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                .andExpect(jsonPath("$.title").value("Não encontrado"));
+    }
+
+    @Test
+    void lembretesNaoTemEndpointDeEscrita() throws Exception {
+        int s1 = mvc.perform(comToken(post("/v1/eu/lembretes"), 4)).andReturn().getResponse().getStatus();
+        int s2 = mvc.perform(comToken(post("/v1/pessoas/5/lembretes"), 4)).andReturn().getResponse().getStatus();
+        assertThat(s1).isIn(404, 405);
+        assertThat(s2).isIn(404, 405);
+    }
+
+    @Test
     void corsLiberaSoAOrigemConfigurada() throws Exception {
         String front = "http://localhost:5173";
         mvc.perform(options("/v1/eu").header("Origin", front)
@@ -125,6 +174,8 @@ class ApiTest extends BancoDeTeste {
         mvc.perform(comToken(get("/v1/pessoas/5/situacao-vacinal"), 4)).andExpect(status().isOk());
         mvc.perform(comToken(get("/v1/pessoas/5/registros"), 4)).andExpect(status().isOk());
         mvc.perform(comToken(get("/v1/pessoas/48/situacao-vacinal"), 4)).andExpect(status().isForbidden());
+        mvc.perform(comToken(get("/v1/eu/lembretes"), 4)).andExpect(status().isOk());
+        mvc.perform(comToken(get("/v1/pessoas/48/lembretes"), 46)).andExpect(status().isOk());
         for (int id : new int[] {4, 5, 48}) {
             Pessoa p = pessoas.findById(id).orElseThrow();
             assertThat(saida.getAll()).doesNotContain(p.getNome());

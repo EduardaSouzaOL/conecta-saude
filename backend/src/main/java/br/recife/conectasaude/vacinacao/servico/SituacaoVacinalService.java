@@ -126,9 +126,17 @@ public class SituacaoVacinalService {
                 AVISOS_DETALHE.stream().map(Mapeamento::aviso).toList());
     }
 
-    private record Contexto(Pessoa pessoa, List<RegistroVacinacao> registros, ResultadoSituacao resultado) {}
+    record Contexto(Pessoa pessoa, List<RegistroVacinacao> registros, ResultadoSituacao resultado) {}
 
     private Contexto contexto(int idPessoa) {
+        return contexto(idPessoa, LocalDate.now(relogio));
+    }
+
+    /**
+     * Situação vacinal calculada da pessoa em {@code hoje} (a mesma regra de {@link #situacao}); usado
+     * também pelos lembretes, para não duplicar a regra. 404 se a pessoa não existe.
+     */
+    Contexto contexto(int idPessoa, LocalDate hoje) {
         Pessoa pessoa = pessoas.findById(idPessoa).orElseThrow(NaoEncontradoException::new);
         String cpfOuCns = pessoa.getCpf() != null ? pessoa.getCpf() : pessoa.getCns();
         List<RegistroVacinacao> registros = fonte.buscarPorPessoa(cpfOuCns);
@@ -144,7 +152,7 @@ public class SituacaoVacinalService {
                 .toList();
 
         CalculadoraSituacaoVacinal calculadora = new CalculadoraSituacaoVacinal(calendario(), equivalencias);
-        ResultadoSituacao resultado = calculadora.calcular(pessoa.getDataNascimento(), LocalDate.now(relogio), paraRegra);
+        ResultadoSituacao resultado = calculadora.calcular(pessoa.getDataNascimento(), hoje, paraRegra);
         return new Contexto(pessoa, registros, resultado);
     }
 
