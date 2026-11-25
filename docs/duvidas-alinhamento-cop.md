@@ -48,7 +48,8 @@
 
 ## 4. Produto: status, mensagens e funcionalidades
 
-- [ ] **Como substituir o status "não posso tomar"?**
+- [x] **Como substituir o status "não posso tomar"?**
+  **Resposta:** a categoria se chama **Próxima** e mostra quando a dose fica liberada (D08, especificação de design de 25/11/2026).
   Contexto: a SESAU achou a mensagem negativa e imprecisa. Opções: "ainda não disponível", esconder a dose, ou mostrar só a próxima data. Decisão D08 em aberto. Fonte: [07](07-reuniao-sesau-2026-11-04.md), [08](08-decisoes.md).
 - [ ] **Vale exibir o PDF da carteira, ou isso compete com o documento oficial do Ministério?**
   Fonte: [09](09-proximos-passos-e-pendencias.md) pergunta 3.

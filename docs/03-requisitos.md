@@ -18,10 +18,10 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 | ID | Requisito | Prioridade |
 |---|---|---|
 | RF04 | Exibir o histórico de doses: vacina, dose, data, lote, fabricante, unidade e fonte do registro | Must |
-| RF05 | Classificar cada dose prevista por situação: **atrasada**, **já pode tomar**, **em dia** (e "ainda não disponível", ver RN03) | Must |
+| RF05 | Classificar cada dose prevista por situação: **atrasada**, **já pode tomar**, **em dia** e **próxima** (na API, `AINDA_NAO_DISPONIVEL`; ver RN03) | Must |
 | RF06 | Mostrar um **painel-resumo** (ex.: "3 atrasadas, 12 disponíveis") para a pessoa entender sua situação de relance. Elogiado pela SESAU | Must |
 | RF07 | Mostrar a próxima dose prevista e quando ela fica disponível | Must |
-| RF08 | Exibir um **aviso de cartão desatualizado**: "Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar" com link para o mapa | Must |
+| RF08 | Exibir um **aviso de cartão desatualizado**: "Leve seu cartão de vacinas à UBS para atualizar o registro." com "saiba mais", que abre o pop-up "Como atualizar sua carteira" (qualquer unidade atualiza; se não conseguir, ouvidoria) e o caminho para a unidade (D26) | Must |
 | RF09 | Disponibilizar a carteira em PDF, só para quem entrou com **login gov.br** (D22) | Must no piloto (D22); alinhamento com o Meu SUS Digital em aberto |
 
 ### Mapa de unidades
@@ -31,7 +31,7 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 | RF10 | A partir de uma dose "já pode tomar", abrir o mapa com as unidades próximas (localização atual ou endereço) | Must |
 | RF11 | Mostrar dados da unidade: nome, endereço, telefone, horário e se a sala de vacina está funcionando | Must |
 | RF12 | Deixar claro que "vacina é porta aberta": pode tomar em qualquer unidade | Must |
-| RF13 | Filtrar por vacina, diferenciando vacinas oferecidas em **toda a rede** (ex.: tétano, hepatite, cerca de 170 salas) das oferecidas só em **salas de referência** (ex.: BCG) | Should |
+| RF13 | **Fora do piloto (D25):** filtrar por vacina, diferenciando vacinas oferecidas em **toda a rede** (ex.: tétano, hepatite, cerca de 170 salas) das oferecidas só em **salas de referência** (ex.: BCG) | Should |
 | RF14 | Mostrar disponibilidade/estoque por unidade | Could (ver [04](04-ecossistema-e-integracoes.md#estoque)) |
 
 ### Gestão de conteúdo (perfil gestor)
@@ -80,18 +80,21 @@ Fontes: minimundo, plano de trabalho e feedback da SESAU na reunião de 04/11/20
 |---|---|
 | RN01 | A situação de cada dose é calculada a partir do esquema vacinal (idade mínima/máxima, ordem e intervalo entre doses) e dos registros existentes |
 | RN02 | O **aprazamento oficial é do profissional de saúde**. Condições clínicas (ex.: imunossuprimido toma 3 doses de HPV, não 2), vítimas de violência e outras indicações especiais mudam o esquema e não aparecem para o app. O app mostra uma **previsão de rotina** e deve deixar isso claro ("confirme na unidade") |
-| RN03 | **Revisar o status "não posso tomar"**. A SESAU recomendou retirar ou reformular: a mensagem negativa confunde, e a idade mínima nem sempre vale para todos. Sugestão: "ainda não disponível para você" ou simplesmente não listar |
+| RN03 | **Nunca usar "não posso tomar"**. A SESAU pediu para retirar: a mensagem negativa confunde, e a idade mínima nem sempre vale para todos. **Decidido (D08, 25/11/2026):** a categoria se chama **Próxima** e mostra quando a dose fica liberada |
 | RN04 | Vacina é **porta aberta**: a pessoa pode tomar em qualquer unidade do país |
 | RN05 | O cidadão **não pode** registrar uma dose. No máximo pode sinalizar "já tomei" para ser orientado a procurar a unidade (só profissional transcreve) |
 | RN06 | A transcrição do cartão físico é feita por médico, enfermeiro ou técnico; basta foto ou cartão com vacina, dose, data e lote |
 | RN07 | A base de referência para a situação vacinal do cidadão deve consolidar **todas as fontes** (RNDS). Usar só o PEC e-SUS marcaria como atrasado quem tomou a dose na média/alta complexidade |
 | RN08 | Um lembrete sempre se refere a uma dose prevista **ou** a uma campanha |
 | RN09 | Download do PDF da carteira e acesso à ouvidoria só para quem entrou com **login gov.br**; login por e-mail não tem acesso (D22). Nível da conta gov.br a definir |
+| RN10 | **Qualquer unidade de saúde** pode atualizar o registro com as doses da caderneta física. Se a unidade não conseguir, a pessoa pode registrar uma reclamação na ouvidoria (D26) |
 
 ## Telas do protótipo do cidadão (referência)
+
+> A especificação completa, tela a tela, está no [19](19-especificacao-design.md).
 
 1. Home do Conecta Recife → card de vacinação → **"ver mais"**
 2. **Minha vacinação**: painel-resumo + lista por situação
 3. Detalhe da vacina/dose
-4. **Mapa** filtrado pela vacina (usa o mapa já existente no Conecta)
+4. **Mapa** de unidades próximas (o filtro por vacina ficou fora do piloto, D25)
 5. Detalhe da unidade

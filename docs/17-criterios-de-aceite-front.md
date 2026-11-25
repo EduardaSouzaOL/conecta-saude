@@ -135,7 +135,7 @@ Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qua
 - [ ] Lembrete de dose (`tipo: DOSE`) abre o detalhe da dose (`idDose`) ou o mapa (`vacina.id`); lembrete de campanha abre a campanha (`idCampanha`).
 - [ ] Mostra os `avisos` da lista.
 - [ ] `textoNotificacao` **não** é usado na tela (é para push futuro, sem dado de saúde).
-- [ ] Sem push no piloto (D20). Aba "Próximas" para doses mais distantes: **[aguarda Figma]**.
+- [ ] Sem push no piloto (D20). Na especificação de design o sino é só representação (D25); se a tela de lembretes entra na demonstração está em aberto (divergência 1 da D25). A categoria das doses ainda não disponíveis se chama **Próxima** (D08).
 
 ### 5.8 Campanhas (`/v1/campanhas?vigentes=true&idPessoa=`)
 - [ ] Lista campanhas vigentes com nome, descrição, período (`dataInicio` a `dataFim`), `publicoAlvo` e vacinas.

@@ -11,7 +11,7 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D05 | **Descartar o dashboard de gestão** | ✅ Decidido | 04/11/2026 |
 | D06 | Usar a **RNDS** como base de referência do cidadão | 🟡 Recomendado; falta confirmar acesso com a Emprel/Ministério | 04/11/2026 |
 | D07 | Protótipo com **dados sintéticos** e **somente leitura** | ✅ Decidido | — |
-| D08 | Rever o status **"não posso tomar"** | 🟡 Em aberto (como substituir) | 04/11/2026 |
+| D08 | Rever o status **"não posso tomar"** | ✅ Decidido em 25/11/2026: na tela a categoria se chama **Próxima** (na API continua `AINDA_NAO_DISPONIVEL`) | 04/11/2026 |
 | D09 | Incluir **aviso de cartão desatualizado / transcrição** | ✅ Decidido | 04/11/2026 |
 | D10 | Mapa: começar com **todas as unidades próximas**; estoque fica para depois | ✅ Decidido | 04/11/2026 |
 | D11 | Contato oficial com a SESAU **via Ivo** | ✅ Decidido | 04/11/2026 |
@@ -28,6 +28,8 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D22 | **Canal de ouvidoria (RF23) e carteira de vacinação em PDF (RF09) entram no piloto**, disponíveis **só para quem entrou com login gov.br**; quem entrou com e-mail comum não tem acesso | ✅ Decidido (Duda) | 25/11/2026 |
 | D23 | **Modo visitante e tela "Entrar como" na demonstração**: mapa, unidades, campanhas e conteúdo educativo abrem sem login; o resto pede login. Na demonstração, a entrada é uma lista de pessoas fictícias, como no protótipo do Conecta | ✅ Decidido (Duda) | 25/11/2026 |
 | D24 | **Contrato `v0.9.0` (visão por vacina + `SCR-06`), regras `IN-2026` (dT 10 anos periódica, Hepatite B ≥ 7 anos nunca atrasada, Influenza fora da situação vacinal) e corte LGPD aos 18 anos para dependentes** | ✅ Decidido | 25/11/2026 |
+| D25 | **Decisões das pendências de design** (especificação de 25/11): "Ver Documentos", Calendário, sino e filtro do mapa só como representação; "Onde vacinar" abre o mapa geral; ouvidoria 136; vacina em destaque na Home | ✅ Decidido (designer + Adan); divergências listadas na D25 | 25/11/2026 |
+| D26 | **Atualização da caderneta física em qualquer unidade de saúde** e pop-up "Como atualizar sua carteira" (SCR-09), com a ouvidoria para reclamação | ✅ Decidido (Adan) | 25/11/2026 |
 
 ## Detalhes
 
@@ -52,6 +54,7 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 
 ### D08 · Status "não posso tomar"
 **Motivo:** mensagem negativa e imprecisa, porque idade mínima e indicação variam. **Opções:** "ainda não disponível", esconder a dose ou só mostrar a próxima data. Validar com usuários.
+**Decisão (25/11/2026, especificação de design, [19](19-especificacao-design.md) §1 item 8):** a quarta categoria se chama **Próxima** em todo lugar (aba e painel-resumo), no lugar de "Próximas", "Indisponíveis" e "não posso tomar". O card mostra quando a dose fica liberada ("Próxima dose liberada no dia …" ou "Aguarde atingir a idade mínima"), com o botão de onde tomar desabilitado. Na API nada muda: a situação continua `AINDA_NAO_DISPONIVEL`.
 
 ### D09 · Aviso de transcrição
 **Motivo:** a SESAU relatou que parte da baixa cobertura é dose aplicada e não registrada (exemplo citado: HPV). Ajuda o cidadão e o indicador do município. *Nota de 24/11/2026:* o "90% real × 54% registrado" não foi confirmado em fonte publicada, então não há número validado para o tamanho do sub-registro (ver [13](13-indicadores-validados.md)).
@@ -157,4 +160,25 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 - **Visão por vacina (`SCR-02`, `SCR-04`, `SCR-05`, `SCR-06`):** `SituacaoVacinal` inclui `vacinas[]`, `resumoVacinas` (sem contar `PRAZO_ENCERRADO`), `vacinaDestaqueHome` (só `AINDA_POSSO_TOMAR`, mais antiga) e `dataUltimaSincronizacao` (`importacao_dados`); novo endpoint `GET /v1/pessoas/{idPessoa}/vacinas/{idVacina}`; `Unidade` passa a expor `telefone` e `horarioFuncionamento` já na listagem `/v1/unidades`, com filtro opcional `?somenteDisponiveis=true`.
 - **LGPD/ECA para dependentes:** o vínculo em `pessoa_responsavel` encerra o acesso do responsável automaticamente quando o dependente completa **18 anos** (salvo parentesco `CURADOR`/`TUTOR`). Referência oficial do MS (Caderneta Digital da Criança / Meu SUS Digital): conta `gov.br` **Prata ou Ouro** com 2FA para acesso a dados sensíveis e de dependentes.
 
+### D25 · Decisões das pendências de design (25/11/2026)
+**Fonte:** especificação de design da Giulia ([19](19-especificacao-design.md) §1, tabela "Decisões das pendências") e Adan para o escopo do mapa.
+- **Só representação** (aparece igual ao Figma, mas não reage ao toque): "Ver Documentos" (não há tela SCR-11), Calendário da barra inferior (não há SCR-10), sino de lembretes (não há SCR-12), filtro do mapa, campo de endereço de "Onde vacinar", ícones do cabeçalho e atalhos do Conecta fora de Vacinação. O item Vacinação entra no drawer só como representação.
+- **Onde vacinar (Adan):** o filtro por vacina (SCR-07, RULE-05) fica **fora do escopo do piloto**. "Veja onde tomar essa vacina" abre o mapa geral de unidades próximas. Coerente com a D10 (mapa sem estoque) e com a RN04 (vacina é porta aberta).
+- **Nome da categoria:** **Próxima** (D08).
+- **Vacina em destaque na Home do Conecta:** a atrasada cujo prazo venceu mais recentemente. O card "Acompanhe suas vacinações" só aparece se houver vacina atrasada.
+- **Card da UBS no acompanhamento (SCR-06):** mostra data e hora em que a pessoa tomou a vacina.
+- **Ouvidoria:** 136 no pop-up (decisão da designer, "definitivo").
+- **Ainda sem resposta da designer** (ficam como no print, sem ação): toque num pin do mapa; desempate Em dia × Próxima (proposta: Próxima só tem vacina sem nenhuma dose tomada); visual da dose atrasada no SCR-06; "ver mais" abre a mesma aba?; texto da aba Próxima; Voltar da Home do Conecta; entrega dos assets.
 
+**Divergências com decisões anteriores [pendente, decidir com a Duda]:**
+1. **Sino de lembretes:** a especificação deixa o sino só como representação, mas a D20 (Adan) colocou os lembretes no piloto, mostrados no app pelo sino. A API (`/v1/eu/lembretes`) continua pronta; falta decidir se a tela de lembretes aparece na demonstração.
+2. **Número da ouvidoria municipal:** o pop-up liga para o 136 em "Ligar para ouvidoria Municipal de Saúde", mas a D22 confirmou a Ouvidoria Municipal de Saúde do Recife no **0800 281 1520** e o WhatsApp ConectaZap no **(81) 9117-1407**. O 136 é a Ouvidoria-Geral do SUS (OuvSUS). Sugestão: no primeiro passo do pop-up, ligar para o 0800 e abrir o ConectaZap; no segundo, ligar para o 136. Isso também responde o "[CONFIRMAR número]" do WhatsApp na especificação.
+3. **Carteira em PDF:** a especificação trata "Baixar carteira (PDF)" como funcional para todos; pela D22 ela só aparece para quem entrou com gov.br. Vale a D22.
+4. **Vacina em destaque na Home:** a especificação pede a atrasada cujo prazo venceu **mais recentemente**; o contrato 0.9.0 (D24) devolve em `vacinaDestaqueHome` a **mais antiga**. Mudar o contrato fica com o contrato-api, depois do ok da Duda.
+
+### D26 · Atualização da caderneta física em qualquer unidade de saúde
+**Decisão (Adan, 25/11/2026):** o app orienta que **qualquer unidade de saúde** pode atualizar o registro com as doses da caderneta física (transcrição). Se a unidade não conseguir, a pessoa abre uma **reclamação na ouvidoria**. As duas informações ficam no pop-up "Como atualizar sua carteira" (SCR-09 da [19](19-especificacao-design.md)).
+- **Onde aparece:** "saiba mais" no aviso azul da aba Atrasada ("Leve seu cartão de vacinas à UBS para atualizar o registro.") e "Saiba como atualizar" na Carteira de Vacinação Digital.
+- **Conteúdo do pop-up:** levar o cartão à UBS; caso não consiga, registrar solicitação na Ouvidoria Municipal de Saúde do Recife (telefone e WhatsApp) ou falar com a Ouvidoria-Geral do SUS (136); botão "Veja o caminho para a UBS".
+- **Regras que continuam valendo:** só profissional habilitado transcreve (RN05, RN06); o cidadão não registra dose; a ouvidoria só abre para quem entrou com gov.br (D22). Como o pop-up fica para quem entrou com e-mail (sem os links da ouvidoria?) **[pendente]**.
+- **Motivo:** "vacina é porta aberta" (RN04) também vale para a atualização do registro, e a SESAU apontou a dose aplicada e não registrada como uma das causas da baixa cobertura (D09).
