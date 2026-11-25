@@ -23,6 +23,7 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D17 | Dose vira **atrasada** logo depois da idade recomendada; dose que passou da **idade máxima** sai da lista de pendentes e aparece só como "converse na unidade"; **sem** situação "em processamento" (só o aviso de até 14 dias) | 🟡 Provisória; **revisada em 25/11 contra a regra oficial** ([16](16-regra-situacao-vacinal.md)) | 24/11/2026 |
 | D18 | Reforços, dose anterior sem registro e intervalo mínimo | 🔄 **Revisada em 25/11/2026** para seguir a regra oficial do PNI: ver [16](16-regra-situacao-vacinal.md) | 24/11/2026 |
 | D19 | Seguir **fielmente** as recomendações oficiais (Calendário 2026, Regras de entrada de dados do PNI, normas do MS): onde nossa escolha divergir, vale a fonte oficial, citada no banco (`fonte_regra`) e na doc | ✅ Decidido (Duda) | 25/11/2026 |
+| D20 | **Lembretes (RF19) entram no piloto**, mostrados **no app** (sino), calculados na hora a partir da situação vacinal e das campanhas vigentes, **sem push** e **sem gravar nada** | ✅ Entrada no piloto decidida (Adan); 🟡 desenho e regras a confirmar com a Duda | 25/11/2026 |
 
 ## Detalhes
 
@@ -102,3 +103,11 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 **Decisão (Duda, 25/11/2026):** a regra de situação vacinal segue **fielmente** as fontes oficiais: Calendário Nacional 2026, "Regras de entrada de dados" do PNI e normas do Ministério da Saúde. Onde uma escolha nossa divergir, vale a fonte oficial.
 **Como fica registrado:** cada dose tem no banco a idade mínima, a idade máxima e o intervalo mínimo oficiais, com a fonte na coluna `fonte_regra`; a regra completa e o que mudou estão no [16](16-regra-situacao-vacinal.md).
 **Efeitos:** D17 e D18 revisadas (ver acima); na base, intervalo mínimo da dT passou de 10 para 5 anos e o intervalo de 180 dias da MenACWY dos 11 aos 14 anos foi retirado. Também passaram a valer as ligações oficiais entre vacinas diferentes (ex.: DTP R1 depois da Penta D3, dT 5 anos depois da última dose com componente tetânico) e as idades e intervalos contados em meses e anos de calendário, como escritos nas fontes.
+
+### D20 · Lembretes no app, no piloto
+**Decisão (Adan, 25/11/2026):** os lembretes de dose e de campanha (RF19, Must) entram no piloto.
+**Desenho (em andamento, a confirmar):** lembretes **dentro do app** (o sino do protótipo), calculados na hora pela API (`GET /v1/eu/lembretes` e `GET /v1/pessoas/{idPessoa}/lembretes`, contrato 0.5.0). **Sem push** e **sem gravar nada**: o backend continua somente leitura (RNF05) e as tabelas `lembrete` e `notificacao` ficam para depois. O front guarda o "visto" só em memória.
+**Regras [a confirmar com a Duda]:** dose `ATRASADA` gera "atrasada"; `PODE_TOMAR` gera "já pode tomar"; `AINDA_NAO_DISPONIVEL` com data até 30 dias gera "em breve"; cada campanha vigente gera um lembrete por pessoa, sem elegibilidade (ainda não calculada). Doses fora da idade e doses sem data não geram lembrete. Detalhes e perguntas abertas (16 a 21) em [contrato-changelog](contrato-changelog.md).
+**Motivo:** RF19 é Must, e fazer no app não depende da Central de Notificações do Conecta, que ainda não sabemos se tem API para módulos ([14](14-integracao-conecta-recife.md)) **[indício]**.
+**Privacidade:** cada lembrete traz um `textoNotificacao` sem dado de saúde (RNF03), pronto para quando houver push.
+**Fica para depois:** push e WhatsApp (RF20) e histórico de notificações (RF21).

@@ -2,6 +2,41 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.5.0 · 25/11/2026 · lembretes no app (D20)
+
+> Decisão D20 (Adan, 25/11/2026): lembretes (RF19, Must) entram no piloto. Desenho **em andamento**: lembretes **no app**, calculados na hora, **sem push** e **sem gravar nada**. As regras de geração, de texto e de ordem estão marcadas **[provisório, a confirmar com a Duda]**.
+
+**Mudança compatível** (só acrescenta endpoints e schemas; nada do que existia mudou).
+
+| Método e caminho | Requisitos | Observação |
+|---|---|---|
+| `GET /v1/eu/lembretes` | RF19, RN08, RNF01, RNF03 | Lembretes da pessoa logada e de cada dependente (o sino do protótipo). 401 sem token |
+| `GET /v1/pessoas/{idPessoa}/lembretes` | RF19, RN08 | Só da pessoa pedida (a logada ou um dependente). 403 e 404 como nos outros endpoints de pessoa |
+
+Novos schemas: `ListaLembretes`, `PessoaNosLembretes`, `Lembrete`, `TipoLembrete` (`DOSE`, `CAMPANHA`) e `MotivoLembrete` (`DOSE_ATRASADA`, `DOSE_DISPONIVEL`, `DOSE_DISPONIVEL_EM_BREVE`, `CAMPANHA_VIGENTE`). Reutiliza `PessoaResumo`, `VacinaResumo` e `Avisos`.
+
+Regras aplicadas (todas **a confirmar com a Duda**):
+
+| Motivo | Vem de | `data` |
+|---|---|---|
+| `DOSE_ATRASADA` | dose `ATRASADA` da situação vacinal | `dataReferencia` (hoje) |
+| `DOSE_DISPONIVEL` | dose `PODE_TOMAR` | `dataReferencia` (hoje) |
+| `DOSE_DISPONIVEL_EM_BREVE` | dose `AINDA_NAO_DISPONIVEL` com `dataDisponivel` não nula até 30 dias depois de hoje (inclusive) | `dataDisponivel` |
+| `CAMPANHA_VIGENTE` | cada campanha vigente hoje, um lembrete por pessoa, **sem** elegibilidade (`elegivel` ainda vem `null`) | `dataInicio` da campanha |
+
+- Doses `EM_DIA`, doses em `dosesForaDaIdade` e doses sem `dataDisponivel` **não** geram lembrete.
+- **Ordem:** motivo (atrasadas, disponíveis, em breve, campanhas); depois `data`; depois a pessoa (a logada primeiro, depois os dependentes na ordem de `/v1/eu`); depois a ordem da dose em `doses` (ou `idCampanha`).
+- **`id` determinístico:** `dose-{idPessoa}-{idDose}-{atrasada|disponivel|em-breve}` ou `campanha-{idPessoa}-{idCampanha}`. O motivo entra no id da dose para que a passagem de "em breve" para "já pode tomar" apareça como lembrete novo. O front guarda o "visto" só em memória.
+- **Textos** gerados pela API por modelos fixos (descritos em `Lembrete`), com o primeiro nome da pessoa ou "você" quando é a logada. Toda `mensagem` termina pedindo para confirmar na unidade. Nunca "não posso tomar".
+- **`textoNotificacao`** sem dado de saúde (RNF03): "Há uma novidade na vacinação de {nome}. Abra o Conecta Recife para ver." ou "Há uma novidade na sua vacinação. …". Hoje não há push; o campo fica pronto para quando houver.
+- A resposta traz `dataReferencia`, `pessoas` (cada pessoa coberta, com a `dataUltimaAtualizacao` dela, RNF09) e `avisos` (`REGRA_EM_ALINHAMENTO`, `PREVISAO_DE_ROTINA`, `ATRASO_REGISTRO`, com o mesmo texto da situação vacinal).
+- **Somente leitura continua valendo** (RNF05): nada é gravado; as tabelas `lembrete` e `notificacao` ficam para depois (RF20 push e RF21 histórico fora do piloto por enquanto).
+
+Exemplos (base sintética, 24/11/2026), **listas completas**, tiradas da situação vacinal completa calculada pelo backend no perfil `dev`:
+
+- `GET /v1/eu/lembretes` com a Valentina (pessoa 4) logada: tríplice viral D2 atrasada dela; 4 doses atrasadas do Heitor (pessoa 5); VIP D3 do Heitor em breve (07/12/2026); Multivacinação 2026 para os dois. 8 lembretes.
+- `GET /v1/pessoas/48/lembretes` com a Luana (pessoa 46) logada: VIP D2, Rotavírus D2 e Pneumo 10 D2 atrasadas; Meningo C D2 já pode tomar; Penta D2 em breve (25/11/2026); Multivacinação 2026. 6 lembretes. O exemplo `bebeDeQuatroMeses` da situação vacinal continua sendo um recorte, por isso não mostra a Rotavírus D2 e a Pneumo 10 D2.
+
 ## 0.4.1 · 25/11/2026 · esclarecimento: detalhe de dose fora da idade
 
 Só documentação, **sem mudança de schema nem de versão**. `GET /v1/pessoas/{idPessoa}/doses/{idDose}` devolve 404 para dose que está em `dosesForaDaIdade` da pessoa (além de `idDose` que não existe no calendário): `DetalheDose.dose` é uma `DosePrevista`, que exige uma das 4 situações, e dose fora da idade não tem situação (D17, D19). O front não oferece link de detalhe para essas doses; mostra só a orientação "converse na unidade" (aviso `DOSE_FORA_DA_IDADE`). Texto adicionado na descrição do endpoint, na resposta 404 dele e em `DoseForaDaIdade`.
@@ -126,3 +161,12 @@ Escolhas da v0:
 13. **Janela de "já pode tomar" do reforço:** pela D17 a dose fica atrasada logo depois da idade recomendada, e pela D18 o reforço só fica disponível nessa mesma data. Na prática, o reforço passa de "ainda não disponível" para "atrasada" e só fica "já pode tomar" no próprio dia. É isso mesmo, ou o reforço deve ter algum prazo antes de ficar atrasado?
 14. **Quando mostrar `DOSE_ANTERIOR_SEM_REGISTRO`:** a API mostra só quando a dose anterior já passou da idade recomendada (está pendente). Para um bebê cuja D1 ainda nem chegou, a D2 futura não recebe a orientação. Confirma?
 15. **Doses que não são reforço, mas têm idade recomendada muito depois do intervalo mínimo** (ex.: varicela D2, recomendada aos 4 anos, com intervalo mínimo de 30 dias depois da D1 aos 15 meses): pela D18 elas ficam "já pode tomar" logo após o intervalo. Mantém assim?
+
+### Abertas (surgiram com os lembretes, D20; para a Duda)
+
+16. **Campanha sem elegibilidade:** hoje toda campanha vigente gera lembrete para todas as pessoas. No exemplo, a Valentina (21 anos) recebe lembrete da Multivacinação 2026, que é para menores de 15. A mensagem mostra o público-alvo e pede "veja se é para você", mas pode confundir. Mantemos assim, filtramos por uma faixa etária simples ou só mostramos campanha quando `elegivel` existir (pergunta 7)?
+17. **Um lembrete de campanha por pessoa ou por família?** Hoje são dois lembretes iguais da mesma campanha para a Valentina e o Heitor.
+18. **Janela de "em breve":** 30 dias, contados a partir de hoje (inclusive o 30º dia). O número está bom?
+19. **Atrasada antiga:** a Valentina recebe lembrete da tríplice viral D2, atrasada desde 2007. Toda dose `ATRASADA` gera lembrete, sem limite de tempo?
+20. **Doses `AINDA_NAO_DISPONIVEL` com a orientação `DOSE_ANTERIOR_SEM_REGISTRO`** (ex.: Meningo C D2 do Heitor) não geram lembrete, porque não têm data. Elas deveriam gerar um lembrete do tipo "procure a unidade"?
+21. **Texto com o número da dose:** o título usa `numeroDose` ("4ª dose" para o 1º reforço da VIP; "1ª dose" para a dose única do HPV). Serve, ou o título deve usar a `descricao` da dose nesses casos?

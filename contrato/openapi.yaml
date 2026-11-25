@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.4.1
-  summary: Situação vacinal, histórico de doses, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
+  version: 0.5.0
+  summary: Situação vacinal, histórico de doses, lembretes, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
-    Contrato **v0.4** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    Contrato **v0.5** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
     para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
 
     Regras que valem para toda a API:
@@ -21,6 +21,8 @@ info:
       Calendário 2026), descritas em `docs/16-regra-situacao-vacinal.md`. A regra ainda está em
       alinhamento com a Secretaria de Saúde. Enquanto isso, toda resposta de situação vacinal e de detalhe da dose
       traz em `avisos` o item `REGRA_EM_ALINHAMENTO`, e o front mostra todos os `avisos` recebidos.
+    - **Lembretes no app (D20):** calculados na hora a partir da situação vacinal e das campanhas
+      vigentes. A API não grava lembrete nem notificação e não envia push; continua somente leitura.
     - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
       (`pessoa_responsavel`). Outra pessoa devolve **403**.
     - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
@@ -44,6 +46,8 @@ tags:
     description: Painel-resumo, doses por situação, histórico e detalhe da dose (RF04 a RF08)
   - name: Unidades
     description: Mapa e detalhe das unidades de saúde (RF10 a RF13)
+  - name: Lembretes
+    description: Lembretes de dose e de campanha mostrados no app, sem push e sem gravar nada (RF19, RN08, D20)
   - name: Campanhas
     description: Campanhas vigentes e elegibilidade (RF18)
   - name: Vacinas
@@ -79,6 +83,144 @@ paths:
                           nome: Heitor Nascimento Ferreira
                           dataNascimento: '2026-05-07'
                         parentesco: MAE
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /v1/eu/lembretes:
+    get:
+      tags: [Lembretes]
+      operationId: listarMeusLembretes
+      summary: Lembretes da pessoa logada e dos dependentes (o sino)
+      description: |
+        Lembretes de dose e de campanha da pessoa logada **e** de cada dependente vinculado a ela
+        (RF19, RN08, D20). Alimenta o sino do protótipo.
+
+        **Calculados na hora** a partir da situação vacinal de cada pessoa
+        (`GET /v1/pessoas/{idPessoa}/situacao-vacinal`, mesma `dataReferencia`) e das campanhas
+        vigentes. A API **não grava** lembrete nem notificação e **não envia push**; as tabelas
+        `lembrete` e `notificacao` ficam para depois. O front guarda o "visto" só em memória,
+        pelo `id` do lembrete.
+
+        Regras de geração e de ordem: ver `Lembrete` e `MotivoLembrete`
+        **[provisório, a confirmar com a Duda]**.
+      responses:
+        '200':
+          description: Lembretes da pessoa logada e dos dependentes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaLembretes'
+              examples:
+                valentinaEHeitor:
+                  summary: Valentina (pessoa 4, logada) e o filho Heitor (pessoa 5), lista completa
+                  description: |
+                    Lista completa (não é recorte), derivada da situação vacinal das duas pessoas
+                    em 24/11/2026. Valentina tem a tríplice viral D2 atrasada; as doses dela em
+                    `dosesForaDaIdade` e a dT sem `dataDisponivel` não geram lembrete. Heitor tem 4
+                    doses atrasadas e a VIP D3, que fica disponível em 07/12/2026 (dentro dos
+                    próximos 30 dias). A Meningo C D2 dele não gera lembrete porque não tem
+                    `dataDisponivel` (falta a D1). A Multivacinação 2026 gera um lembrete para cada
+                    pessoa, porque a elegibilidade ainda não é calculada (`elegivel` vem `null`).
+                  value:
+                    dataReferencia: '2026-11-24'
+                    pessoas:
+                      - pessoa: { id: 4, nome: Valentina Oliveira Ferreira, dataNascimento: '2005-11-12' }
+                        dataUltimaAtualizacao: '2009-12-07T09:48:00-03:00'
+                      - pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
+                    lembretes:
+                      - id: dose-4-26-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 4, nome: Valentina Oliveira Ferreira, dataNascimento: '2005-11-12' }
+                        data: '2026-11-24'
+                        titulo: A sua 2ª dose da vacina Tríplice viral (SCR) está atrasada
+                        mensagem: 'Procure uma unidade de saúde para tomar. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na sua vacinação. Abra o Conecta Recife para ver.
+                        vacina: { id: 10, nome: Tríplice viral (SCR) }
+                        idDose: 26
+                        idCampanha: null
+                      - id: dose-5-14-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-11-24'
+                        titulo: A 1ª dose da vacina Rotavírus humano de Heitor está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Heitor. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        idDose: 14
+                        idCampanha: null
+                      - id: dose-5-19-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-11-24'
+                        titulo: A 1ª dose da vacina Meningocócica C conjugada de Heitor está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Heitor. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: { id: 7, nome: Meningocócica C conjugada }
+                        idDose: 19
+                        idCampanha: null
+                      - id: dose-5-17-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-11-24'
+                        titulo: A 2ª dose da vacina Pneumocócica 10-valente de Heitor está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Heitor. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: { id: 6, nome: Pneumocócica 10-valente }
+                        idDose: 17
+                        idCampanha: null
+                      - id: dose-5-8-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-11-24'
+                        titulo: A 3ª dose da vacina Penta (DTP/Hib/HB) de Heitor está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Heitor. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        idDose: 8
+                        idCampanha: null
+                      - id: dose-5-11-em-breve
+                        tipo: DOSE
+                        motivo: DOSE_DISPONIVEL_EM_BREVE
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-12-07'
+                        titulo: 'Em breve: 3ª dose da vacina Poliomielite inativada (VIP) de Heitor'
+                        mensagem: A partir de 07/12/2026, Heitor já pode tomar esta dose. Confirme na unidade.
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        idDose: 11
+                        idCampanha: null
+                      - id: campanha-4-2
+                        tipo: CAMPANHA
+                        motivo: CAMPANHA_VIGENTE
+                        pessoa: { id: 4, nome: Valentina Oliveira Ferreira, dataNascimento: '2005-11-12' }
+                        data: '2026-11-09'
+                        titulo: 'Está acontecendo: Multivacinação 2026'
+                        mensagem: 'Público: Menores de 15 anos. Vai até 12/12/2026. Veja se é para você e confirme na unidade.'
+                        textoNotificacao: Há uma novidade na sua vacinação. Abra o Conecta Recife para ver.
+                        vacina: null
+                        idDose: null
+                        idCampanha: 2
+                      - id: campanha-5-2
+                        tipo: CAMPANHA
+                        motivo: CAMPANHA_VIGENTE
+                        pessoa: { id: 5, nome: Heitor Nascimento Ferreira, dataNascimento: '2026-05-07' }
+                        data: '2026-11-09'
+                        titulo: 'Está acontecendo: Multivacinação 2026'
+                        mensagem: 'Público: Menores de 15 anos. Vai até 12/12/2026. Veja se é para Heitor e confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Heitor. Abra o Conecta Recife para ver.
+                        vacina: null
+                        idDose: null
+                        idCampanha: 2
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
 
@@ -379,6 +521,118 @@ paths:
           description: |
             Pessoa não encontrada, `idDose` que não existe no calendário ou dose que está em
             `dosesForaDaIdade` da pessoa (sem situação, sem detalhe).
+
+  /v1/pessoas/{idPessoa}/lembretes:
+    get:
+      tags: [Lembretes]
+      operationId: listarLembretesDaPessoa
+      summary: Lembretes de uma pessoa
+      description: |
+        Os mesmos lembretes de `GET /v1/eu/lembretes`, só da pessoa pedida (a logada ou um
+        dependente vinculado a ela). Útil na tela de cada dependente. Mesmas regras de geração,
+        de texto e de ordem (ver `Lembrete` e `MotivoLembrete`) **[provisório, a confirmar com a
+        Duda]**. Calculados na hora; nada é gravado (D20).
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Lembretes da pessoa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaLembretes'
+              examples:
+                bernardo:
+                  summary: Bernardo (pessoa 48), pedido pela mãe Luana (pessoa 46, logada), lista completa
+                  description: |
+                    Lista completa (não é recorte), derivada da situação vacinal completa do
+                    Bernardo em 24/11/2026. O exemplo `bebeDeQuatroMeses` da situação vacinal é
+                    um recorte e não mostra a Rotavírus D2 e a Pneumo 10 D2, que também estão
+                    atrasadas. A Meningo C D2 já pode tomar. A Penta D2 fica disponível amanhã
+                    (25/11/2026), por isso entra como "em breve". A Penta D3 e a VIP D3 não têm
+                    `dataDisponivel` (falta a dose anterior) e não geram lembrete.
+                  value:
+                    dataReferencia: '2026-11-24'
+                    pessoas:
+                      - pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
+                    lembretes:
+                      - id: dose-48-10-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-24'
+                        titulo: A 2ª dose da vacina Poliomielite inativada (VIP) de Bernardo está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Bernardo. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        idDose: 10
+                        idCampanha: null
+                      - id: dose-48-15-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-24'
+                        titulo: A 2ª dose da vacina Rotavírus humano de Bernardo está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Bernardo. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        idDose: 15
+                        idCampanha: null
+                      - id: dose-48-17-atrasada
+                        tipo: DOSE
+                        motivo: DOSE_ATRASADA
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-24'
+                        titulo: A 2ª dose da vacina Pneumocócica 10-valente de Bernardo está atrasada
+                        mensagem: 'Procure uma unidade de saúde com Bernardo. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: { id: 6, nome: Pneumocócica 10-valente }
+                        idDose: 17
+                        idCampanha: null
+                      - id: dose-48-20-disponivel
+                        tipo: DOSE
+                        motivo: DOSE_DISPONIVEL
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-24'
+                        titulo: Hora da 2ª dose da vacina Meningocócica C conjugada de Bernardo
+                        mensagem: Bernardo já pode tomar esta dose. Procure uma unidade de saúde com Bernardo. Confirme na unidade.
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: { id: 7, nome: Meningocócica C conjugada }
+                        idDose: 20
+                        idCampanha: null
+                      - id: dose-48-7-em-breve
+                        tipo: DOSE
+                        motivo: DOSE_DISPONIVEL_EM_BREVE
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-25'
+                        titulo: 'Em breve: 2ª dose da vacina Penta (DTP/Hib/HB) de Bernardo'
+                        mensagem: A partir de 25/11/2026, Bernardo já pode tomar esta dose. Confirme na unidade.
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        idDose: 7
+                        idCampanha: null
+                      - id: campanha-48-2
+                        tipo: CAMPANHA
+                        motivo: CAMPANHA_VIGENTE
+                        pessoa: { id: 48, nome: Bernardo Oliveira Andrade, dataNascimento: '2026-07-13' }
+                        data: '2026-11-09'
+                        titulo: 'Está acontecendo: Multivacinação 2026'
+                        mensagem: 'Público: Menores de 15 anos. Vai até 12/12/2026. Veja se é para Bernardo e confirme na unidade.'
+                        textoNotificacao: Há uma novidade na vacinação de Bernardo. Abra o Conecta Recife para ver.
+                        vacina: null
+                        idDose: null
+                        idCampanha: 2
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
 
   /v1/unidades:
     get:
@@ -1223,3 +1477,143 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Vacina'
+
+    TipoLembrete:
+      type: string
+      description: |
+        A que o lembrete se refere (RN08): sempre a uma dose prevista (`DOSE`) **ou** a uma
+        campanha (`CAMPANHA`).
+      enum: [DOSE, CAMPANHA]
+
+    MotivoLembrete:
+      type: string
+      description: |
+        Por que o lembrete existe. **[provisório, a confirmar com a Duda]** (D20). Vem da
+        situação vacinal da pessoa (`GET /v1/pessoas/{idPessoa}/situacao-vacinal`, mesma
+        `dataReferencia`) e das campanhas vigentes:
+        - `DOSE_ATRASADA`: cada dose de `doses` com situação `ATRASADA`.
+        - `DOSE_DISPONIVEL`: cada dose de `doses` com situação `PODE_TOMAR`.
+        - `DOSE_DISPONIVEL_EM_BREVE`: cada dose de `doses` com situação `AINDA_NAO_DISPONIVEL` e
+          `dataDisponivel` não nula, até 30 dias depois da `dataReferencia` (inclusive). Dose sem
+          `dataDisponivel` (falta a dose anterior) não gera lembrete.
+        - `CAMPANHA_VIGENTE`: cada campanha vigente na `dataReferencia` (as mesmas de
+          `GET /v1/campanhas?vigentes=true`), um lembrete por pessoa. **Não** considera
+          elegibilidade, porque `elegivel` ainda vem `null`; por isso a mensagem mostra o
+          público-alvo e pede para a pessoa ver se é para ela.
+
+        Não geram lembrete: doses `EM_DIA`, doses em `dosesForaDaIdade` (o app só orienta
+        "converse na unidade") e doses `AINDA_NAO_DISPONIVEL` fora da janela de 30 dias.
+      enum: [DOSE_ATRASADA, DOSE_DISPONIVEL, DOSE_DISPONIVEL_EM_BREVE, CAMPANHA_VIGENTE]
+
+    Lembrete:
+      type: object
+      description: |
+        Lembrete mostrado **dentro do app** (sino), calculado na hora (D20). Não é gravado e não
+        vira push. Nunca traz CID, condição clínica ou grupo de atendimento.
+
+        **Ordem na lista** **[provisório, a confirmar com a Duda]**: primeiro por `motivo`
+        (`DOSE_ATRASADA`, `DOSE_DISPONIVEL`, `DOSE_DISPONIVEL_EM_BREVE`, `CAMPANHA_VIGENTE`); depois
+        por `data` (mais cedo primeiro); depois pela pessoa, na ordem de `pessoas` (a logada
+        primeiro, depois os dependentes na ordem de `GET /v1/eu`); por fim, para dose, na ordem em
+        que a dose aparece em `doses` da situação vacinal e, para campanha, por `idCampanha`.
+
+        **Textos** (RNF01, RN03: nunca "não posso tomar"). Gerados pela API com estes modelos, para
+        o texto ficar igual em todas as telas. `{nome}` é o primeiro nome da pessoa; quando a
+        pessoa do lembrete é a logada, usa-se o modelo "você". `{n}` é `numeroDose`; `{vacina}` é
+        `vacina.nome`; datas no formato dd/mm/aaaa.
+
+        | Motivo | `titulo` (dependente / logada) | `mensagem` (dependente / logada) |
+        |---|---|---|
+        | `DOSE_ATRASADA` | "A {n}ª dose da vacina {vacina} de {nome} está atrasada" / "A sua {n}ª dose da vacina {vacina} está atrasada" | "Procure uma unidade de saúde com {nome}. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade." / "Procure uma unidade de saúde para tomar. Vacina é porta aberta: pode ser em qualquer unidade. Confirme na unidade." |
+        | `DOSE_DISPONIVEL` | "Hora da {n}ª dose da vacina {vacina} de {nome}" / "Hora da sua {n}ª dose da vacina {vacina}" | "{nome} já pode tomar esta dose. Procure uma unidade de saúde com {nome}. Confirme na unidade." / "Você já pode tomar esta dose. Procure uma unidade de saúde. Confirme na unidade." |
+        | `DOSE_DISPONIVEL_EM_BREVE` | "Em breve: {n}ª dose da vacina {vacina} de {nome}" / "Em breve: sua {n}ª dose da vacina {vacina}" | "A partir de {data}, {nome} já pode tomar esta dose. Confirme na unidade." / "A partir de {data}, você já pode tomar esta dose. Confirme na unidade." |
+        | `CAMPANHA_VIGENTE` | "Está acontecendo: {campanha.nome}" (igual nos dois casos) | "Público: {campanha.publicoAlvo}. Vai até {campanha.dataFim}. Veja se é para {nome} e confirme na unidade." / "… Veja se é para você e confirme na unidade." |
+
+        `textoNotificacao` é sempre "Há uma novidade na vacinação de {nome}. Abra o Conecta Recife
+        para ver." (dependente) ou "Há uma novidade na sua vacinação. Abra o Conecta Recife para
+        ver." (logada), sem vacina, dose, situação ou campanha (RNF03).
+      required: [id, tipo, motivo, pessoa, data, titulo, mensagem, textoNotificacao, vacina, idDose, idCampanha]
+      properties:
+        id:
+          type: string
+          description: |
+            Identificador estável e determinístico, que o front usa para marcar "visto" (só em
+            memória). Formato: `dose-{idPessoa}-{idDose}-{atrasada|disponivel|em-breve}` ou
+            `campanha-{idPessoa}-{idCampanha}`. O motivo entra no id da dose de propósito: quando
+            uma dose "em breve" passa a "já pode tomar", vira um lembrete novo (não visto).
+          pattern: '^(dose-[0-9]+-[0-9]+-(atrasada|disponivel|em-breve)|campanha-[0-9]+-[0-9]+)$'
+          examples: [dose-48-20-disponivel]
+        tipo:
+          $ref: '#/components/schemas/TipoLembrete'
+        motivo:
+          $ref: '#/components/schemas/MotivoLembrete'
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        data:
+          type: string
+          format: date
+          description: |
+            `DOSE_DISPONIVEL_EM_BREVE`: a `dataDisponivel` da dose. `DOSE_ATRASADA` e
+            `DOSE_DISPONIVEL`: a `dataReferencia` (hoje). `CAMPANHA_VIGENTE`: a `dataInicio` da campanha.
+        titulo:
+          type: string
+          description: Texto curto em linguagem simples, para o app (ver modelos acima)
+        mensagem:
+          type: string
+          description: Texto em linguagem simples, para o app; sempre termina pedindo para confirmar na unidade
+        textoNotificacao:
+          type: string
+          description: |
+            Versão sem dado de saúde, para tela de bloqueio ou aparelho compartilhado (RNF03). Hoje
+            não há push (D20); o campo já fica pronto para quando houver.
+        vacina:
+          description: Vacina da dose (`DOSE`), para abrir o mapa filtrado (RF10). `null` em `CAMPANHA`
+          oneOf:
+            - $ref: '#/components/schemas/VacinaResumo'
+            - type: 'null'
+        idDose:
+          type: [integer, 'null']
+          description: Id da dose no calendário (`dose_esquema`), para abrir o detalhe da dose. Preenchido só em `DOSE`
+        idCampanha:
+          type: [integer, 'null']
+          description: Id da campanha (`GET /v1/campanhas`). Preenchido só em `CAMPANHA`
+
+    PessoaNosLembretes:
+      type: object
+      description: Pessoa coberta pela lista de lembretes, com a data da última atualização dos dados dela (RNF09)
+      required: [pessoa, dataUltimaAtualizacao]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+          description: Mesmo valor de `dataUltimaAtualizacao` da situação vacinal da pessoa **[provisório]**
+
+    ListaLembretes:
+      type: object
+      required: [dataReferencia, pessoas, lembretes, avisos]
+      properties:
+        dataReferencia:
+          type: string
+          format: date
+          description: Data usada no cálculo (hoje, no fuso de Recife), a mesma da situação vacinal
+        pessoas:
+          type: array
+          description: |
+            Pessoas cobertas pela lista: a logada primeiro, depois os dependentes na ordem de
+            `GET /v1/eu` (em `/v1/pessoas/{idPessoa}/lembretes`, só a pessoa pedida). Aparecem
+            mesmo quando não têm lembrete.
+          items:
+            $ref: '#/components/schemas/PessoaNosLembretes'
+        lembretes:
+          type: array
+          description: Lembretes na ordem descrita em `Lembrete`. Lista vazia se não houver
+          items:
+            $ref: '#/components/schemas/Lembrete'
+        avisos:
+          description: |
+            Sempre `REGRA_EM_ALINHAMENTO`, `PREVISAO_DE_ROTINA` e `ATRASO_REGISTRO`, nesta ordem,
+            com o mesmo texto da situação vacinal. O front mostra todos, sem mudar o texto.
+          allOf:
+            - $ref: '#/components/schemas/Avisos'

@@ -24,6 +24,8 @@ No perfil `dev`, o "hoje" fica fixo em **24/11/2026** (`minha-vacinacao.data-ref
 
 **CORS:** só as origens em `minha-vacinacao.cors.origens-permitidas` são liberadas (nenhuma por padrão; no `dev`, o Vite em `localhost:5173`). O preflight `OPTIONS` passa sem token.
 
+**Lembretes (D20):** `GET /v1/eu/lembretes` (logada + dependentes, o sino) e `GET /v1/pessoas/{idPessoa}/lembretes` são calculados na hora a partir da situação vacinal (`regra.GeradorLembretes`, sobre o resultado da `CalculadoraSituacaoVacinal`) e das campanhas vigentes. Nada é gravado: as tabelas `lembrete` e `notificacao` não são usadas e não há push. Regras e textos provisórios, a confirmar com a Duda.
+
 A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualquer outra). Fora de `dev`/`test`, nenhum token vale até o SSO real entrar em `seguranca.ValidadorToken`.
 
 ## Testes
@@ -35,7 +37,7 @@ A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualqu
 - Com o **Docker** rodando, os testes de banco sobem um MySQL 8.4 com Testcontainers.
 - Sem Docker, dá para apontar para um MySQL vazio: `TESTE_DB_URL=jdbc:mysql://127.0.0.1:3306/banco_vazio TESTE_DB_USER=... TESTE_DB_PASSWORD=... ./mvnw test`.
 - Sem nenhum dos dois, os testes de banco (API, contrato, migrações, repositórios) são **pulados** com um aviso `*** ATENÇÃO ***` no console; os testes de FHIR, da regra e de "somente leitura" rodam sempre.
-- Com `CI=true` (GitHub Actions) ou `EXIGIR_BANCO=true`, a falta de banco **quebra** o build em vez de pular. O workflow `.github/workflows/backend.yml` roda a suíte completa (71 testes) com Testcontainers a cada PR.
+- Com `CI=true` (GitHub Actions) ou `EXIGIR_BANCO=true`, a falta de banco **quebra** o build em vez de pular. O workflow `.github/workflows/backend.yml` roda a suíte completa (91 testes) com Testcontainers a cada PR.
 
 ## Pacotes
 
@@ -43,7 +45,7 @@ A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualqu
 |---|---|---|
 | `dados` | `dados-fhir` | Entidades JPA (`@Immutable`) e repositórios somente leitura |
 | `fonte` | `dados-fhir` | `FonteRegistrosVacinacao`, `FonteBancoSintetico`, leitura e validação de `Immunization` (HAPI FHIR) |
-| `regra` | `backend-java` | Regra de situação vacinal conforme as fontes oficiais (D19, docs/16), Java puro |
+| `regra` | `backend-java` | Regra de situação vacinal conforme as fontes oficiais (D19, docs/16) e geração dos lembretes (D20), Java puro |
 | `servico`, `api`, `seguranca` | `backend-java` | Serviços, endpoints do contrato, token falso (dev) e controle de acesso |
 
 ## Migrações

@@ -134,4 +134,25 @@ public final class Respostas {
     public record Vacina(int id, String nome, String descricao, List<DoencaResumo> doencas) {}
 
     public record ListaVacinas(List<Vacina> vacinas) {}
+
+    public record Lembrete(
+            String id,
+            String tipo,
+            String motivo,
+            PessoaResumo pessoa,
+            LocalDate data,
+            String titulo,
+            String mensagem,
+            String textoNotificacao,
+            VacinaResumo vacina,
+            Integer idDose,
+            Integer idCampanha) {}
+
+    public record PessoaNosLembretes(PessoaResumo pessoa, OffsetDateTime dataUltimaAtualizacao) {}
+
+    public record ListaLembretes(
+            LocalDate dataReferencia,
+            List<PessoaNosLembretes> pessoas,
+            List<Lembrete> lembretes,
+            List<Aviso> avisos) {}
 }

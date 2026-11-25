@@ -133,6 +133,24 @@ class ContratoTest extends BancoDeTeste {
         assertThat(real).isEqualTo(exemplo("/v1/eu", "responsavelComUmFilho"));
     }
 
+    /** Os exemplos de lembretes são listas completas: a resposta inteira tem que ser igual. */
+    @Test
+    void lembretesBatemComOsExemplos() throws Exception {
+        JsonNode eu = chamar("/v1/eu/lembretes", 4);
+        assertConformeSchema(eu, "ListaLembretes");
+        JsonNode exEu = exemplo("/v1/eu/lembretes", "valentinaEHeitor");
+        assertThat(exEu.isMissingNode()).as("exemplo valentinaEHeitor no contrato").isFalse();
+        assertConformeSchema(exEu, "ListaLembretes");
+        assertThat(eu).isEqualTo(exEu);
+
+        JsonNode bernardo = chamar("/v1/pessoas/48/lembretes", 46);
+        assertConformeSchema(bernardo, "ListaLembretes");
+        JsonNode exBernardo = exemplo("/v1/pessoas/{idPessoa}/lembretes", "bernardo");
+        assertThat(exBernardo.isMissingNode()).as("exemplo bernardo no contrato").isFalse();
+        assertConformeSchema(exBernardo, "ListaLembretes");
+        assertThat(bernardo).isEqualTo(exBernardo);
+    }
+
     @Test
     void unidadesCampanhasEVacinasSeguemOContrato() throws Exception {
         JsonNode unidades = chamar("/v1/unidades?vacina=4&lat=-8.12&lng=-34.93", 4);

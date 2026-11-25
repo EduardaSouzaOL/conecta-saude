@@ -3,6 +3,7 @@ package br.recife.conectasaude.vacinacao.api;
 import br.recife.conectasaude.vacinacao.api.TratadorDeErros.RequisicaoInvalidaException;
 import br.recife.conectasaude.vacinacao.seguranca.ControleDeAcesso;
 import br.recife.conectasaude.vacinacao.servico.ConsultasService;
+import br.recife.conectasaude.vacinacao.servico.LembretesService;
 import br.recife.conectasaude.vacinacao.servico.SituacaoVacinalService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints de contrato/openapi.yaml (v0.3.0). Somente GET: nenhum endpoint cria ou altera dose
+ * Endpoints de contrato/openapi.yaml (v0.5.0). Somente GET: nenhum endpoint cria ou altera dose
  * (RNF05, RN05). Dados de uma pessoa passam sempre pelo {@link ControleDeAcesso}.
  */
 @RestController
@@ -21,16 +22,31 @@ public class MinhaVacinacaoController {
     private final ControleDeAcesso acesso;
     private final SituacaoVacinalService situacao;
     private final ConsultasService consultas;
+    private final LembretesService lembretes;
 
-    public MinhaVacinacaoController(ControleDeAcesso acesso, SituacaoVacinalService situacao, ConsultasService consultas) {
+    public MinhaVacinacaoController(ControleDeAcesso acesso, SituacaoVacinalService situacao, ConsultasService consultas,
+            LembretesService lembretes) {
         this.acesso = acesso;
         this.situacao = situacao;
         this.consultas = consultas;
+        this.lembretes = lembretes;
     }
 
     @GetMapping("/eu")
     public Respostas.Eu eu() {
         return consultas.eu(acesso.idPessoaLogada());
+    }
+
+    /** Lembretes da logada e dos dependentes (o sino), calculados na hora; nada é gravado (D20). */
+    @GetMapping("/eu/lembretes")
+    public Respostas.ListaLembretes meusLembretes() {
+        return lembretes.daPessoaLogadaEDependentes(acesso.idPessoaLogada());
+    }
+
+    @GetMapping("/pessoas/{idPessoa}/lembretes")
+    public Respostas.ListaLembretes lembretesDaPessoa(@PathVariable int idPessoa) {
+        acesso.exigirAcesso(idPessoa);
+        return lembretes.daPessoa(idPessoa, acesso.idPessoaLogada());
     }
 
     @GetMapping("/pessoas/{idPessoa}/situacao-vacinal")
