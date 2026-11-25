@@ -16,8 +16,8 @@ export function Avisos({ avisos, compacto = false }: { avisos: Aviso[]; compacto
           <div>
             <p>{a.mensagem}</p>
             {a.codigo === 'CARTAO_DESATUALIZADO' && (
-              <Link to="/atualizar-caderneta" className="link">
-                Saiba como atualizar
+              <Link to="/mapa" className="link">
+                Encontrar unidade próxima
               </Link>
             )}
             {a.codigo === 'DOSE_FORA_DA_IDADE' && (

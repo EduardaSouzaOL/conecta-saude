@@ -6,7 +6,13 @@ import type { Eu, ListaUnidades } from '../api/tipos';
  * capturadas por scripts/capturar-demo.mjs. Regras de acesso iguais às da API: 401 sem token,
  * 403 para pessoa fora da família logada, 404 para o que não existe.
  */
-type Dados = { logins: { id: number; nome: string }[]; respostas: Record<string, unknown> };
+export interface LoginDemo {
+  id: number;
+  nome: string;
+  dataNascimento: string;
+  dependentes: { nome: string; dataNascimento: string }[];
+}
+type Dados = { logins: LoginDemo[]; respostas: Record<string, unknown> };
 const base = dados as unknown as Dados;
 
 export const loginsDemo = base.logins;

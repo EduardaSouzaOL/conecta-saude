@@ -1,13 +1,14 @@
 import { Link } from 'react-router';
 import type { DosePrevista } from '../api/tipos';
-import { SITUACOES, explicacaoDose, rotuloSituacao } from '../util/situacao';
-import { capitalizar } from '../util/texto';
-import { Orientacoes } from './Orientacoes';
+import { dataBr } from '../util/datas';
+import { explicacaoDose } from '../util/situacao';
+import { Etapas } from './Etapas';
 import { IconeSeta } from './Icones';
+import { Orientacoes } from './Orientacoes';
 
 /**
- * Cartão de uma vacina numa aba: as doses daquela situação e, embaixo, o caminho do esquema
- * (todas as doses da vacina, cada uma com a cor da situação).
+ * Cartão da vacina (protótipo "Minha Vacinação"): nome e seta, frase da situação, etapas do
+ * esquema, "Veja onde tomar essa vacina" e "Ver detalhes".
  */
 export function CartaoVacina({
   idPessoa,
@@ -19,42 +20,42 @@ export function CartaoVacina({
   todasDaVacina: DosePrevista[];
 }) {
   const primeira = dosesDaAba[0]!;
-  const tomadas = todasDaVacina.filter((d) => d.situacao === 'EM_DIA').length;
-  const podeIr = dosesDaAba.some((d) => d.situacao === 'ATRASADA' || d.situacao === 'PODE_TOMAR');
+  const situacao = primeira.situacao;
+  const todasTomadas = todasDaVacina.every((d) => d.situacao === 'EM_DIA');
+  const ultimaTomada = [...todasDaVacina].reverse().find((d) => d.registro)?.registro;
+  const detalhe = `/vacinas/${idPessoa}/dose/${primeira.idDose}`;
+
+  let frase: string;
+  if (situacao === 'EM_DIA') {
+    frase = todasTomadas
+      ? 'Todas as doses desta vacina estão registradas.'
+      : `Última dose registrada em ${dataBr(ultimaTomada?.dataAplicacao)}.`;
+  } else {
+    frase = dosesDaAba.map(explicacaoDose).join(' ');
+  }
+
   return (
-    <article className="cartao cartao-vacina">
-      <Link to={`/vacinas/${idPessoa}/dose/${primeira.idDose}`} className="cartao-vacina-topo">
+    <article className={`cartao-vacina cartao-vacina-${situacao === 'AINDA_NAO_DISPONIVEL' ? 'apagado' : 'normal'}`}>
+      <Link to={detalhe} className="cartao-vacina-topo">
         <h3>{primeira.vacina.nome}</h3>
         <IconeSeta />
       </Link>
-      <ul className="doses-da-aba">
-        {dosesDaAba.map((d) => (
-          <li key={d.idDose}>
-            <Link to={`/vacinas/${idPessoa}/dose/${d.idDose}`} className="dose-linha">
-              <span className={`selo selo-${SITUACOES[d.situacao].cor}`}>{rotuloSituacao(d)}</span>
-              <span className="dose-nome">{capitalizar(d.nomeDose)} · {d.descricao}</span>
-            </Link>
-            <p className="dose-explicacao">{explicacaoDose(d)}</p>
-            {d.registro?.transcricao && <p className="detalhe">Registro transcrito do cartão físico.</p>}
-            <Orientacoes orientacoes={d.orientacoes} />
-          </li>
-        ))}
-      </ul>
-      <div className="esquema" aria-label={`${tomadas} de ${todasDaVacina.length} doses tomadas`}>
-        <p className="detalhe">
-          {tomadas} de {todasDaVacina.length} {todasDaVacina.length === 1 ? 'dose tomada' : 'doses tomadas'}
-        </p>
-        <ol className="esquema-barras" aria-hidden="true">
-          {todasDaVacina.map((d) => (
-            <li key={d.idDose} className={`barra barra-${SITUACOES[d.situacao].cor}`} title={capitalizar(d.nomeDose)} />
-          ))}
-        </ol>
-      </div>
-      {podeIr && (
+      <p className="cartao-vacina-frase">{frase}</p>
+      {dosesDaAba.map((d) => (
+        <Orientacoes key={d.idDose} orientacoes={d.orientacoes} />
+      ))}
+      {todasDaVacina.length > 1 && <Etapas doses={todasDaVacina} atual={primeira} />}
+      {(situacao === 'ATRASADA' || situacao === 'PODE_TOMAR') && (
         <Link to={`/mapa?vacina=${primeira.vacina.id}`} className="botao botao-primario">
-          Ver onde tomar esta vacina
+          Veja onde tomar essa vacina
         </Link>
       )}
+      {situacao === 'AINDA_NAO_DISPONIVEL' && primeira.dataDisponivel && (
+        <p className="cartao-vacina-nota">Próxima dose liberada no dia {dataBr(primeira.dataDisponivel)}.</p>
+      )}
+      <Link to={detalhe} className="botao botao-contorno">
+        Ver detalhes
+      </Link>
     </article>
   );
 }

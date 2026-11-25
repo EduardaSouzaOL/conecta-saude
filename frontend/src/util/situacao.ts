@@ -4,7 +4,7 @@ import { capitalizar, concordar } from './texto';
 
 /** Textos em linguagem simples (RNF01). Dose sem liberação é "ainda não disponível" (RN03). */
 export const SITUACOES: Record<SituacaoDose, { rotulo: string; aba: string; cor: string; abaSlug: string }> = {
-  ATRASADA: { rotulo: 'Atrasada', aba: 'Atrasadas', cor: 'atrasada', abaSlug: 'atrasadas' },
+  ATRASADA: { rotulo: 'Atrasada', aba: 'Atrasada', cor: 'atrasada', abaSlug: 'atrasadas' },
   PODE_TOMAR: { rotulo: 'Já pode tomar', aba: 'Já pode tomar', cor: 'pode', abaSlug: 'ja-pode-tomar' },
   EM_DIA: { rotulo: 'Em dia', aba: 'Em dia', cor: 'emdia', abaSlug: 'em-dia' },
   AINDA_NAO_DISPONIVEL: { rotulo: 'Ainda não disponível', aba: 'Próximas', cor: 'proxima', abaSlug: 'proximas' },

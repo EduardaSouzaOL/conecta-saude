@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { modoDemo } from '../api/cliente';
 import { useLembretes } from '../api/consultas';
 import { useSessao } from '../sessao/Sessao';
-import { IconeHistorico, IconeInicio, IconeMapa, IconeSino, IconeVacina, IconeVoltar } from './Icones';
+import { IconeHistorico, IconeInicio, IconeMapa, IconePessoa, IconeSino, IconeVacina, IconeVoltar } from './Icones';
 
 const ABAS = [
   { para: '/', rotulo: 'Início', Icone: IconeInicio, fim: true },
@@ -12,7 +12,7 @@ const ABAS = [
   { para: '/vacinas', rotulo: 'Vacinas', Icone: IconeVacina, fim: false },
 ];
 
-/** Moldura do app: faixa de demonstração, conteúdo e barra inferior fixa. */
+/** Moldura do app (protótipo): faixa azul no topo, conteúdo e barra inferior arredondada. */
 export function Layout() {
   const { pathname } = useLocation();
   const principal = useRef<HTMLElement>(null);
@@ -22,12 +22,18 @@ export function Layout() {
 
   return (
     <div className="app">
-      {modoDemo && (
-        <div className="faixa-demo">
-          <span>Demonstração · dados sintéticos</span>
-          <Link to="/entrar">Trocar família</Link>
+      <div className="topo-app">
+        <div className="topo-marca">
+          <strong>ConectaSaúde</strong>
+          <span>Recife</span>
         </div>
-      )}
+        {modoDemo && (
+          <Link to="/conecta" className="topo-demo" aria-label="Voltar para a página inicial do Conecta (demonstração)">
+            <span>Conecta</span>
+            <IconePessoa />
+          </Link>
+        )}
+      </div>
       <main ref={principal} className="conteudo" id="conteudo">
         <Outlet />
       </main>
@@ -43,57 +49,52 @@ export function Layout() {
   );
 }
 
-/** Cabeçalho de cada tela: voltar, título e sino de lembretes. */
-export function Cabecalho({ titulo, voltar, children }: { titulo: string; voltar?: boolean; children?: ReactNode }) {
+/**
+ * Cabeçalho de cada tela, como no protótipo: "VOLTAR" em cima, título à esquerda e,
+ * à direita, o sino de lembretes (ou outra ação).
+ */
+export function Cabecalho({
+  titulo,
+  voltar,
+  sino = true,
+  children,
+}: {
+  titulo: string;
+  voltar?: boolean;
+  sino?: boolean;
+  children?: ReactNode;
+}) {
   const navegar = useNavigate();
   // Sem indicação, mostra "voltar" quando há tela anterior dentro do app.
   const temAnterior = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
   const mostrarVoltar = voltar ?? temAnterior;
-  const { pathname } = useLocation();
   useEffect(() => {
     document.title = `${titulo} · Minha vacinação`;
   }, [titulo]);
   return (
     <header className="cabecalho">
+      {mostrarVoltar && (
+        <button type="button" className="voltar" onClick={() => (temAnterior ? navegar(-1) : navegar('/'))}>
+          <IconeVoltar /> Voltar
+        </button>
+      )}
       <div className="cabecalho-linha">
-        {mostrarVoltar ? (
-          <button
-            type="button"
-            className="botao-icone"
-            aria-label="Voltar"
-            onClick={() => (temAnterior ? navegar(-1) : navegar('/'))}
-          >
-            <IconeVoltar />
-          </button>
-        ) : (
-          <span className="cabecalho-espaco" />
-        )}
-        <h1>
-          {titulo}
-        </h1>
-        {pathname !== '/lembretes' ? <Sino /> : <span className="cabecalho-espaco" />}
+        <h1>{titulo}</h1>
+        {sino && <Sino />}
       </div>
       {children}
     </header>
   );
 }
 
-function Sino() {
+export function Sino() {
   const { data } = useLembretes();
   const { lembretesVistos } = useSessao();
   const novos = data ? data.lembretes.filter((l) => !lembretesVistos.has(l.id)).length : 0;
   return (
-    <Link
-      to="/lembretes"
-      className="botao-icone sino"
-      aria-label={novos > 0 ? `Lembretes: ${novos} novos` : 'Lembretes'}
-    >
+    <Link to="/lembretes" className="sino" aria-label={novos > 0 ? `Lembretes: ${novos} novos` : 'Lembretes'}>
       <IconeSino />
-      {novos > 0 && (
-        <span className="contador" aria-hidden="true">
-          {novos > 9 ? '9+' : novos}
-        </span>
-      )}
+      {novos > 0 && <span className="sino-ponto" aria-hidden="true" />}
     </Link>
   );
 }

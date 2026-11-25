@@ -12,6 +12,6 @@ describe('Avisos', () => {
     render(<MemoryRouter><Avisos avisos={avisos} /></MemoryRouter>);
     const itens = screen.getAllByRole('listitem');
     expect(itens.map((i) => i.querySelector('p')?.textContent)).toEqual(['Texto A.', 'Texto B.', 'Texto C.']);
-    expect(screen.getByRole('link', { name: 'Saiba como atualizar' })).toHaveAttribute('href', '/atualizar-caderneta');
+    expect(screen.getByRole('link', { name: 'Encontrar unidade próxima' })).toHaveAttribute('href', '/mapa');
   });
 });

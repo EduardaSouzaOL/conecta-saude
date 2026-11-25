@@ -27,9 +27,15 @@ Também dá para gerar um único arquivo HTML com tudo dentro (app + dados da de
 
 ### Login
 
-O token do Conecta (SSO) ainda não está definido (D15). Em dev e na demonstração o app usa o token
-falso do perfil dev: `dev-pessoa-<id>`. Padrão: família da pessoa 115. Outras: `?token=dev-pessoa-110`
-na URL, `VITE_TOKEN`, ou "Trocar família" na faixa da demonstração (115, 110 e 4).
+O token do Conecta (SSO) ainda não está definido (D15). O app usa o token falso do perfil dev:
+`dev-pessoa-<id>`.
+
+- **Demonstração:** abre na tela "Entrar como" (protótipo "Entrar Como"), com 8 pessoas fictícias:
+  responsáveis com crianças (115, 110, 4), adolescentes (26, 39), adultos (409, 386) e pessoa idosa
+  (402). Depois do login aparece a simulação da home do Conecta (protótipo "Home - Seu Antônio"),
+  com o bloco "Acompanhe suas vacinações" personalizado pela carteira, e dali se entra no módulo.
+  "Sair" volta para a entrada. Nenhum CPF é pedido ou mostrado.
+- **Dev com API real:** pessoa 115 por padrão; outra com `?token=dev-pessoa-<id>` ou `VITE_TOKEN`.
 
 ## Checagens
 
@@ -54,7 +60,9 @@ npm run e2e             # Playwright em tela de Pixel 7 e iPhone 13 + axe (WCAG 
 
 | Rota | Tela |
 |---|---|
-| `#/` | Início: painel-resumo, lembretes, próxima dose, campanhas, onde vacinar |
+| `#/entrar` | Entrada da demonstração: escolher a pessoa |
+| `#/conecta` | Simulação da home do Conecta com "Acompanhe suas vacinações" |
+| `#/` | Início: carteira, painel-resumo, Minha Vacinação em abas, postos próximos, campanhas |
 | `#/vacinas?aba=atrasadas` | Minha vacinação, com as abas Atrasadas, Já pode tomar, Em dia e Próximas |
 | `#/vacinas/:idPessoa/dose/:idDose` | Detalhe da dose: linha do tempo da vacina e registro |
 | `#/historico` | Histórico de vacinas (RF04) |

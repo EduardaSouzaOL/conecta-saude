@@ -14,7 +14,8 @@ function tokenInicial(): string | null {
   const daUrl = new URLSearchParams(window.location.search).get('token');
   if (daUrl) return daUrl;
   if (import.meta.env.VITE_TOKEN) return import.meta.env.VITE_TOKEN;
-  if (import.meta.env.DEV || modoDemo) return 'dev-pessoa-115';
+  // Na demonstração, começa pela tela de entrada (simula o login do Conecta).
+  if (import.meta.env.DEV && !modoDemo) return 'dev-pessoa-115';
   return null;
 }
 

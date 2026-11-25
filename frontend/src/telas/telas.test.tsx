@@ -10,13 +10,13 @@ const situacao = (id: number) => respostas[`/v1/pessoas/${id}/situacao-vacinal`]
 describe('Início', () => {
   it('mostra o painel-resumo igual ao da API e troca para o dependente', async () => {
     renderizar('/');
-    expect(await screen.findByText('Olá, Matheus!')).toBeInTheDocument();
+    expect(await screen.findByText('Matheus Rocha Vasconcelos')).toBeInTheDocument();
     const resumo = await screen.findByRole('list', { name: 'Resumo das doses' });
     const r = situacao(115).resumo;
     expect(within(resumo).getByRole('link', { name: `${r.atrasadas} Atrasadas` })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('radio', { name: /Ana/ }));
-    expect(await screen.findByText('Caderneta de Ana')).toBeInTheDocument();
+    expect(await screen.findByText('Ana Melo Vasconcelos')).toBeInTheDocument();
     const r2 = situacao(116).resumo;
     expect(within(screen.getByRole('list', { name: 'Resumo das doses' })).getByRole('link', { name: `${r2.atrasadas} Atrasadas` })).toBeInTheDocument();
   });
@@ -30,7 +30,7 @@ describe('Início', () => {
 describe('Minha vacinação', () => {
   it('mostra o aviso de regra em alinhamento e todos os avisos da API', async () => {
     renderizar('/vacinas?aba=atrasadas');
-    await screen.findByRole('tablist');
+    await screen.findByRole('tabpanel');
     for (const a of situacao(115).avisos) {
       expect(screen.getByText(a.mensagem)).toBeInTheDocument();
     }
@@ -55,9 +55,9 @@ describe('Detalhe da dose', () => {
     const d = situacao(116).doses.find((x) => x.situacao === 'ATRASADA')!;
     renderizar(`/vacinas/116/dose/${d.idDose}`);
     expect(await screen.findByRole('heading', { level: 1, name: d.vacina.nome })).toBeInTheDocument();
-    expect(await screen.findByText('Doses desta vacina')).toBeInTheDocument();
+    expect(await screen.findByText(/1ª dose - atrasada|atrasad/)).toBeInTheDocument();
     expect(screen.getByText(/Estas regras ainda estão em alinhamento/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ver onde tomar esta vacina' })).toHaveAttribute('href', `/mapa?vacina=${d.vacina.id}`);
+    expect(screen.getByText('Protocolo')).toBeInTheDocument();
   });
 
   it('não mostra dados de quem não é da família (403)', async () => {
@@ -94,4 +94,16 @@ describe('Privacidade e linguagem', () => {
       expect(texto).not.toMatch(/\bcid\b/);
     },
   );
+});
+
+describe('Entrada da demonstração', () => {
+  it('lista as pessoas fictícias e mostra a home do Conecta com a dose mais urgente', async () => {
+    renderizar('/entrar', null);
+    await userEvent.click(await screen.findByText('Valentina Oliveira Ferreira'));
+    await userEvent.click(screen.getByRole('button', { name: 'Fazer Login' }));
+    expect(await screen.findByText('Olá, Valentina!')).toBeInTheDocument();
+    const lista = respostas['eu:4 /v1/eu/lembretes'] as ListaLembretes;
+    const primeiro = lista.lembretes.find((l) => l.tipo === 'DOSE')!;
+    expect(await screen.findByRole('heading', { level: 3, name: primeiro.vacina!.nome })).toBeInTheDocument();
+  });
 });

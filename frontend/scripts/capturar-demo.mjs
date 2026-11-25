@@ -4,8 +4,9 @@
 import { writeFileSync } from 'node:fs';
 
 const API = process.env.API ?? 'http://localhost:8080';
-// Famílias da demonstração: pessoa logada (responsável) e os dependentes dela.
-const LOGINS = [115, 110, 4];
+// Pessoas que podem "entrar" na demonstração (cada uma vê a própria carteira e a dos dependentes):
+// responsáveis com crianças, adolescentes, adultos e pessoa idosa.
+const LOGINS = [115, 110, 4, 26, 39, 409, 386, 402];
 
 async function get(caminho, idLogado) {
   const r = await fetch(API + caminho, { headers: { Authorization: `Bearer dev-pessoa-${idLogado}` } });
@@ -19,7 +20,12 @@ for (const id of LOGINS) {
   const eu = await get('/v1/eu', id);
   respostas[`eu:${id} /v1/eu`] = eu;
   respostas[`eu:${id} /v1/eu/lembretes`] = await get('/v1/eu/lembretes', id);
-  logins.push({ id, nome: eu.pessoa.nome });
+  logins.push({
+    id,
+    nome: eu.pessoa.nome,
+    dataNascimento: eu.pessoa.dataNascimento,
+    dependentes: eu.dependentes.map((d) => ({ nome: d.pessoa.nome, dataNascimento: d.pessoa.dataNascimento })),
+  });
   for (const p of [eu.pessoa, ...eu.dependentes.map((d) => d.pessoa)]) {
     const base = `/v1/pessoas/${p.id}`;
     const sv = await get(`${base}/situacao-vacinal`, id);

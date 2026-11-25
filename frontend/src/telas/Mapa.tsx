@@ -1,28 +1,26 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { useUnidades, useVacinas, type Ponto } from '../api/consultas';
-import type { Disponibilidade } from '../api/tipos';
+import { CartaoUnidade } from '../componentes/CartaoUnidade';
 import { Carregando, Erro, Vazio } from '../componentes/Estado';
-import { IconeAlvo, IconeInfo, IconeSeta } from '../componentes/Icones';
+import { IconeAlvo, IconeFiltro, IconeInfo, IconeMapa } from '../componentes/Icones';
 import { Cabecalho } from '../componentes/Layout';
 import { MapaUnidades } from '../componentes/MapaUnidades';
-import { distancia } from '../util/texto';
 
-export const DISPONIBILIDADE: Record<Disponibilidade, { rotulo: string; cor: string }> = {
-  DISPONIVEL: { rotulo: 'Tem a vacina', cor: 'emdia' },
-  INDISPONIVEL: { rotulo: 'Sem a vacina agora', cor: 'atrasada' },
-  TEMPORARIAMENTE_INDISPONIVEL: { rotulo: 'Em falta por pouco tempo', cor: 'aviso' },
-  SEM_INFORMACAO: { rotulo: 'Sem informação: ligue antes', cor: 'proxima' },
-};
+export { DISPONIBILIDADE } from '../componentes/CartaoUnidade';
 
+/** Mapa (protótipo "Mapa"): local da pessoa, postos próximos, filtro por vacina e lista. */
 export function Mapa() {
   const [params, setParams] = useSearchParams();
   const vacina = params.get('vacina') ? Number(params.get('vacina')) : undefined;
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [localizando, setLocalizando] = useState(false);
   const [erroLocal, setErroLocal] = useState<string | null>(null);
+  const [filtroAberto, setFiltroAberto] = useState(false);
+  const [selecionada, setSelecionada] = useState<number | null>(null);
   const vacinas = useVacinas();
   const unidades = useUnidades(vacina, ponto);
+  const nomeVacina = vacinas.data?.vacinas.find((v) => v.id === vacina)?.nome;
 
   function pertoDeMim() {
     if (!navigator.geolocation) {
@@ -44,73 +42,73 @@ export function Mapa() {
     );
   }
 
+  const lista = unidades.data?.unidades ?? [];
+  const destaque = lista.find((u) => u.id === selecionada);
+  const ordenada = destaque ? [destaque, ...lista.filter((u) => u !== destaque)] : lista;
+
   return (
     <>
-      <Cabecalho titulo="Onde vacinar" />
-      <section className="secao">
-        <label className="campo">
-          <span>Filtrar por vacina</span>
-          <select
-            value={vacina ?? ''}
-            onChange={(e) => setParams(e.target.value ? { vacina: e.target.value } : {}, { replace: true })}
-          >
-            <option value="">Todas as unidades com sala de vacina</option>
-            {vacinas.data?.vacinas.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" className="botao botao-secundario botao-largo" onClick={pertoDeMim} disabled={localizando}>
-          <IconeAlvo /> {localizando ? 'Procurando você…' : ponto ? 'Atualizar minha localização' : 'Mostrar as mais perto de mim'}
+      <Cabecalho titulo={nomeVacina ?? 'Onde vacinar'} />
+      <section className="secao pilha">
+        <button type="button" className="local" onClick={pertoDeMim} disabled={localizando}>
+          <IconeMapa />
+          {localizando ? 'Procurando você…' : ponto ? 'Perto de você' : 'Usar minha localização'}
         </button>
         {erroLocal && <p className="erro-campo" role="alert">{erroLocal}</p>}
-      </section>
-
-      {unidades.isPending && <Carregando />}
-      {unidades.isError && <Erro erro={unidades.error} tentarDeNovo={() => unidades.refetch()} />}
-      {unidades.data && (
-        <>
-          <section className="secao">
-            <MapaUnidades unidades={unidades.data.unidades} ponto={ponto} />
-            <p className="aviso aviso-info aviso-solto">
-              <IconeInfo />
-              <span>{unidades.data.avisoPortaAberta}</span>
-            </p>
-          </section>
-          <section className="secao" aria-labelledby="titulo-unidades">
-            <h2 id="titulo-unidades" className="titulo-secao">
-              {unidades.data.unidades.length} unidades {ponto ? 'perto de você' : ''}
-            </h2>
-            {unidades.data.unidades.length === 0 ? (
+        <div className="linha-titulo">
+          <h2 className="titulo-secao">Postos próximos</h2>
+          <span className="detalhe">{lista.length} postos</span>
+        </div>
+        {unidades.isPending && <Carregando />}
+        {unidades.isError && <Erro erro={unidades.error} tentarDeNovo={() => unidades.refetch()} />}
+        {unidades.data && (
+          <>
+            <MapaUnidades unidades={lista} ponto={ponto} selecionada={selecionada} aoSelecionar={setSelecionada}>
+              <button
+                type="button"
+                className="mapa-botao mapa-filtro"
+                aria-label="Filtrar por vacina"
+                aria-expanded={filtroAberto}
+                onClick={() => setFiltroAberto((v) => !v)}
+              >
+                <IconeFiltro />
+              </button>
+              <button type="button" className="mapa-botao mapa-local" aria-label="Mostrar as mais perto de mim" onClick={pertoDeMim}>
+                <IconeAlvo />
+              </button>
+            </MapaUnidades>
+            {filtroAberto && (
+              <label className="campo">
+                <span>Filtrar por vacina</span>
+                <select
+                  value={vacina ?? ''}
+                  onChange={(e) => {
+                    setParams(e.target.value ? { vacina: e.target.value } : {}, { replace: true });
+                    setFiltroAberto(false);
+                  }}
+                >
+                  <option value="">Todas as unidades com sala de vacina</option>
+                  {vacinas.data?.vacinas.map((v) => (
+                    <option key={v.id} value={v.id}>{v.nome}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <p className="aviso aviso-info"><IconeInfo /><span>{unidades.data.avisoPortaAberta}</span></p>
+            {ordenada.length === 0 ? (
               <Vazio>Nenhuma unidade encontrada.</Vazio>
             ) : (
-              <ul className="lista-cartoes">
-                {unidades.data.unidades.map((u) => (
+              <ul className="lista-unidades">
+                {ordenada.map((u) => (
                   <li key={u.id}>
-                    <Link to={`/unidades/${u.id}${vacina ? `?vacina=${vacina}` : ''}`} className="cartao cartao-link">
-                      <div>
-                        <strong>{u.nome}</strong>
-                        <p>{u.endereco}</p>
-                        <p className="detalhe">
-                          {[u.distritoSanitario, distancia(u.distanciaMetros)].filter(Boolean).join(' · ')}
-                        </p>
-                        {u.disponibilidadeVacina && (
-                          <span className={`selo selo-${DISPONIBILIDADE[u.disponibilidadeVacina].cor}`}>
-                            {DISPONIBILIDADE[u.disponibilidadeVacina].rotulo}
-                          </span>
-                        )}
-                      </div>
-                      <IconeSeta />
-                    </Link>
+                    <CartaoUnidade unidade={u} nomeVacina={nomeVacina} eyebrow={u.id === selecionada ? 'Posto selecionado' : undefined} />
                   </li>
                 ))}
               </ul>
             )}
-          </section>
-        </>
-      )}
+          </>
+        )}
+      </section>
     </>
   );
 }

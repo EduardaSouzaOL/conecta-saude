@@ -4,7 +4,7 @@ import { Carregando, Erro } from '../componentes/Estado';
 import { IconeInfo, IconeMapa, IconeRelogio, IconeRota, IconeTelefone } from '../componentes/Icones';
 import { Cabecalho } from '../componentes/Layout';
 import { dataBr } from '../util/datas';
-import { DISPONIBILIDADE } from './Mapa';
+import { DISPONIBILIDADE } from '../componentes/CartaoUnidade';
 
 export function DetalheUnidade() {
   const id = Number(useParams().idUnidade);

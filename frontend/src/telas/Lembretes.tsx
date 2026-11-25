@@ -26,13 +26,13 @@ export function Lembretes() {
     return () => marcarVistos(ids);
   }, [lembretes.data, marcarVistos]);
 
-  if (lembretes.isPending) return <><Cabecalho titulo="Lembretes" voltar /><Carregando /></>;
-  if (lembretes.isError) return <><Cabecalho titulo="Lembretes" voltar /><Erro erro={lembretes.error} tentarDeNovo={() => lembretes.refetch()} /></>;
+  if (lembretes.isPending) return <><Cabecalho titulo="Lembretes" voltar sino={false} /><Carregando /></>;
+  if (lembretes.isError) return <><Cabecalho titulo="Lembretes" voltar sino={false} /><Erro erro={lembretes.error} tentarDeNovo={() => lembretes.refetch()} /></>;
 
   const { lembretes: lista, avisos, pessoas } = lembretes.data;
   return (
     <>
-      <Cabecalho titulo="Lembretes" voltar />
+      <Cabecalho titulo="Lembretes" voltar sino={false} />
       <section className="secao">
         <p className="intro">Lembretes de vacina de {pessoas.map((p, i) => (i === 0 ? 'você' : primeiroNome(p.pessoa.nome))).join(', ').replace(/, ([^,]*)$/, ' e $1')}.</p>
         {lista.length === 0 ? (

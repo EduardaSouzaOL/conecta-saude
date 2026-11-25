@@ -66,3 +66,12 @@ export const IconePessoa = (p: P) => (
 export const IconeDocumento = (p: P) => (
   <svg {...base(p)}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></svg>
 );
+export const IconeAndar = (p: P) => (
+  <svg {...base(p)}><circle cx="13" cy="4" r="2" /><path d="m7 21 3-7 3 2v5M10 14l1-5 4 3 3 1M8 9l3-1" /></svg>
+);
+export const IconeFiltro = (p: P) => (
+  <svg {...base(p)}><path d="M6 3v18M12 3v18M18 3v18" /><circle cx="6" cy="15" r="2" fill="currentColor" /><circle cx="12" cy="8" r="2" fill="currentColor" /><circle cx="18" cy="14" r="2" fill="currentColor" /></svg>
+);
+export const IconeVoltarChevron = (p: P) => (
+  <svg {...base(p)}><path d="m15 18-6-6 6-6" /></svg>
+);

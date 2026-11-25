@@ -11,6 +11,7 @@ import { definirToken } from '../api/cliente';
 interface Sessao {
   token: string | null;
   entrar: (token: string) => void;
+  sair: () => void;
   pessoaAtiva: number | null;
   escolherPessoa: (id: number) => void;
   lembretesVistos: ReadonlySet<string>;
@@ -39,13 +40,21 @@ export function ProvedorSessao({ tokenInicial, children }: { tokenInicial: strin
     [cliente],
   );
 
+  const sair = useCallback(() => {
+    definirToken(null);
+    setToken(null);
+    setPessoaAtiva(null);
+    setVistos(new Set());
+    cliente.clear();
+  }, [cliente]);
+
   const marcarVistos = useCallback((ids: string[]) => {
     setVistos((atual) => (ids.every((i) => atual.has(i)) ? atual : new Set([...atual, ...ids])));
   }, []);
 
   const valor = useMemo(
-    () => ({ token, entrar, pessoaAtiva, escolherPessoa: setPessoaAtiva, lembretesVistos, marcarVistos }),
-    [token, entrar, pessoaAtiva, lembretesVistos, marcarVistos],
+    () => ({ token, entrar, sair, pessoaAtiva, escolherPessoa: setPessoaAtiva, lembretesVistos, marcarVistos }),
+    [token, entrar, sair, pessoaAtiva, lembretesVistos, marcarVistos],
   );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
