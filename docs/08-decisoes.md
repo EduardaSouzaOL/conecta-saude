@@ -138,3 +138,5 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 - Canais de ouvidoria do Recife (telefone, site, horário) a confirmar com a SESAU. Por enquanto a API traz só a Ouvidoria do SUS, Disque Saúde 136.
 - Se a carteira em PDF compete com o documento oficial do Meu SUS Digital (dúvida já levada à COP).
 
+**Complemento (Duda, 25/11/2026): opção de baixar no Meu SUS Digital.** Junto do botão da nossa carteira, o front oferece também a opção de baixar o documento **oficial** no **Meu SUS Digital** (app do Ministério da Saúde). São duas opções lado a lado: a nossa carteira em PDF continua **igual** (mesmo formato e conteúdo, gerada pela nossa API) e o Meu SUS Digital é só um link de saída. O app não coloca arquivo dentro do Meu SUS Digital nem lê dados dele (não há API pública); a pessoa baixa lá com a conta gov.br dela. A opção segue a mesma regra da D22 (só com login gov.br). Link e forma de abrir o app (loja, site ou link direto) **[a confirmar]** com a Emprel/SESAU.
+

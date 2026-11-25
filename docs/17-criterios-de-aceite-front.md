@@ -146,6 +146,7 @@ Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qua
 - [ ] O PDF **não** fica guardado no navegador (nada em `localStorage`, `sessionStorage` ou cache; a API manda `Cache-Control: no-store`).
 - [ ] Mostra estado de **carregando** enquanto o PDF é gerado e, em erro, a mensagem do `detail`. Se vier `403` com `type` `/problemas/login-gov-br-necessario`, mostra o `detail` e esconde o botão.
 - [ ] Junto do botão, o texto: "Este documento não substitui o documento oficial do Ministério da Saúde (Meu SUS Digital)." (o mesmo que vai dentro do PDF).
+- [ ] **Segunda opção, "Baixar no Meu SUS Digital"** (D22, complemento): ao lado do botão da nossa carteira, uma ação que abre o Meu SUS Digital, onde a pessoa baixa o documento oficial do Ministério. Aparece nas mesmas condições do botão da carteira (`recursos.carteiraPdf` `true`). A nossa carteira **não muda** por causa dessa opção. Abre fora do Conecta (app ou site do Meu SUS Digital); o endereço e se abre o app instalado ou a loja: **[pendente]** (Emprel/SESAU). O front não envia nenhum dado para o Meu SUS Digital.
 
 ### 5.11 Ouvidoria (`/v1/ouvidoria`, RF23, D22)
 - [ ] Só para quem entrou com **gov.br**: a entrada "Ouvidoria" aparece quando `recursos.ouvidoria` é `true`. Onde fica a entrada (menu, fim da tela de situação, detalhe da dose com `ATUALIZAR_CADERNETA`): **[aguarda Figma]**.
