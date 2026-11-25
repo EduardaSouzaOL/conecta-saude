@@ -2,8 +2,10 @@ package br.recife.conectasaude.vacinacao.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -77,6 +79,33 @@ class ApiTest extends BancoDeTeste {
         mvc.perform(comToken(get("/v1/pessoas/5/doses/99999"), 4)).andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Não encontrado"));
         mvc.perform(comToken(get("/v1/unidades/99999"), 4)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void doseForaDaIdadeNaoTemDetalhe() throws Exception {
+        // Pessoa 95 (dependente da 94): Meningo C D1 e D2 (doses 19 e 20) estão em dosesForaDaIdade
+        mvc.perform(comToken(get("/v1/pessoas/95/situacao-vacinal"), 94)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.dosesForaDaIdade[?(@.idDose == 19)]").exists());
+        mvc.perform(comToken(get("/v1/pessoas/95/doses/19"), 94)).andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+    }
+
+    @Test
+    void corsLiberaSoAOrigemConfigurada() throws Exception {
+        String front = "http://localhost:5173";
+        mvc.perform(options("/v1/eu").header("Origin", front)
+                        .header("Access-Control-Request-Method", "GET")
+                        .header("Access-Control-Request-Headers", "authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", front));
+        mvc.perform(options("/v1/eu").header("Origin", "https://outro-site.example")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+        // O 401 também leva o cabeçalho CORS, para o front conseguir ler o erro
+        mvc.perform(get("/v1/eu").header("Origin", front)).andExpect(status().isUnauthorized())
+                .andExpect(header().string("Access-Control-Allow-Origin", front));
+        mvc.perform(comToken(get("/v1/eu"), 4).header("Origin", front)).andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", front));
     }
 
     @Test
