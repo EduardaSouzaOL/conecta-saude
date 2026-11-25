@@ -68,34 +68,34 @@ INSERT INTO vacina_doenca (id_vacina, id_doenca) VALUES
 (16, 19);
 
 -- idade_minima / idade_maxima em DIAS
-INSERT INTO esquema_vacinal (id_esquema, id_vacina, nome, idade_minima, idade_maxima, descricao, status) VALUES
-(1, 1, 'BCG – dose única ao nascer', 0, 1825, 'Idades em dias', 'ATIVO'),
-(2, 2, 'Hepatite B – dose ao nascer', 0, 30, 'Idades em dias', 'ATIVO'),
-(3, 2, 'Hepatite B – sem esquema, a partir de 7 anos (3 doses)', 2557, NULL, 'Idades em dias', 'ATIVO'),
-(4, 3, 'Penta – 3 doses', 46, 2556, 'Idades em dias', 'ATIVO'),
-(5, 4, 'VIP – 3 doses + 2 reforços', 46, 1825, 'Idades em dias', 'ATIVO'),
-(6, 5, 'Rotavírus – 2 doses', 46, 729, 'Idades em dias', 'ATIVO'),
-(7, 6, 'Pneumo 10 – 2 doses + reforço', 61, 1825, 'Idades em dias', 'ATIVO'),
-(8, 7, 'Meningo C – 2 doses', 91, 364, 'Idades em dias', 'ATIVO'),
-(9, 8, 'Meningo ACWY – reforço aos 12 meses', 365, 1825, 'Idades em dias', 'ATIVO'),
-(10, 8, 'Meningo ACWY – adolescentes 11 a 14 anos', 4018, 5478, 'Idades em dias', 'ATIVO'),
-(11, 9, 'Febre amarela – dose + reforço', 274, 21914, 'Idades em dias', 'ATIVO'),
-(12, 10, 'Tríplice viral – 2 doses', 365, 21914, 'Idades em dias', 'ATIVO'),
-(13, 11, 'Varicela – 2 doses', 457, 2556, 'Idades em dias', 'ATIVO'),
-(14, 12, 'Hepatite A – dose única', 457, 1825, 'Idades em dias', 'ATIVO'),
-(15, 13, 'DTP – reforços', 457, 2556, 'Idades em dias', 'ATIVO'),
-(16, 14, 'HPV – dose única 9 a 14 anos', 3287, 5478, 'Idades em dias', 'ATIVO'),
-(17, 15, 'dT – reforço a cada 10 anos', 5114, NULL, 'Idades em dias', 'ATIVO'),
-(18, 16, 'Influenza – dose anual', 183, NULL, 'Idades em dias', 'ATIVO');
+INSERT INTO esquema_vacinal (id_esquema, id_vacina, nome, tipo_esquema, periodicidade_periodo, periodicidade_texto, idade_minima, idade_maxima, idade_minima_periodo, calcular_sem_idade_recomendada, descricao, status) VALUES
+(1, 1, 'BCG – dose única ao nascer', 'DOSES', NULL, NULL, 0, 1825, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(2, 2, 'Hepatite B – dose ao nascer', 'DOSES', NULL, NULL, 0, 30, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(3, 2, 'Hepatite B – sem esquema, a partir de 7 anos (3 doses)', 'DOSES', NULL, NULL, 2557, NULL, 'P7Y', TRUE, 'Idades em dias', 'ATIVO'),
+(4, 3, 'Penta – 3 doses', 'DOSES', NULL, NULL, 46, 2556, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(5, 4, 'VIP – 3 doses + 2 reforços', 'DOSES', NULL, NULL, 46, 1825, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(6, 5, 'Rotavírus – 2 doses', 'DOSES', NULL, NULL, 46, 729, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(7, 6, 'Pneumo 10 – 2 doses + reforço', 'DOSES', NULL, NULL, 61, 1825, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(8, 7, 'Meningo C – 2 doses', 'DOSES', NULL, NULL, 91, 364, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(9, 8, 'Meningo ACWY – reforço aos 12 meses', 'DOSES', NULL, NULL, 365, 1825, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(10, 8, 'Meningo ACWY – adolescentes 11 a 14 anos', 'DOSES', NULL, NULL, 4018, 5478, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(11, 9, 'Febre amarela – dose + reforço', 'DOSES', NULL, NULL, 274, 21914, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(12, 10, 'Tríplice viral – 2 doses', 'DOSES', NULL, NULL, 365, 21914, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(13, 11, 'Varicela – 2 doses', 'DOSES', NULL, NULL, 457, 2556, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(14, 12, 'Hepatite A – dose única', 'DOSES', NULL, NULL, 457, 1825, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(15, 13, 'DTP – reforços', 'DOSES', NULL, NULL, 457, 2556, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(16, 14, 'HPV – dose única 9 a 14 anos', 'DOSES', NULL, NULL, 3287, 5478, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(17, 15, 'dT – reforço a cada 10 anos', 'PERIODICA', 'P10Y', 'Reforço a cada 10 anos', 5114, NULL, NULL, FALSE, 'Idades em dias', 'ATIVO'),
+(18, 16, 'Influenza – dose anual', 'PERIODICA', 'P1Y', 'Dose anual', 183, NULL, 'P6M', FALSE, 'Idades em dias', 'ATIVO');
 
 -- intervalo_apos_anterior, idade_recomendada_dias, idade_minima_dias e idade_maxima_dias em DIAS (aproximação);
 -- a regra usa os períodos ISO 8601 (*_periodo), com meses e anos de calendário
 INSERT INTO dose_esquema (id_dose_esquema, id_esquema, numero_dose, intervalo_apos_anterior, idade_recomendada_dias, codigo_dose_rnds, idade_minima_dias, idade_maxima_dias, idade_recomendada_periodo, idade_minima_periodo, idade_limite_periodo, intervalo_minimo_periodo, fonte_regra, descricao) VALUES
 (1, 1, 1, NULL, 0, '9', 0, 1825, 'P0D', 'P0D', 'P5Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; BCG DU < 5A', 'Ao nascer (dose única)'),
 (2, 2, 1, NULL, 0, '8', 0, 30, 'P0D', 'P0D', 'P31D', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D ≤ 30D', 'Ao nascer (até 30 dias)'),
-(3, 3, 1, NULL, NULL, '1', 31, NULL, NULL, 'P31D', NULL, NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D1 > 30D', '1ª dose'),
-(4, 3, 2, 30, NULL, '2', 31, NULL, NULL, 'P31D', NULL, 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D2 > 30D, 30 dias após D1', '30 dias após a 1ª'),
-(5, 3, 3, 150, NULL, '3', 31, NULL, NULL, 'P31D', NULL, 'P150D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D3 > 30D, 150 dias após D2', '6 meses após a 1ª'),
+(3, 3, 1, NULL, NULL, '1', 2557, NULL, NULL, 'P7Y', NULL, NULL, '[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); [PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D1 > 30D', '1ª dose'),
+(4, 3, 2, 30, NULL, '2', 2557, NULL, NULL, 'P7Y', NULL, 'P30D', '[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); [PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D2 > 30D, 30 dias após D1', '30 dias após a 1ª'),
+(5, 3, 3, 150, NULL, '3', 2557, NULL, NULL, 'P7Y', NULL, 'P150D', '[IN-2026] Hepatite B a partir de 7 anos (3 doses, sem idade recomendada, nunca atrasada); [PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HB D3 > 30D, 150 dias após D2', '6 meses após a 1ª'),
 (6, 4, 1, NULL, 61, '1', 45, 2556, 'P2M', 'P1M15D', 'P7Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; Penta D1 ≥ 1M15D a < 7A', '2 meses'),
 (7, 4, 2, 30, 122, '2', 76, 2556, 'P4M', 'P2M15D', 'P7Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; Penta D2 ≥ 2M15D a < 7A, 30 dias após D1', '4 meses'),
 (8, 4, 3, 30, 183, '3', 106, 2556, 'P6M', 'P3M15D', 'P7Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; Penta D3 ≥ 3M15D a < 7A, 30 dias após D2', '6 meses'),
@@ -123,7 +123,7 @@ INSERT INTO dose_esquema (id_dose_esquema, id_esquema, numero_dose, intervalo_ap
 (30, 15, 1, 183, 457, '6', 365, 2556, 'P15M', 'P1Y', 'P7Y', 'P6M', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; DTP R1 ≥ 1A a < 7A, 6 meses após Penta D3', '1º reforço aos 15 meses'),
 (31, 15, 2, 180, 1461, '7', 1461, 2556, 'P4Y', 'P4Y', 'P7Y', 'P180D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; DTP R2 ≥ 4A a < 7A, 180 dias após R1', '2º reforço aos 4 anos'),
 (32, 16, 1, NULL, 3287, '9', 3287, 5478, 'P9Y', 'P9Y', 'P15Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; HPV4 DU ≥ 9A a ≤ 14A', 'Dose única (9 a 14 anos)'),
-(33, 17, 1, 1826, 5114, '38', 2557, NULL, 'P14Y', 'P7Y', NULL, 'P5Y', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; dT REF ≥ 7A, aprazamento 10 anos, intervalo mínimo 5 anos após a última dose com componente tetânico (D3)', 'Reforço a cada 10 anos'),
+(33, 17, 1, 3652, 5114, '38', 2557, NULL, 'P14Y', 'P7Y', NULL, 'P10Y', '[IN-2026] dT REF ≥ 7A, reforço a cada 10 anos na rotina (5 anos apenas em caso de exposição a risco); [PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]', 'Reforço a cada 10 anos'),
 (34, 18, 1, NULL, NULL, '1', 183, 3286, NULL, 'P6M', 'P9Y', NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; INF3 D1 ≥ 6M a ≤ 8A', '1ª dose (primovacinação, criança)'),
 (35, 18, 2, 30, NULL, '2', 213, 3286, NULL, 'P7M', 'P9Y', 'P30D', '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; INF3 D2 ≥ 7M a ≤ 8A, 30 dias após D1', '2ª dose (primovacinação, criança)'),
 (36, 18, 3, NULL, NULL, '9', 244, NULL, NULL, 'P8M', NULL, NULL, '[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]; INF3 DU ≥ 8M (texto da planilha, a conferir)', 'Dose anual');
@@ -132,9 +132,13 @@ INSERT INTO dose_esquema (id_dose_esquema, id_esquema, numero_dose, intervalo_ap
 INSERT INTO dose_anterior_oficial (id_dose_esquema, id_dose_anterior, prioridade, exige_registro, fonte_regra) VALUES
 (21, 20, 1, FALSE, '[PNI-REG] Regras de entrada de dados 4: MenC D2 -> REF, intervalo mínimo 60 dias; [IN-2026] só quando há MenC D2'),
 (30, 8, 1, TRUE, '[PNI-REG] Regras de entrada de dados 4: Penta D3 -> R1, intervalo mínimo 6 meses'),
-(33, 31, 1, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R2)'),
-(33, 30, 2, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (DTP R1, sem R2)'),
-(33, 8, 3, TRUE, '[PNI-REG] Regras de entrada de dados 4: dT D3 -> REF, intervalo mínimo 5 anos (Penta D3, sem R1 e R2)');
+(33, 31, 1, TRUE, '[IN-2026] dT REF 10 anos após DTP R2 (5 anos apenas em exposição a risco)'),
+(33, 30, 2, TRUE, '[IN-2026] dT REF 10 anos após DTP R1, sem R2 (5 anos apenas em exposição a risco)'),
+(33, 8, 3, TRUE, '[IN-2026] dT REF 10 anos após Penta D3, sem R1 e R2 (5 anos apenas em exposição a risco)');
+
+-- [IN-2026] esquema de atualização dispensado quando dose infantil equivalente já consta
+INSERT INTO esquema_dispensado_por_dose (id_esquema, id_dose_esquema, fonte_regra) VALUES
+(3, 8, '[IN-2026] Penta D3 completa a proteção infantil contra Hepatite B, dispensando o esquema de 3 doses >= 7 anos');
 
 -- system http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico (recorte)
 -- códigos, siglas, nomes e status conferidos na planilha oficial de Nomenclaturas do PNI

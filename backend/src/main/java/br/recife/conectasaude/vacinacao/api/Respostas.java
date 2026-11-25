@@ -38,10 +38,11 @@ public final class Respostas {
 
     public record Aviso(String codigo, String mensagem) {}
 
-    public record RegistroResumo(int idRegistro, LocalDate dataAplicacao, boolean transcricao) {}
+    public record RegistroResumo(int idRegistro, LocalDate dataAplicacao, boolean transcricao, UnidadeResumo unidade) {}
 
     public record DosePrevista(
             int idDose,
+            int idEsquema,
             VacinaResumo vacina,
             int numeroDose,
             String nomeDose,
@@ -52,16 +53,55 @@ public final class Respostas {
             RegistroResumo registro,
             List<Aviso> orientacoes) {}
 
-    public record DoseForaDaIdade(int idDose, VacinaResumo vacina, int numeroDose, String nomeDose, String descricao) {}
+    public record DoseForaDaIdade(
+            int idDose,
+            int idEsquema,
+            VacinaResumo vacina,
+            int numeroDose,
+            String nomeDose,
+            String descricao) {}
 
     public record ResumoSituacao(int atrasadas, int podeTomar, int emDia, int aindaNaoDisponiveis) {}
+
+    public record DoseNaTrilha(
+            int idDose,
+            int idEsquema,
+            int numeroDose,
+            String nomeDose,
+            String descricao,
+            String estado,
+            LocalDate dataRecomendada,
+            LocalDate dataDisponivel,
+            RegistroResumo registro,
+            List<Aviso> orientacoes) {}
+
+    public record VacinaSituacao(
+            VacinaResumo vacina,
+            int idEsquema,
+            String nomeEsquema,
+            String tipoEsquema,
+            String statusAba,
+            String subsecaoAtrasada,
+            Integer etapaAtual,
+            Integer totalEtapas,
+            List<DoseNaTrilha> trilhaDoses,
+            LocalDate dataUltimaDose,
+            String periodicidadeTexto,
+            LocalDate proximaDataDisponivel,
+            boolean podeVerOndeTomar) {}
+
+    public record ResumoVacinas(int atrasadas, int podeTomar, int emDia, int proximas) {}
 
     public record SituacaoVacinal(
             PessoaResumo pessoa,
             LocalDate dataReferencia,
             OffsetDateTime dataUltimaAtualizacao,
+            OffsetDateTime dataUltimaSincronizacao,
             ResumoSituacao resumo,
+            ResumoVacinas resumoVacinas,
             DosePrevista proximaDose,
+            VacinaSituacao vacinaDestaqueHome,
+            List<VacinaSituacao> vacinas,
             List<DosePrevista> doses,
             List<DoseForaDaIdade> dosesForaDaIdade,
             List<Aviso> avisos) {}
@@ -100,6 +140,27 @@ public final class Respostas {
             OffsetDateTime dataUltimaAtualizacao,
             List<Aviso> avisos) {}
 
+    public record DetalheVacina(
+            int idPessoa,
+            VacinaResumo vacina,
+            int idEsquema,
+            String nomeEsquema,
+            String tipoEsquema,
+            String statusAba,
+            String subsecaoAtrasada,
+            Integer etapaAtual,
+            Integer totalEtapas,
+            LocalDate dataUltimaDose,
+            String periodicidadeTexto,
+            LocalDate proximaDataDisponivel,
+            boolean podeVerOndeTomar,
+            List<DoencaResumo> doencas,
+            List<DoseNaTrilha> protocolo,
+            List<RegistroVacinacao> registros,
+            OffsetDateTime dataUltimaAtualizacao,
+            OffsetDateTime dataUltimaSincronizacao,
+            List<Aviso> avisos) {}
+
     /** Unidade no mapa: os dois últimos campos vêm nulos sem os filtros. */
     public record UnidadeNoMapa(
             int id,
@@ -110,6 +171,8 @@ public final class Respostas {
             Double latitude,
             Double longitude,
             boolean possuiSalaVacina,
+            String telefone,
+            String horarioFuncionamento,
             Integer distanciaMetros,
             String disponibilidadeVacina) {}
 

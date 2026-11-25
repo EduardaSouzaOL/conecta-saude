@@ -46,7 +46,7 @@ class CalculadoraSituacaoVacinalTest {
             dose(30, 15, 13, "DTP", 1, "1º reforço aos 15 meses", "P15M", "P1Y", "P7Y", "P6M", 8),
             dose(31, 15, 13, "DTP", 2, "2º reforço aos 4 anos", "P4Y", "P4Y", "P7Y", "P180D"),
             dose(32, 16, 14, "HPV", 1, "Dose única (9 a 14 anos)", "P9Y", "P9Y", "P15Y", null),
-            dose(33, 17, 15, "dT", 1, "Reforço a cada 10 anos", "P14Y", "P7Y", null, "P5Y", 31, 30, 8),
+            dose(33, 17, 15, "dT", 1, "Reforço a cada 10 anos", "P14Y", "P7Y", null, "P10Y", 31, 30, 8),
             dose(36, 18, 16, "Influenza", 3, "Dose anual", null, "P8M", null, null));
 
     /** Tetra viral (SCRV, código 56) = tríplice viral D2 + varicela D1 (regra oficial do PNI). */
@@ -292,26 +292,63 @@ class CalculadoraSituacaoVacinalTest {
 
         @Test
         void dTNaoLiberaAos7AnosQuandoADtpR2FoiAos4() {
-            // [PNI-REG] linha "25;dT;…;3;D3;≥ 7A;10 anos;5 anos": 5 anos depois da última dose tetânica.
+            // [IN-2026] dT reforço de rotina: 10 anos depois da última dose tetânica (DTP R2 aos 4 anos -> 14 anos).
             RegistroParaRegra penta3 = registro(13, 8, "42", 3, "2026-11-07");
             RegistroParaRegra dtp1 = registro(14, 30, "46", 13, "2027-08-07");
             RegistroParaRegra dtp2 = registro(15, 31, "46", 13, "2030-05-07");
-            DoseCalculada aos7 = dose(calcular("2033-05-07", penta1, penta2, penta3, dtp1, dtp2), 33);
-            assertThat(aos7.situacao()).isEqualTo(Situacao.AINDA_NAO_DISPONIVEL);
-            assertThat(aos7.dataDisponivel()).isEqualTo(LocalDate.of(2035, 5, 7));
-            assertThat(aos7.orientacoes()).isEmpty();
-            assertThat(dose(calcular("2035-05-07", penta1, penta2, penta3, dtp1, dtp2), 33).situacao())
+            DoseCalculada aos10 = dose(calcular("2036-05-07", penta1, penta2, penta3, dtp1, dtp2), 33);
+            assertThat(aos10.situacao()).isEqualTo(Situacao.AINDA_NAO_DISPONIVEL);
+            assertThat(aos10.dataDisponivel()).isEqualTo(LocalDate.of(2040, 5, 7));
+            assertThat(aos10.orientacoes()).isEmpty();
+            assertThat(dose(calcular("2040-05-07", penta1, penta2, penta3, dtp1, dtp2), 33).situacao())
                     .isEqualTo(Situacao.PODE_TOMAR);
         }
 
         @Test
         void dTSemDtpR2ContaDaDtpR1() {
-            // Sem R2, a última dose tetânica é a DTP R1 (07/08/2027): 5 anos depois = 07/08/2032; 7 anos = 07/05/2033.
+            // Sem R2, a última dose tetânica é a DTP R1 (07/08/2027): 10 anos depois = 07/08/2037.
             RegistroParaRegra penta3 = registro(13, 8, "42", 3, "2026-11-07");
             RegistroParaRegra dtp1 = registro(14, 30, "46", 13, "2027-08-07");
-            DoseCalculada dT = dose(calcular("2033-05-07", penta1, penta2, penta3, dtp1), 33);
+            DoseCalculada antes = dose(calcular("2037-08-06", penta1, penta2, penta3, dtp1), 33);
+            assertThat(antes.situacao()).isEqualTo(Situacao.AINDA_NAO_DISPONIVEL);
+            assertThat(antes.dataDisponivel()).isEqualTo(LocalDate.of(2037, 8, 7));
+            DoseCalculada dT = dose(calcular("2037-08-07", penta1, penta2, penta3, dtp1), 33);
             assertThat(dT.situacao()).isEqualTo(Situacao.PODE_TOMAR);
-            assertThat(dT.dataDisponivel()).isEqualTo(LocalDate.of(2033, 5, 7));
+            assertThat(dT.dataDisponivel()).isEqualTo(LocalDate.of(2037, 8, 7));
+        }
+
+        @Test
+        void hepatiteBSeteAnosOuMaisEntraComoPodeTomarNuncaAtrasadaEDispensadaComPentaD3() {
+            List<DoseCalendario> calComHepB = List.of(
+                    dose(8, 4, 3, "Penta", 3, "6 meses", "P6M", "P3M15D", "P7Y", "P30D"),
+                    new DoseCalendario(3, 3, "Hepatite B – >= 7 anos", 2, "Hepatite B", 1, "1ª dose",
+                            null, "1", null, Period.parse("P7Y"), null, null, List.of(), false,
+                            "DOSES", null, Period.parse("P7Y"), true, List.of(8)),
+                    new DoseCalendario(4, 3, "Hepatite B – >= 7 anos", 2, "Hepatite B", 2, "2ª dose",
+                            30, "2", null, Period.parse("P7Y"), null, Period.parse("P30D"), List.of(), false,
+                            "DOSES", null, Period.parse("P7Y"), true, List.of(8)),
+                    new DoseCalendario(5, 3, "Hepatite B – >= 7 anos", 2, "Hepatite B", 3, "3ª dose",
+                            150, "3", null, Period.parse("P7Y"), null, Period.parse("P150D"), List.of(), false,
+                            "DOSES", null, Period.parse("P7Y"), true, List.of(8)));
+            CalculadoraSituacaoVacinal calc = new CalculadoraSituacaoVacinal(calComHepB, EQUIVALENCIAS);
+            // Menor de 7 anos: não entra no esquema >= 7 anos
+            ResultadoSituacao bebe = calc.calcular(LocalDate.of(2025, 1, 1), LocalDate.of(2026, 11, 24), List.of());
+            assertThat(bebe.doses()).extracting(d -> d.dose().idDose()).doesNotContain(3, 4, 5);
+            // Adulto (30 anos) sem Penta D3: D1 é PODE_TOMAR (nunca ATRASADA), D2/D3 aguardam anterior sem orientação
+            ResultadoSituacao adulto = calc.calcular(LocalDate.of(1996, 1, 1), LocalDate.of(2026, 11, 24), List.of());
+            assertThat(dose(adulto, 3).situacao()).isEqualTo(Situacao.PODE_TOMAR);
+            assertThat(dose(adulto, 3).dataRecomendada()).isNull();
+            assertThat(dose(adulto, 4).situacao()).isEqualTo(Situacao.AINDA_NAO_DISPONIVEL);
+            assertThat(dose(adulto, 4).orientacoes()).isEmpty();
+            // Após D1 há 40 dias: D2 vira PODE_TOMAR (nunca ATRASADA)
+            ResultadoSituacao comD1 = calc.calcular(LocalDate.of(1996, 1, 1), LocalDate.of(2026, 11, 24),
+                    List.of(registro(100, 3, "9", 2, "2026-10-01")));
+            assertThat(dose(comD1, 3).situacao()).isEqualTo(Situacao.EM_DIA);
+            assertThat(dose(comD1, 4).situacao()).isEqualTo(Situacao.PODE_TOMAR);
+            // Adolescente >= 7 anos COM Penta D3: esquema de atualização dispensado
+            ResultadoSituacao comPenta = calc.calcular(LocalDate.of(2012, 7, 23), LocalDate.of(2026, 11, 24),
+                    List.of(registro(200, 8, "42", 3, "2013-01-27")));
+            assertThat(comPenta.doses()).extracting(d -> d.dose().idDose()).doesNotContain(3, 4, 5);
         }
 
         @Test

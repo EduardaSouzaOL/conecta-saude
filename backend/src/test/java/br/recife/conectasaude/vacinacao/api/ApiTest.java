@@ -88,6 +88,25 @@ class ApiTest extends BancoDeTeste {
                 .andExpect(jsonPath("$.dosesForaDaIdade[?(@.idDose == 19)]").exists());
         mvc.perform(comToken(get("/v1/pessoas/95/doses/19"), 94)).andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        // Mas o acompanhamento consolidado da vacina (SCR-06) abre sem 404, em PRAZO_ENCERRADO
+        mvc.perform(comToken(get("/v1/pessoas/95/vacinas/7"), 94)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusAba").value("ATRASADA"))
+                .andExpect(jsonPath("$.subsecaoAtrasada").value("PRAZO_ENCERRADO"))
+                .andExpect(jsonPath("$.podeVerOndeTomar").value(false))
+                .andExpect(jsonPath("$.protocolo.length()").value(2));
+    }
+
+    @Test
+    void unidadesSomenteDisponiveisERegistrosFiltradosPorVacina() throws Exception {
+        mvc.perform(get("/v1/unidades?vacina=4&somenteDisponiveis=true&lat=-8.12&lng=-34.93"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unidades[*].disponibilidadeVacina").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("DISPONIVEL"))))
+                .andExpect(jsonPath("$.unidades[0].telefone").isNotEmpty())
+                .andExpect(jsonPath("$.unidades[0].horarioFuncionamento").isNotEmpty());
+        mvc.perform(comToken(get("/v1/pessoas/5/registros?vacina=5"), 4))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registros.length()").value(1))
+                .andExpect(jsonPath("$.registros[0].vacina.id").value(5));
     }
 
     @Test

@@ -42,20 +42,37 @@ public record DoseCalendario(
         Period idadeLimite,
         Period intervaloMinimo,
         List<Integer> idsDoseAnteriorOficial,
-        boolean anteriorOpcional) {
+        boolean anteriorOpcional,
+        String tipoEsquema,
+        String periodicidadeTexto,
+        Period idadeMinimaEsquema,
+        boolean calcularSemIdadeRecomendada,
+        List<Integer> idsDoseDispensadora) {
 
-    /** Dose cuja anterior oficial, quando houver, é exigida. */
+    /** Dose cuja anterior oficial, quando houver, é exigida (esquema padrão DOSES). */
     public DoseCalendario(int idDose, int idEsquema, String nomeEsquema, int idVacina, String nomeVacina,
             int numeroDose, String descricao, Integer intervaloMinimoDias, String codigoDoseRnds,
             Period idadeRecomendada, Period idadeMinima, Period idadeLimite, Period intervaloMinimo,
             List<Integer> idsDoseAnteriorOficial) {
         this(idDose, idEsquema, nomeEsquema, idVacina, nomeVacina, numeroDose, descricao, intervaloMinimoDias,
                 codigoDoseRnds, idadeRecomendada, idadeMinima, idadeLimite, intervaloMinimo, idsDoseAnteriorOficial,
-                false);
+                false, "DOSES", null, null, false, List.of());
+    }
+
+    /** Construtor de compatibilidade sem metadados de esquema periódico/dispensa. */
+    public DoseCalendario(int idDose, int idEsquema, String nomeEsquema, int idVacina, String nomeVacina,
+            int numeroDose, String descricao, Integer intervaloMinimoDias, String codigoDoseRnds,
+            Period idadeRecomendada, Period idadeMinima, Period idadeLimite, Period intervaloMinimo,
+            List<Integer> idsDoseAnteriorOficial, boolean anteriorOpcional) {
+        this(idDose, idEsquema, nomeEsquema, idVacina, nomeVacina, numeroDose, descricao, intervaloMinimoDias,
+                codigoDoseRnds, idadeRecomendada, idadeMinima, idadeLimite, intervaloMinimo, idsDoseAnteriorOficial,
+                anteriorOpcional, "DOSES", null, null, false, List.of());
     }
 
     public DoseCalendario {
         idsDoseAnteriorOficial = idsDoseAnteriorOficial == null ? List.of() : List.copyOf(idsDoseAnteriorOficial);
+        idsDoseDispensadora = idsDoseDispensadora == null ? List.of() : List.copyOf(idsDoseDispensadora);
+        tipoEsquema = tipoEsquema == null || tipoEsquema.isBlank() ? "DOSES" : tipoEsquema;
     }
 
     /** Nome da dose para mostrar ("2ª dose", "1º reforço"), por {@link NomeDose} (D21). */

@@ -100,12 +100,21 @@ class ContratoTest extends BancoDeTeste {
             JsonNode real = chamar("/v1/pessoas/" + caso[1] + "/situacao-vacinal", (int) caso[2]);
 
             assertConformeSchema(real, "SituacaoVacinal");
-            for (String campo : List.of("pessoa", "dataReferencia", "dataUltimaAtualizacao", "proximaDose", "avisos")) {
+            for (String campo : List.of("pessoa", "dataReferencia", "dataUltimaAtualizacao", "dataUltimaSincronizacao",
+                    "proximaDose", "avisos")) {
                 assertThat(real.path(campo)).as("%s.%s", caso[0], campo).isEqualTo(esperado.path(campo));
             }
             assertContemItens(real.path("doses"), esperado.path("doses"), "idDose");
             assertContemItens(real.path("dosesForaDaIdade"), esperado.path("dosesForaDaIdade"), "idDose");
+            assertContemItens(real.path("vacinas"), esperado.path("vacinas"), "vacina");
         }
+    }
+
+    @Test
+    void acompanhamentoDaVacinaBateComOExemplo() throws Exception {
+        JsonNode real = chamar("/v1/pessoas/5/vacinas/5", 4);
+        assertConformeSchema(real, "DetalheVacina");
+        assertThat(real).isEqualTo(exemplo("/v1/pessoas/{idPessoa}/vacinas/{idVacina}", "rotavirusHeitor"));
     }
 
     @Test

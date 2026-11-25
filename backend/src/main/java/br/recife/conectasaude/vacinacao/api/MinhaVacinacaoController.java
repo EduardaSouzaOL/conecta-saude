@@ -87,9 +87,10 @@ public class MinhaVacinacaoController {
     }
 
     @GetMapping("/pessoas/{idPessoa}/registros")
-    public Respostas.ListaRegistros registros(@PathVariable int idPessoa) {
+    public Respostas.ListaRegistros registros(@PathVariable int idPessoa,
+            @RequestParam(required = false) Integer vacina) {
         acesso.exigirAcesso(idPessoa);
-        return situacao.registros(idPessoa);
+        return situacao.registros(idPessoa, vacina);
     }
 
     @GetMapping("/pessoas/{idPessoa}/doses/{idDose}")
@@ -98,16 +99,24 @@ public class MinhaVacinacaoController {
         return situacao.detalheDose(idPessoa, idDose);
     }
 
+    /** Acompanhamento consolidado de uma vacina (SCR-06); funciona também para PRAZO_ENCERRADO. */
+    @GetMapping("/pessoas/{idPessoa}/vacinas/{idVacina}")
+    public Respostas.DetalheVacina detalheVacina(@PathVariable int idPessoa, @PathVariable int idVacina) {
+        acesso.exigirAcesso(idPessoa);
+        return situacao.detalheVacina(idPessoa, idVacina);
+    }
+
     @GetMapping("/unidades")
     public Respostas.ListaUnidades unidades(@RequestParam(required = false) Integer vacina,
-            @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng) {
+            @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng,
+            @RequestParam(defaultValue = "false") boolean somenteDisponiveis) {
         if ((lat == null) != (lng == null)) {
             throw new RequisicaoInvalidaException("Envie latitude e longitude juntas.");
         }
         if (lat != null && (lat < -90 || lat > 90 || lng < -180 || lng > 180)) {
             throw new RequisicaoInvalidaException("Latitude ou longitude fora do intervalo.");
         }
-        return consultas.unidades(vacina, lat, lng);
+        return consultas.unidades(vacina, lat, lng, somenteDisponiveis);
     }
 
     @GetMapping("/unidades/{idUnidade}")

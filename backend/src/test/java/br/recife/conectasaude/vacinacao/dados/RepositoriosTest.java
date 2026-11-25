@@ -92,9 +92,15 @@ class RepositoriosTest extends BancoDeTeste {
         assertThat(vipR1.getIdadeMaximaDias()).isEqualTo(1825);
         assertThat(vipR1.getFonteRegra()).startsWith("[PNI-REG]").contains("VIP R1");
         DoseEsquema dT = doses.findById(33).orElseThrow();
-        assertThat(dT.getIntervaloAposAnteriorDias()).isEqualTo(1826);
+        assertThat(dT.getIntervaloAposAnteriorDias()).isEqualTo(3653);
+        assertThat(dT.getIntervaloMinimoPeriodo()).isEqualTo("P10Y");
+        assertThat(dT.getEsquema().getTipoEsquema()).isEqualTo("PERIODICA");
+        assertThat(dT.getEsquema().getPeriodicidadeTexto()).isEqualTo("Reforço a cada 10 anos");
         assertThat(dT.getIdadeMinimaDias()).isEqualTo(2557);
         assertThat(dT.getIdadeMaximaDias()).isNull();
+        DoseEsquema hbAdulto = doses.findById(3).orElseThrow();
+        assertThat(hbAdulto.getEsquema().isCalcularSemIdadeRecomendada()).isTrue();
+        assertThat(hbAdulto.getEsquema().getDosesDispensadoras()).containsExactly(8);
         assertThat(doses.findById(22).orElseThrow().getIntervaloAposAnteriorDias()).isNull();
         // Dose anterior oficial de outra vacina: dT depois de DTP R2, senão DTP R1, senão Penta D3.
         assertThat(dT.getDosesAnterioresOficiais()).extracting(DoseAnteriorOficial::getIdDoseAnterior)
