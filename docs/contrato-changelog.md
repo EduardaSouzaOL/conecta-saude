@@ -2,6 +2,19 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.4.0 · 25/11/2026 · regra oficial do PNI (D19)
+
+> Decisão D19 (Duda, 25/11/2026): a situação vacinal segue **fielmente** as fontes oficiais. Regra completa e fontes em [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md). A regra ainda está em alinhamento com a SESAU, por isso o aviso `REGRA_EM_ALINHAMENTO` continua.
+
+O formato das respostas **não mudou**; mudou o cálculo, e por isso os valores:
+
+- **Faixa etária oficial de cada dose** (Regras de entrada de dados 4, PNI): a dose fica disponível na idade mínima da dose e sai para `dosesForaDaIdade` depois da idade máxima da dose (antes era a do esquema). Ex.: rotavírus D1 até < 1 ano e D2 até < 2 anos; Pneumo 10 e Meningo C D1/D2 até < 1 ano.
+- **Retirada a regra "reforço só na idade recomendada"** (0.3.0). Reforço segue a mesma regra das outras doses: idade mínima oficial + intervalo mínimo. Ex.: VIP R1 a partir de 1 ano, desde que 6 meses depois da D3; febre amarela REF a partir de 4 anos; Pneumo 10 REF a partir de 12 meses.
+- **Dose anterior sem registro:** a dose seguinte agora é `AINDA_NAO_DISPONIVEL` (antes seguia a idade e podia ficar `ATRASADA`), com `dataDisponivel: null`. A orientação `DOSE_ANTERIOR_SEM_REGISTRO` aparece quando a dose anterior já passou da idade recomendada dela.
+- **`proximaDose`:** dose sem `dataDisponivel` (falta a anterior) não entra.
+- `intervaloMinimoDias` do detalhe da dose é o intervalo mínimo oficial (dT: 5 anos, não 10).
+- Exemplos atualizados com a base sintética: datas de `dataDisponivel` pela idade mínima oficial (ex.: Penta/VIP/Rotavírus D1 em 45 dias; Meningo C D1 em 2 meses; DTP R1 em 1 ano); Meningo C D2 do Heitor (pessoa 5) passou de atrasada para "ainda não disponível".
+
 ## 0.3.0 · 24/11/2026 · orientações por dose e reforços (D18, provisórias)
 
 > **Regras provisórias, em alinhamento com a SESAU.** As respostas às perguntas 11a, 11b e 12 vieram da Duda (decisão D18) e ainda precisam ser confirmadas com a Secretaria de Saúde.
