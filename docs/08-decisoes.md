@@ -20,6 +20,9 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D14 | Integração com o Conecta pela **opção A**: o núcleo do módulo é um **microsserviço Java (Spring Boot) com API REST/OpenAPI** | ✅ Decidido pela equipe; falta validar com a Emprel | 24/11/2026 |
 | D15 | Telas do piloto pela **opção B**: **módulo web dentro do app (webview)**, com o login do Conecta (SSO), consumindo a API da D14 | ✅ Decidido pela equipe; falta validar com a Emprel | 24/11/2026 |
 | D16 | **Opção C** (telas nativas no app, usando a mesma API) como **evolução depois do piloto** | 💡 Proposta a apresentar à COP/Emprel (não é decisão) | 24/11/2026 |
+| D17 | Dose vira **atrasada** logo depois da idade recomendada; dose que passou da **idade máxima** sai da lista de pendentes e aparece só como "converse na unidade"; **sem** situação "em processamento" (só o aviso de até 14 dias) | 🟡 Provisória; **revisada em 25/11 contra a regra oficial** ([16](16-regra-situacao-vacinal.md)) | 24/11/2026 |
+| D18 | Reforços, dose anterior sem registro e intervalo mínimo | 🔄 **Revisada em 25/11/2026** para seguir a regra oficial do PNI: ver [16](16-regra-situacao-vacinal.md) | 24/11/2026 |
+| D19 | Seguir **fielmente** as recomendações oficiais (Calendário 2026, Regras de entrada de dados do PNI, normas do MS): onde nossa escolha divergir, vale a fonte oficial, citada no banco (`fonte_regra`) e na doc | ✅ Decidido (Duda) | 25/11/2026 |
 
 ## Detalhes
 
@@ -83,3 +86,19 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 **Por que propor:** melhor experiência, acesso direto ao mapa, à localização e às notificações que o Conecta já tem, e visual igual ao resto do app.
 **Por que não agora:** depende do time e do ciclo de versões da Emprel nas lojas, e ainda não conhecemos a tecnologia do app.
 **Como apresentar:** ver [14](14-integracao-conecta-recife.md) §3, "Como apresentar a opção C em 25/11".
+
+### D17 · Quando a dose fica atrasada, idade máxima e "em processamento"
+**Status:** provisória, revisada em 25/11/2026 contra a regra oficial (ver D19 e [16](16-regra-situacao-vacinal.md)).
+**Decisão:** a dose fica **atrasada** logo depois da idade recomendada. A dose que passou da **idade máxima** sai da lista de pendentes e aparece só em "fora da idade", com a orientação "converse na unidade de saúde". **Não existe** a situação "em processamento": aparece sempre o aviso de que uma vacina tomada pode levar até 14 dias para aparecer.
+**Motivo do "sem em processamento":** a API não tem como saber que uma dose foi tomada antes de ela chegar à RNDS. As fontes possíveis seriam: o próprio cidadão dizer que tomou (autodeclaração, contra a RN05), o PEC da unidade antes de sincronizar (não temos acesso) ou o cartão de papel (não está no sistema).
+**Revisão de 25/11:** a idade máxima passou a ser a **oficial de cada dose**, e "atrasada" só vale quando a dose já está liberada pela regra oficial.
+
+### D18 · Reforços, dose anterior sem registro e intervalo mínimo
+**Status:** revisada em 25/11/2026 para seguir a regra oficial do PNI. Ver [16](16-regra-situacao-vacinal.md).
+**Antes:** reforço só na idade recomendada; dose seguinte à que não tem registro seguia o calendário, com orientação; intervalo mínimo não cumprido = ainda não disponível + "atualizar caderneta".
+**Agora:** toda dose é liberada na idade mínima oficial + intervalo mínimo; sem a dose anterior, a seguinte fica **ainda não disponível** com a orientação "Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde."; o caso do intervalo mínimo continua igual.
+
+### D19 · Fonte oficial vence
+**Decisão (Duda, 25/11/2026):** a regra de situação vacinal segue **fielmente** as fontes oficiais: Calendário Nacional 2026, "Regras de entrada de dados" do PNI e normas do Ministério da Saúde. Onde uma escolha nossa divergir, vale a fonte oficial.
+**Como fica registrado:** cada dose tem no banco a idade mínima, a idade máxima e o intervalo mínimo oficiais, com a fonte na coluna `fonte_regra`; a regra completa e o que mudou estão no [16](16-regra-situacao-vacinal.md).
+**Efeitos:** D17 e D18 revisadas (ver acima); na base, intervalo mínimo da dT passou de 10 para 5 anos e o intervalo de 180 dias da MenACWY dos 11 aos 14 anos foi retirado.

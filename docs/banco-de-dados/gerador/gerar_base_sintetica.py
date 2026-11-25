@@ -309,6 +309,60 @@ VACINAS = [
                      (3, "9", None, None, "Dose anual")])]),
 ]
 
+# Regra OFICIAL por dose, usada pelo app para calcular a situação (D17/D18).
+# Fontes:
+#  [PNI-REG] faixa etária (idade mínima/máxima) e intervalo mínimo de cada
+#            dose, "Regras de entrada de dados 4" (PNI, 04/09/2026). Recorte em
+#            ../referencias/regras-entrada-pni-recorte.csv.
+#  [CNV-2026] idade recomendada: Calendário Técnico Nacional da Criança
+#            (30/01/2026) e Instrução Normativa do Calendário 2026.
+# Chave (vacina, n_esquema, numero) -> (idade_min_dias, idade_max_dias,
+# intervalo_min_dias_oficial ou "=" para manter o da tabela VACINAS, fonte).
+# "< X" vira X - 1 dia; "≤ X anos" vira (X+1) anos - 1 dia.
+_R = "[PNI-REG] Regras de entrada de dados 4 (04/09/2026); idade recomendada [CNV-2026]"
+def m15(n): return meses(n) + 15  # "nM15D"
+REGRA_OFICIAL = {
+    ("BCG", 0, 1): (0, anos(5) - 1, "=", _R + "; BCG DU < 5A"),
+    ("Hepatite B", 0, 1): (0, 30, "=", _R + "; HB D ≤ 30D"),
+    ("Hepatite B", 1, 1): (31, None, "=", _R + "; HB D1 > 30D"),
+    ("Hepatite B", 1, 2): (31, None, "=", _R + "; HB D2 > 30D, 30 dias após D1"),
+    ("Hepatite B", 1, 3): (31, None, "=", _R + "; HB D3 > 30D, 150 dias após D2"),
+    ("Penta (DTP/Hib/HB)", 0, 1): (m15(1), anos(7) - 1, "=", _R + "; Penta D1 ≥ 1M15D a < 7A"),
+    ("Penta (DTP/Hib/HB)", 0, 2): (m15(2), anos(7) - 1, "=", _R + "; Penta D2 ≥ 2M15D a < 7A, 30 dias após D1"),
+    ("Penta (DTP/Hib/HB)", 0, 3): (m15(3), anos(7) - 1, "=", _R + "; Penta D3 ≥ 3M15D a < 7A, 30 dias após D2"),
+    ("Poliomielite inativada (VIP)", 0, 1): (m15(1), None, "=", _R + "; VIP D1 ≥ 1M15D"),
+    ("Poliomielite inativada (VIP)", 0, 2): (m15(2), None, "=", _R + "; VIP D2 ≥ 2M15D, 30 dias após D1"),
+    ("Poliomielite inativada (VIP)", 0, 3): (m15(3), None, "=", _R + "; VIP D3 ≥ 3M15D, 30 dias após D2"),
+    ("Poliomielite inativada (VIP)", 0, 4): (anos(1), anos(5) - 1, "=", _R + "; VIP R1 ≥ 1A a < 5A, 6 meses após D3"),
+    ("Poliomielite inativada (VIP)", 0, 5): (anos(4), anos(5) - 1, "=", _R + "; VIP R2 ≥ 4A a < 5A, 180 dias após R1"),
+    ("Rotavírus humano", 0, 1): (m15(1), anos(1) - 1, "=", _R + "; ROTA D1 ≥ 1M15D a < 1A"),
+    ("Rotavírus humano", 0, 2): (m15(3), anos(2) - 1, "=", _R + "; ROTA D2 ≥ 3M15D a < 2A, 30 dias após D1; sem D1 não há D2"),
+    ("Pneumocócica 10-valente", 0, 1): (meses(2), anos(1) - 1, "=", _R + "; VPC10 D1 ≥ 2M a < 1A"),
+    ("Pneumocócica 10-valente", 0, 2): (meses(3), anos(1) - 1, "=", _R + "; VPC10 D2 ≥ 3M a < 1A, 30 dias após D1"),
+    ("Pneumocócica 10-valente", 0, 3): (meses(12), anos(5) - 1, "=", _R + "; VPC10 REF ≥ 12M a < 5A, 60 dias após D2"),
+    ("Meningocócica C conjugada", 0, 1): (meses(2), anos(1) - 1, "=", _R + "; MenC D1 ≥ 2M a < 1A"),
+    ("Meningocócica C conjugada", 0, 2): (meses(3), anos(1) - 1, "=", _R + "; MenC D2 ≥ 3M a < 1A, 30 dias após D1"),
+    ("Meningocócica ACWY", 0, 1): (meses(12), anos(15) - 1, "=", _R + "; MenACWY REF ≥ 1A a ≤ 14A, 60 dias após MenC D2"),
+    # Adolescentes: faixa do calendário (11 a 14 anos); a planilha não traz intervalo mínimo para este REF
+    ("Meningocócica ACWY", 1, 1): (anos(11), anos(15) - 1, None, _R + "; MenACWY REF ≤ 14A; 11 a 14 anos pelo calendário; sem intervalo mínimo na planilha"),
+    ("Febre amarela", 0, 1): (meses(9), anos(5) - 1, "=", _R + "; VFA D ≥ 9M a < 5A"),
+    ("Febre amarela", 0, 2): (anos(4), None, "=", _R + "; VFA REF ≥ 4A, 30 dias após D"),
+    ("Tríplice viral (SCR)", 0, 1): (anos(1), None, "=", _R + "; SCR D1 ≥ 1A"),
+    ("Tríplice viral (SCR)", 0, 2): (anos(1), None, "=", _R + "; SCR D2 ≥ 1A, 15 dias após D1"),
+    ("Varicela", 0, 1): (meses(15), None, "=", _R + "; VZ D1 ≥ 15M"),
+    ("Varicela", 0, 2): (anos(4), None, "=", _R + "; VZ D2 ≥ 4A, 30 dias após D1"),
+    ("Hepatite A", 0, 1): (meses(15), anos(5) - 1, "=", _R + "; HAinf DU ≥ 15M a ≤ 4A"),
+    ("DTP (tríplice bacteriana)", 0, 1): (anos(1), anos(7) - 1, "=", _R + "; DTP R1 ≥ 1A a < 7A, 180 dias após Penta D3"),
+    ("DTP (tríplice bacteriana)", 0, 2): (anos(4), anos(7) - 1, "=", _R + "; DTP R2 ≥ 4A a < 7A, 180 dias após R1"),
+    ("HPV quadrivalente", 0, 1): (anos(9), anos(15) - 1, "=", _R + "; HPV4 DU ≥ 9A a ≤ 14A"),
+    # dT: aprazamento 10 anos, intervalo MÍNIMO 5 anos após a dose anterior
+    ("Dupla adulto (dT)", 0, 1): (anos(7), None, anos(5), _R + "; dT REF ≥ 7A, aprazamento 10 anos, intervalo mínimo 5 anos"),
+    ("Influenza", 0, 1): (meses(6), anos(9) - 1, "=", _R + "; INF3 D1 ≥ 6M a ≤ 8A"),
+    ("Influenza", 0, 2): (meses(7), anos(9) - 1, "=", _R + "; INF3 D2 ≥ 7M a ≤ 8A, 30 dias após D1"),
+    # A planilha traz "≥ 8M" para a DU; mantido como está, a conferir com a SESAU
+    ("Influenza", 0, 3): (meses(8), None, "=", _R + "; INF3 DU ≥ 8M (texto da planilha, a conferir)"),
+}
+
 # Cobertura "real" (tomou de fato) e probabilidade de registro na RNDS dado
 # que tomou. (ASSUMIDO) valores realistas.
 # HPV: CENÁRIO HIPOTÉTICO de sub-registro, inspirado numa fala da SESAU na
@@ -484,7 +538,10 @@ def main():
             esq_rows.append((id_esq, i, nome_e, imin, imax, "Idades em dias", "ATIVO"))
             for (num, cdose, idade, intervalo, desc) in doses:
                 id_dose += 1
-                dose_rows.append((id_dose, id_esq, num, intervalo, idade, cdose, desc))
+                imin_d, imax_d, int_of, fonte = REGRA_OFICIAL[(v["nome"], ne, num)]
+                int_col = intervalo if int_of == "=" else int_of
+                dose_rows.append((id_dose, id_esq, num, int_col, idade, cdose,
+                                  imin_d, imax_d, fonte, desc))
                 dose_idx[(v["nome"], ne, num)] = (id_dose, (num, cdose, idade, intervalo, desc))
     s2 += inserts("vacina", ["id_vacina", "nome", "fabricante", "descricao", "status"], vac_rows)
     s2 += inserts("doenca", ["id_doenca", "nome"], doenca_rows)
@@ -492,10 +549,11 @@ def main():
     s2 += "\n-- idade_minima / idade_maxima em DIAS\n"
     s2 += inserts("esquema_vacinal", ["id_esquema", "id_vacina", "nome", "idade_minima",
                                       "idade_maxima", "descricao", "status"], esq_rows)
-    s2 += "\n-- intervalo_apos_anterior e idade_recomendada_dias em DIAS\n"
+    s2 += "\n-- intervalo_apos_anterior (mínimo oficial), idade_recomendada_dias, idade_minima_dias e idade_maxima_dias em DIAS\n"
     s2 += inserts("dose_esquema", ["id_dose_esquema", "id_esquema", "numero_dose",
                                    "intervalo_apos_anterior", "idade_recomendada_dias",
-                                   "codigo_dose_rnds", "descricao"], dose_rows)
+                                   "codigo_dose_rnds", "idade_minima_dias",
+                                   "idade_maxima_dias", "fonte_regra", "descricao"], dose_rows)
     # de-para código RNDS -> vacina
     cod2vac = {v["cod"]: vac_id[v["nome"]] for v in VACINAS}
     cod2vac["77"] = vac_id["Influenza"]

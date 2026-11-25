@@ -33,6 +33,7 @@ Esta pasta organiza o conteúdo do arquivo original `Hackathon - ARIES (1).md` (
 | 13 | [Indicadores validados](13-indicadores-validados.md) | Números de dengue e HPV conferidos nas fontes oficiais, o que pode e o que não pode ser afirmado |
 | 14 | [Integração com o Conecta Recife](14-integracao-conecta-recife.md) | Como o módulo entra no Conecta (processo, opções técnicas com Java, login, dados, LGPD, contato com a Emprel) |
 | 15 | [Proposta de agentes para implementação](15-proposta-agentes-implementacao.md) | Agentes do Claude Code para backend e frontend, ordem de trabalho sem esperar o Figma e como levar para o repositório |
+| 16 | [Regra de situação vacinal](16-regra-situacao-vacinal.md) | Como o app decide atrasada / já pode tomar / ainda não disponível, seguindo as fontes oficiais do PNI |
 | — | [Dúvidas para o alinhamento com a COP](duvidas-alinhamento-cop.md) | Perguntas em aberto por tema, para o alinhamento de 25/11/2026 |
 | A | [Anexo — histórico e ideias iniciais](anexo-historico-ideias-iniciais.md) | Como o projeto evoluiu do nicho climático para a vacinação |
 

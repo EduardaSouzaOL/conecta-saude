@@ -72,7 +72,7 @@ O de-para do calendário fica em duas colunas: `rnds_imunobiologico.id_vacina` (
 
 - `pessoa`: + `cns`; regra "CPF ou CNS obrigatório".
 - `unidade_saude`: + `cnes`, `distrito_sanitario`, `possui_sala_vacina`.
-- `dose_esquema`: + `idade_recomendada_dias`, `codigo_dose_rnds`. **Idades e intervalos agora são em dias** (resolve a pendência do doc 05).
+- `dose_esquema`: + `idade_recomendada_dias`, `codigo_dose_rnds`. **Idades e intervalos agora são em dias** (resolve a pendência do doc 05); em 25/11/2026, + `idade_minima_dias`, `idade_maxima_dias` (faixa etária oficial de cada dose) e `fonte_regra`, e `intervalo_apos_anterior` passou a ser o **intervalo mínimo oficial** (regra em [16](16-regra-situacao-vacinal.md)).
 - `registro_vacinacao`: reescrita conforme a tabela acima; `id_dose_esquema` passou a aceitar `NULL`; a coluna de texto `fabricante` virou `id_fabricante`.
 - Novas tabelas de terminologia: `rnds_imunobiologico`, `rnds_dose` (com a sigla usada pelo PNI: D1, DU, REF…), `rnds_estrategia_vacinacao`, `rnds_via_administracao`, `rnds_local_aplicacao`, `fabricante_imunobiologico` (código oficial, display oficial e nome por extenso).
 - Nova tabela **só de demonstração**: `simulacao_dose_caderneta`, a "caderneta física". Ela guarda todas as doses que a pessoa tomou de fato, com a situação `REGISTRADA`, `NAO_REGISTRADA` ou `EM_PROCESSAMENTO`. Serve para demonstrar o aviso de cartão desatualizado (D09) e medir o sub-registro. **O app não deve ler essa tabela**: na vida real essa informação não existe no sistema.
