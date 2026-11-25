@@ -22,6 +22,12 @@ public final class Respostas {
 
     public record Recursos(boolean carteiraPdf, boolean ouvidoria) {}
 
+    /** Tela "Entrar como" (só perfil dev): pessoa sintética para escolher, sem CPF nem CNS. */
+    public record PessoaDemo(int id, String nome, LocalDate dataNascimento, String idade, String resumo,
+            List<PessoaResumo> dependentes, String tokenGovBr, String tokenEmail) {}
+
+    public record ListaPessoasDemo(List<PessoaDemo> pessoas, String aviso) {}
+
     public record CanalOuvidoria(String nome, String descricao, String telefone, String whatsapp, String site) {}
 
     public record Ouvidoria(String orientacao, List<CanalOuvidoria> canais, List<Aviso> avisos) {}

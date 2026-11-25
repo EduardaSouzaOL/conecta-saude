@@ -26,6 +26,7 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 | D20 | **Lembretes (RF19) entram no piloto**, mostrados **no app** (sino), calculados na hora a partir da situação vacinal e das campanhas vigentes, **sem push** e **sem gravar nada** | ✅ Entrada no piloto decidida (Adan); regras revistas pela D21 (janela de "em breve" de 7 dias) | 25/11/2026 |
 | D21 | **Lembretes e elegibilidade em campanha seguem o PNI e o Ministério da Saúde**, não escolhas nossas: lembrete de campanha só para quem está na faixa etária e, em campanha **seletiva**, tem dose a fazer de vacina da campanha; dose atrasada lembra até a idade máxima oficial; dose sem a anterior não lembra (lembra a anterior); nome da dose pela RNDS; "em breve" só até 7 dias antes | ✅ Decidido (Adan) | 25/11/2026 |
 | D22 | **Canal de ouvidoria (RF23) e carteira de vacinação em PDF (RF09) entram no piloto**, disponíveis **só para quem entrou com login gov.br**; quem entrou com e-mail comum não tem acesso | ✅ Decidido (Duda) | 25/11/2026 |
+| D23 | **Modo visitante e tela "Entrar como" na demonstração**: mapa, unidades, campanhas e conteúdo educativo abrem sem login; o resto pede login. Na demonstração, a entrada é uma lista de pessoas fictícias, como no protótipo do Conecta | ✅ Decidido (Duda) | 25/11/2026 |
 
 ## Detalhes
 
@@ -126,6 +127,13 @@ Formato: decisão, contexto, motivo e status. Atualize este arquivo sempre que a
 - **Janela de "em breve" (Adan, 25/11/2026; contrato 0.6.1):** dose ainda não disponível gera lembrete "em breve" só se fica disponível **até 7 dias** depois de hoje (inclusive); era 30. O Ministério da Saúde não define antecedência **[dado]**; a revisão sistemática de Currie et al., *BMC Public Health* 2024;24:1753 ([PMC11218178](https://pmc.ncbi.nlm.nih.gov/articles/PMC11218178/)), mostra lembretes eficazes enviados de 1 a 7 dias antes (Domek 2016, 1 semana antes; Gibson 2017, 3 e 1 dia antes; Domek 2019, 3, 2 e 1 dia antes) e nenhum ensaio com 30 dias **[dado]**. As doses mais distantes já aparecem na aba "Próximas" do front. Responde a pergunta 18 do [contrato-changelog](contrato-changelog.md).
 - **Texto do lembrete de campanha não seletiva (Adan, 25/11/2026; contrato 0.6.1):** aprovado; deixa de ser provisório. Mensagem: "{nome} faz parte do público da {campanha}. Não é preciso ter dose atrasada: basta levar {nome} e a caderneta a uma unidade de saúde até {data de fim}. Confirme na unidade." (pessoa logada: "Você faz parte do público da {campanha}. Não é preciso ter dose atrasada: basta ir a uma unidade de saúde com a sua caderneta até {data de fim}. Confirme na unidade."). O texto da campanha seletiva não muda.
 **Efeito da janela no exemplo:** a VIP D3 do Heitor (disponível em 07/12/2026) deixa de gerar "em breve"; a Penta D2 do Bernardo (25/11/2026) continua.
+
+### D23 · Modo visitante e tela "Entrar como" na demonstração
+**Decisão (Duda, 25/11/2026):** simular a entrada do Conecta Recife como no protótipo do hackathon (pasta conecta-recife-data-remodeling), sem a parte de personalização de serviços.
+- **Modo visitante:** sem login abrem o mapa, o detalhe da unidade, as campanhas (sem `idPessoa`) e o conteúdo educativo. Situação vacinal, registros, lembretes, carteira e ouvidoria continuam só com login.
+- **"Entrar como":** `GET /v1/demo/pessoas`, só no perfil dev, lista 8 pessoas sintéticas (nome, idade, dependentes e um resumo do caso, sem CPF, CNS nem condição de saúde) com o token de teste de cada uma, para gov.br e para e-mail. Quem aparece fica na configuração do dev (`minha-vacinacao.demo.pessoas`).
+- **No Conecta de verdade** a tela "Entrar como" não existe: a entrada é o login do app (SSO, D15). A tela fica com quem faz o front ([17](17-criterios-de-aceite-front.md) §5.0).
+**Como fica na API:** contrato 0.8.0.
 
 ### D22 · Ouvidoria e carteira em PDF só com login gov.br
 **Decisão (Duda, 25/11/2026):** o **canal de ouvidoria** (RF23) e a **carteira de vacinação em PDF** (RF09) entram no piloto. Os dois só ficam disponíveis para quem entrou no Conecta Recife com **login gov.br**. Quem entrou com e-mail comum (ou outra forma) continua vendo a situação vacinal, o mapa, os lembretes e as campanhas, mas não acessa a ouvidoria nem baixa a carteira.

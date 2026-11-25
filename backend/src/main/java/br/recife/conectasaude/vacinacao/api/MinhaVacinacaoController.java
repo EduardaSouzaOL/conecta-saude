@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints de contrato/openapi.yaml (v0.7.1). Somente GET: nenhum endpoint cria ou altera dose
+ * Endpoints de contrato/openapi.yaml (v0.8.0). Somente GET: nenhum endpoint cria ou altera dose
  * (RNF05, RN05). Dados de uma pessoa passam sempre pelo {@link ControleDeAcesso}.
  */
 @RestController

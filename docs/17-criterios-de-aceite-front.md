@@ -1,6 +1,6 @@
 # 17 · Critérios de aceite do front ("Minha vacinação")
 
-> Criado em 25/11/2026 para quem vai implementar o front web (React + TypeScript + Vite, D12/D15). Base: **contrato da API v0.7.1** (`contrato/openapi.yaml` no repositório `EduardaSouzaOL/conecta-saude`, branch `main`), [03 · Requisitos](03-requisitos.md) e [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md).
+> Criado em 25/11/2026 para quem vai implementar o front web (React + TypeScript + Vite, D12/D15). Base: **contrato da API v0.8.0** (`contrato/openapi.yaml` no repositório `EduardaSouzaOL/conecta-saude`, branch `main`), [03 · Requisitos](03-requisitos.md) e [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md).
 >
 > Marcações: **[aguarda Figma]** = depende do protótipo (layout, cores, ícones, ordem visual, textos de rótulo finais). **[pendente]** = depende de decisão ou de dado que ainda não existe.
 >
@@ -75,6 +75,13 @@ Mapa: `avisoPortaAberta` = "Vacina é porta aberta: você pode se vacinar em qua
 - [ ] Visual (cores, fontes, espaçamentos, ícones) por variáveis CSS (tokens), para aplicar o Figma depois. **[aguarda Figma]**
 
 ## 5. Critérios por tela
+
+### 5.0 Tela "Entrar como" (só na demonstração, `/v1/demo/pessoas`)
+- [ ] Lista as pessoas que vêm da API, com nome, idade, `resumo` e dependentes. Não pede senha.
+- [ ] Ao escolher, o front guarda o token **só em memória** e manda `Authorization: Bearer <tokenGovBr>`. A opção "entrar com e-mail" usa o `tokenEmail` (mostra que carteira e ouvidoria somem, D22).
+- [ ] Botão **"Continuar sem entrar"**: abre só mapa, detalhe da unidade, campanhas sem `idPessoa` e conteúdo educativo. Telas de dado pessoal mostram um convite para entrar.
+- [ ] Mostra o `aviso` ("Só para demonstração…").
+- [ ] Esta tela **não existe** no Conecta de verdade; só aparece com a API no perfil dev.
 
 ### 5.1 Entrada e seletor de pessoa (`/v1/eu`)
 - [ ] Abre com a pessoa logada selecionada.

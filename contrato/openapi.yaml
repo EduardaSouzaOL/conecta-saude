@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Minha vacinação · API do ConectaSaúde Recife
-  version: 0.7.1
+  version: 0.8.0
   summary: Situação vacinal, histórico de doses, lembretes, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
   description: |
     Contrato **v0.7.0** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
@@ -33,6 +33,12 @@ info:
       que ela pode usar (`recursos`), para o front decidir o que mostrar.
     - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
       (`pessoa_responsavel`). Outra pessoa devolve **403**.
+    - **Modo visitante:** como o "Continuar sem entrar" do Conecta, `GET /v1/unidades`,
+      `GET /v1/unidades/{idUnidade}`, `GET /v1/vacinas` e `GET /v1/campanhas` (sem `idPessoa`)
+      respondem sem token. Com token, ele é conferido como nos outros endpoints (inválido = 401).
+      `GET /v1/campanhas?idPessoa=` e todo dado de pessoa continuam exigindo login.
+    - **Tela "Entrar como" (só no perfil dev):** `GET /v1/demo/pessoas` lista pessoas da base
+      sintética, com o token de teste de cada uma. Não existe fora de dev.
     - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
 
     Pontos marcados com **[provisório]** dependem de definição de regra de negócio e podem mudar
@@ -50,6 +56,8 @@ security:
 tags:
   - name: Pessoa
     description: Pessoa logada e seus dependentes (RF01, RF02)
+  - name: Demonstração
+    description: Só no perfil dev, com dados sintéticos. Não existe em produção
   - name: Situação vacinal
     description: Painel-resumo, doses por situação, histórico e detalhe da dose (RF04 a RF08)
   - name: Unidades
@@ -658,6 +666,9 @@ paths:
     get:
       tags: [Unidades]
       operationId: listarUnidades
+      security:
+        - {}
+        - tokenConecta: []
       summary: Unidades de saúde para o mapa
       description: |
         Lista as unidades com sala de vacina (RF10). Com `vacina`, cada unidade traz a
@@ -734,6 +745,9 @@ paths:
     get:
       tags: [Unidades]
       operationId: obterUnidade
+      security:
+        - {}
+        - tokenConecta: []
       summary: Detalhe da unidade
       description: |
         Nome, endereço, telefone, horário, sala de vacina e as vacinas com a disponibilidade
@@ -789,6 +803,9 @@ paths:
     get:
       tags: [Campanhas]
       operationId: listarCampanhas
+      security:
+        - {}
+        - tokenConecta: []
       summary: Campanhas de vacinação
       description: |
         Lista as campanhas (RF18). Com `vigentes=true`, só as que estão acontecendo hoje
@@ -796,6 +813,8 @@ paths:
         `elegivel` se a campanha é para a pessoa (D21), com a mesma regra do lembrete
         `CAMPANHA_VIGENTE` (ver `Campanha.elegivel`). Sem `idPessoa`, ou quando a campanha não
         tem faixa etária cadastrada (ex.: público de gestantes ou de grupos), `elegivel` vem `null`.
+
+        Sem `idPessoa`, responde sem token (modo visitante). Com `idPessoa`, exige login: sem token, **401**.
       parameters:
         - name: vigentes
           in: query
@@ -921,6 +940,9 @@ paths:
     get:
       tags: [Vacinas]
       operationId: listarVacinas
+      security:
+        - {}
+        - tokenConecta: []
       summary: Catálogo de vacinas
       description: Vacinas ativas do catálogo e as doenças que cada uma previne (RF22).
       responses:
@@ -1008,6 +1030,139 @@ paths:
                     status: 403
                     detail: Você só pode ver os seus dados e os das pessoas que estão sob a sua responsabilidade.
 
+  /v1/demo/pessoas:
+    get:
+      tags: [Demonstração]
+      operationId: listarPessoasDemo
+      security: []
+      summary: Pessoas para a tela "Entrar como" (só no perfil dev)
+      description: |
+        Para a demonstração, como a tela "Entrar como" do protótipo do Conecta: algumas pessoas da
+        base sintética, cada uma com um caso bom para mostrar, e o token de teste de cada uma.
+        Quem escolhe uma pessoa passa a mandar `Authorization: Bearer <tokenGovBr>` (login com
+        gov.br) ou `<tokenEmail>` (login com e-mail, D22) nas outras chamadas.
+
+        - **Só nos perfis dev e test.** Fora deles o endpoint não existe (404) e nenhum token de teste vale.
+        - Não precisa de token. Não traz CPF, CNS nem dado de saúde: só nome, nascimento, idade,
+          dependentes e um resumo do caso.
+        - "Continuar sem entrar" não chama nada: usa só os endpoints do modo visitante.
+        - Quem aparece e o resumo vêm da configuração do perfil (`minha-vacinacao.demo.pessoas`).
+      responses:
+        '200':
+          description: Pessoas da demonstração
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaPessoasDemo'
+              examples:
+                padrao:
+                  summary: As 8 pessoas da demonstração (base sintética, 24/11/2026)
+                  value:
+                    pessoas:
+                      - id: 4
+                        nome: 'Valentina Oliveira Ferreira'
+                        dataNascimento: '2005-11-12'
+                        idade: '21 anos'
+                        resumo: 'Mãe do Heitor, bebê de 6 meses com doses atrasadas, lembretes e campanha.'
+                        dependentes:
+                          - id: 5
+                            nome: 'Heitor Nascimento Ferreira'
+                            dataNascimento: '2026-05-07'
+                        tokenGovBr: dev-pessoa-4
+                        tokenEmail: dev-pessoa-4-email
+                      - id: 46
+                        nome: 'Luana Teixeira Andrade'
+                        dataNascimento: '1990-02-02'
+                        idade: '36 anos'
+                        resumo: 'Mãe do João e do Bernardo, bebê de 4 meses com doses atrasadas e uma que fica disponível amanhã.'
+                        dependentes:
+                          - id: 47
+                            nome: 'João Silva Andrade'
+                            dataNascimento: '2013-12-29'
+                          - id: 48
+                            nome: 'Bernardo Oliveira Andrade'
+                            dataNascimento: '2026-07-13'
+                        tokenGovBr: dev-pessoa-46
+                        tokenEmail: dev-pessoa-46-email
+                      - id: 94
+                        nome: 'Letícia Teixeira Rocha'
+                        dataNascimento: '1981-06-04'
+                        idade: '45 anos'
+                        resumo: 'Responsável por três crianças. O Heitor, de 1 ano e 5 meses, tem doses fora da idade e a MenACWY atrasada.'
+                        dependentes:
+                          - id: 95
+                            nome: 'Heitor Ferreira Rocha'
+                            dataNascimento: '2025-06-19'
+                          - id: 96
+                            nome: 'Ícaro Moura Rocha'
+                            dataNascimento: '2019-06-08'
+                          - id: 97
+                            nome: 'Carlos Vasconcelos Rocha'
+                            dataNascimento: '2023-05-11'
+                        tokenGovBr: dev-pessoa-94
+                        tokenEmail: dev-pessoa-94-email
+                      - id: 1
+                        nome: 'Cecília Silva Albuquerque'
+                        dataNascimento: '2000-12-24'
+                        idade: '25 anos'
+                        resumo: 'Adulta com uma dose transcrita do cartão físico, sem lote. Mãe da Lívia.'
+                        dependentes:
+                          - id: 3
+                            nome: 'Lívia Souza Albuquerque'
+                            dataNascimento: '2020-03-28'
+                        tokenGovBr: dev-pessoa-1
+                        tokenEmail: dev-pessoa-1-email
+                      - id: 115
+                        nome: 'Matheus Rocha Vasconcelos'
+                        dataNascimento: '2000-11-01'
+                        idade: '26 anos'
+                        resumo: 'Pai da Ana, de 1 ano, do Igor, de 6 anos, e do Henrique, de 7 anos.'
+                        dependentes:
+                          - id: 116
+                            nome: 'Ana Melo Vasconcelos'
+                            dataNascimento: '2025-10-26'
+                          - id: 117
+                            nome: 'Igor Souza Vasconcelos'
+                            dataNascimento: '2020-07-04'
+                          - id: 118
+                            nome: 'Henrique Araújo Vasconcelos'
+                            dataNascimento: '2019-04-09'
+                        tokenGovBr: dev-pessoa-115
+                        tokenEmail: dev-pessoa-115-email
+                      - id: 110
+                        nome: 'Antônio Barbosa Vasconcelos'
+                        dataNascimento: '1992-09-04'
+                        idade: '34 anos'
+                        resumo: 'Pai de três crianças, entre elas a Clara, recém-nascida de 1 mês.'
+                        dependentes:
+                          - id: 111
+                            nome: 'Maria Leite Vasconcelos'
+                            dataNascimento: '2026-03-17'
+                          - id: 112
+                            nome: 'Clara Leite Vasconcelos'
+                            dataNascimento: '2026-10-07'
+                          - id: 113
+                            nome: 'Luiz Batista Vasconcelos'
+                            dataNascimento: '2022-12-05'
+                        tokenGovBr: dev-pessoa-110
+                        tokenEmail: dev-pessoa-110-email
+                      - id: 26
+                        nome: 'Lucas Lima Rocha'
+                        dataNascimento: '2012-07-23'
+                        idade: '14 anos'
+                        resumo: 'Adolescente de 14 anos.'
+                        dependentes: []
+                        tokenGovBr: dev-pessoa-26
+                        tokenEmail: dev-pessoa-26-email
+                      - id: 402
+                        nome: 'Pedro Melo Rocha'
+                        dataNascimento: '1954-11-03'
+                        idade: '72 anos'
+                        resumo: 'Idoso de 72 anos.'
+                        dependentes: []
+                        tokenGovBr: dev-pessoa-402
+                        tokenEmail: dev-pessoa-402-email
+                    aviso: 'Só para demonstração: todas as pessoas são fictícias (dados sintéticos).'
   /v1/ouvidoria:
     get:
       tags: [Só com login gov.br]
@@ -1229,6 +1384,46 @@ components:
         ouvidoria:
           type: boolean
           description: '`true` só com login gov.br: pode ver `GET /v1/ouvidoria`'
+
+    ListaPessoasDemo:
+      type: object
+      required: [pessoas, aviso]
+      properties:
+        pessoas:
+          type: array
+          items:
+            $ref: '#/components/schemas/PessoaDemo'
+        aviso:
+          type: string
+          description: Texto para mostrar na tela ("Só para demonstração…")
+
+    PessoaDemo:
+      type: object
+      required: [id, nome, dataNascimento, idade, resumo, dependentes, tokenGovBr, tokenEmail]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        dataNascimento:
+          type: string
+          format: date
+        idade:
+          type: string
+          description: Idade em texto ("20 anos", "6 meses"), na data de referência
+        resumo:
+          type: string
+          description: O caso que essa pessoa mostra na demonstração
+        dependentes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PessoaResumo'
+        tokenGovBr:
+          type: string
+          description: Token de teste com login gov.br (`dev-pessoa-<id>`)
+        tokenEmail:
+          type: string
+          description: Token de teste com login por e-mail (`dev-pessoa-<id>-email`)
 
     Ouvidoria:
       type: object

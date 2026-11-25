@@ -245,6 +245,53 @@ class ApiTest extends BancoDeTeste {
     }
 
     @Test
+    void modoVisitanteAbreSoDadoPublico() throws Exception {
+        // Sem token: unidades, vacinas, campanhas e a lista da demonstração
+        for (String caminho : new String[] {"/v1/unidades", "/v1/unidades?vacina=4&lat=-8.12&lng=-34.93",
+                "/v1/unidades/9", "/v1/vacinas", "/v1/campanhas", "/v1/campanhas?vigentes=true", "/v1/demo/pessoas"}) {
+            mvc.perform(get(caminho)).andExpect(status().isOk());
+        }
+        // Dado de pessoa continua exigindo login
+        for (String caminho : new String[] {"/v1/campanhas?idPessoa=5", "/v1/eu", "/v1/eu/lembretes",
+                "/v1/pessoas/5/situacao-vacinal", "/v1/pessoas/5/registros", "/v1/pessoas/5/carteira.pdf",
+                "/v1/ouvidoria"}) {
+            mvc.perform(get(caminho)).andExpect(status().isUnauthorized())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        }
+        // Com token inválido, mesmo rota pública dá 401; com token válido, idPessoa funciona
+        mvc.perform(get("/v1/unidades").header("Authorization", "Bearer token-qualquer"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(comToken(get("/v1/campanhas?idPessoa=5"), 4)).andExpect(status().isOk());
+        // Visitante não escreve nada
+        assertThat(mvc.perform(post("/v1/unidades")).andReturn().getResponse().getStatus()).isIn(401, 404, 405);
+    }
+
+    @Test
+    void entrarComoListaPessoasSemCpfNemCns() throws Exception {
+        String corpo = mvc.perform(get("/v1/demo/pessoas")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.pessoas.length()").value(8))
+                .andExpect(jsonPath("$.pessoas[0].id").value(4))
+                .andExpect(jsonPath("$.pessoas[0].tokenGovBr").value("dev-pessoa-4"))
+                .andExpect(jsonPath("$.pessoas[0].tokenEmail").value("dev-pessoa-4-email"))
+                .andExpect(jsonPath("$.pessoas[0].dependentes[0].id").value(5))
+                .andExpect(jsonPath("$.pessoas[*].cpf").isEmpty())
+                .andExpect(jsonPath("$.pessoas[*].cns").isEmpty())
+                .andReturn().getResponse().getContentAsString();
+        for (int id : new int[] {1, 4, 5, 26, 46, 48, 94, 95, 110, 111, 115, 116, 402}) {
+            Pessoa p = pessoas.findById(id).orElseThrow();
+            if (p.getCpf() != null) {
+                assertThat(corpo).doesNotContain(p.getCpf());
+            }
+            if (p.getCns() != null) {
+                assertThat(corpo).doesNotContain(p.getCns());
+            }
+        }
+        // O token da lista funciona
+        mvc.perform(get("/v1/eu").header("Authorization", "Bearer dev-pessoa-46")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.dependentes[*].pessoa.id").value(org.hamcrest.Matchers.hasItem(48)));
+    }
+
+    @Test
     void latitudeSemLongitudeDa400() throws Exception {
         mvc.perform(comToken(get("/v1/unidades?lat=-8.12"), 4)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Envie latitude e longitude juntas."));

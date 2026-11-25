@@ -9,3 +9,23 @@ minha-vacinacao:
   cors:
     origens-permitidas:
       - http://localhost:5173
+  # Tela "Entrar como" (GET /v1/demo/pessoas): quem aparece, na ordem, e o resumo do caso.
+  # Só pessoas da base sintética. O resumo não fala de condição de saúde.
+  demo:
+    pessoas:
+      - id: 4
+        resumo: "Mãe do Heitor, bebê de 6 meses com doses atrasadas, lembretes e campanha."
+      - id: 46
+        resumo: "Mãe do João e do Bernardo, bebê de 4 meses com doses atrasadas e uma que fica disponível amanhã."
+      - id: 94
+        resumo: "Responsável por três crianças. O Heitor, de 1 ano e 5 meses, tem doses fora da idade e a MenACWY atrasada."
+      - id: 1
+        resumo: "Adulta com uma dose transcrita do cartão físico, sem lote. Mãe da Lívia."
+      - id: 115
+        resumo: "Pai da Ana, de 1 ano, do Igor, de 6 anos, e do Henrique, de 7 anos."
+      - id: 110
+        resumo: "Pai de três crianças, entre elas a Clara, recém-nascida de 1 mês."
+      - id: 26
+        resumo: "Adolescente de 14 anos."
+      - id: 402
+        resumo: "Idoso de 72 anos."
