@@ -3,6 +3,12 @@ spring:
   flyway:
     locations: classpath:db/migration,classpath:db/dados-sinteticos
 
-# Para a demonstração bater com os exemplos do contrato, descomente:
-# minha-vacinacao:
-#   data-referencia: 2026-11-24
+minha-vacinacao:
+  # "Hoje" fixo: a base sintética e os exemplos do contrato usam 24/11/2026. Assim o dev e a
+  # demonstração mostram as mesmas situações que os exemplos. Para usar a data real, apague a linha.
+  data-referencia: 2026-11-24
+  cors:
+    # Front em dev (Vite). Com o proxy do Vite o CORS nem é usado; isto cobre quem abrir sem proxy.
+    origens-permitidas:
+      - http://localhost:5173
+      - http://127.0.0.1:5173

@@ -2,6 +2,10 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.4.1 · 25/11/2026 · esclarecimento: detalhe de dose fora da idade
+
+Só documentação, **sem mudança de schema nem de versão**. `GET /v1/pessoas/{idPessoa}/doses/{idDose}` devolve 404 para dose que está em `dosesForaDaIdade` da pessoa (além de `idDose` que não existe no calendário): `DetalheDose.dose` é uma `DosePrevista`, que exige uma das 4 situações, e dose fora da idade não tem situação (D17, D19). O front não oferece link de detalhe para essas doses; mostra só a orientação "converse na unidade" (aviso `DOSE_FORA_DA_IDADE`). Texto adicionado na descrição do endpoint, na resposta 404 dele e em `DoseForaDaIdade`.
+
 ## 0.4.1 · 25/11/2026 · dose anterior entre vacinas e idades em calendário (D19)
 
 O formato das respostas **não mudou**; mudou o cálculo, para seguir a regra oficial também nestes pontos ([16](16-regra-situacao-vacinal.md)):

@@ -331,6 +331,12 @@ paths:
         Tela 3 do protótipo: situação da dose, quando fica disponível, doenças que a vacina
         previne e os registros ligados a ela. `idDose` é o id da dose no calendário
         (`dose_esquema`).
+
+        Só existe detalhe para dose com situação (as que vêm em `doses` da situação vacinal).
+        Dose que está em `dosesForaDaIdade` da pessoa não tem situação (D17, D19) e devolve
+        404, assim como um `idDose` que não existe no calendário. O front não deve oferecer
+        link de detalhe para essas doses: mostra só a orientação "converse na unidade"
+        (aviso `DOSE_FORA_DA_IDADE`).
       parameters:
         - $ref: '#/components/parameters/IdPessoa'
         - name: idDose
@@ -370,6 +376,9 @@ paths:
           $ref: '#/components/responses/SemAcesso'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
+          description: |
+            Pessoa não encontrada, `idDose` que não existe no calendário ou dose que está em
+            `dosesForaDaIdade` da pessoa (sem situação, sem detalhe).
 
   /v1/unidades:
     get:
@@ -841,7 +850,8 @@ components:
       description: |
         Dose sem registro cuja idade máxima oficial a pessoa já passou (D17, D19). Não é
         mostrada como atrasada: o front só orienta a conversar na unidade (aviso
-        `DOSE_FORA_DA_IDADE`).
+        `DOSE_FORA_DA_IDADE`). Não tem detalhe em `/v1/pessoas/{idPessoa}/doses/{idDose}`
+        (devolve 404).
       required: [idDose, vacina, numeroDose, descricao]
       properties:
         idDose:

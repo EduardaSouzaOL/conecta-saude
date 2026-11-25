@@ -20,6 +20,10 @@ Enquanto o SSO do Conecta não existe, os perfis `dev` e `test` aceitam um **tok
 curl -H "Authorization: Bearer dev-pessoa-4" http://localhost:8080/v1/eu   # Valentina, mãe do Heitor (5)
 ```
 
+No perfil `dev`, o "hoje" fica fixo em **24/11/2026** (`minha-vacinacao.data-referencia`), a mesma data da base sintética e dos exemplos do contrato.
+
+**CORS:** só as origens em `minha-vacinacao.cors.origens-permitidas` são liberadas (nenhuma por padrão; no `dev`, o Vite em `localhost:5173`). O preflight `OPTIONS` passa sem token.
+
 A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualquer outra). Fora de `dev`/`test`, nenhum token vale até o SSO real entrar em `seguranca.ValidadorToken`.
 
 ## Testes

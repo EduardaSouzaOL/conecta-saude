@@ -14,7 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Exige token em toda rota {@code /v1/**} e guarda o id da pessoa logada na requisição. Não
- * registra o token em log.
+ * registra o token em log. O preflight CORS ({@code OPTIONS}) não leva token e passa direto: quem
+ * responde é o {@link ConfiguracaoCors}.
  */
 @Component
 public class FiltroAutenticacao extends OncePerRequestFilter {
@@ -30,7 +31,8 @@ public class FiltroAutenticacao extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith(request.getContextPath() + "/v1/");
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+                || !request.getRequestURI().startsWith(request.getContextPath() + "/v1/");
     }
 
     @Override
