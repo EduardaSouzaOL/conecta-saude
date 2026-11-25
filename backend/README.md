@@ -38,7 +38,7 @@ A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualqu
 |---|---|---|
 | `dados` | `dados-fhir` | Entidades JPA (`@Immutable`) e repositórios somente leitura |
 | `fonte` | `dados-fhir` | `FonteRegistrosVacinacao`, `FonteBancoSintetico`, leitura e validação de `Immunization` (HAPI FHIR) |
-| `regra` | `backend-java` | Regra de situação vacinal (D17 + D18, provisórias), Java puro |
+| `regra` | `backend-java` | Regra de situação vacinal conforme as fontes oficiais (D19, docs/16), Java puro |
 | `servico`, `api`, `seguranca` | `backend-java` | Serviços, endpoints do contrato, token falso (dev) e controle de acesso |
 
 ## Migrações
