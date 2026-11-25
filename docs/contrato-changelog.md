@@ -2,6 +2,16 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.8.0 · 25/11/2026 · modo visitante e tela "Entrar como" (demonstração)
+
+> Pedido da Duda (25/11/2026), para simular a entrada do Conecta como no protótipo do hackathon: "Entrar como" com pessoas fictícias e "Continuar sem entrar".
+
+**Mudança compatível** (endpoints que exigiam token passam a aceitar sem; um endpoint novo só em dev).
+
+- **Modo visitante:** `GET /v1/unidades`, `GET /v1/unidades/{idUnidade}`, `GET /v1/vacinas` e `GET /v1/campanhas` (sem `idPessoa`) respondem sem token. Com token, ele é conferido (inválido = 401). Todo dado de pessoa continua exigindo login.
+- **Novo `GET /v1/demo/pessoas`** (`listarPessoasDemo`), **só nos perfis dev e test**, sem token: 4 pessoas sintéticas com o caso de cada uma e os tokens de teste `tokenGovBr` e `tokenEmail`. Sem CPF, CNS ou dado de saúde.
+- `info.version` 0.7.1 → 0.8.0.
+
 ## 0.7.1 · 25/11/2026 · correções pela Instrução Normativa 2026 e horário das unidades
 
 > Pesquisa no [18](18-pesquisa-regras-ministerio.md); aplicadas com o ok da Duda (D19: a fonte oficial vence).

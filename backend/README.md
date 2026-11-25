@@ -21,6 +21,8 @@ curl -H "Authorization: Bearer dev-pessoa-4" http://localhost:8080/v1/eu        
 curl -H "Authorization: Bearer dev-pessoa-4-email" http://localhost:8080/v1/eu   # a mesma pessoa, com e-mail
 ```
 
+**Modo visitante e "Entrar como":** sem token, `GET /v1/unidades`, `/v1/unidades/{id}`, `/v1/vacinas` e `/v1/campanhas` (sem `idPessoa`) respondem normalmente (`FiltroAutenticacao.ROTAS_VISITANTE`). `GET /v1/demo/pessoas` (`api.DemoController`, só dev e test) lista as pessoas da demonstração com o token de teste de cada uma.
+
 **Carteira em PDF e ouvidoria (D22):** `GET /v1/pessoas/{idPessoa}/carteira.pdf` (`servico.CarteiraPdfService`, PDFBox) e `GET /v1/ouvidoria` (`servico.OuvidoriaService`) só respondem para login gov.br; com e-mail, 403 `/problemas/login-gov-br-necessario` (`ControleDeAcesso.exigirLoginGovBr`). O PDF é gerado na hora, sem CPF, CNS, CID ou dado do profissional, e não é guardado. O SSO real precisa informar o método de login em `seguranca.ValidadorToken`.
 
 No perfil `dev`, o "hoje" fica fixo em **24/11/2026** (`minha-vacinacao.data-referencia`), a mesma data da base sintética e dos exemplos do contrato.

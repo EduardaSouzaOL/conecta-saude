@@ -145,6 +145,14 @@ class ContratoTest extends BancoDeTeste {
     }
 
     @Test
+    void entrarComoBateComOExemplo() throws Exception {
+        String corpo = mvc.perform(get("/v1/demo/pessoas")).andReturn().getResponse().getContentAsString();
+        JsonNode real = json.readTree(corpo);
+        assertConformeSchema(real, "ListaPessoasDemo");
+        assertThat(real).isEqualTo(exemplo("/v1/demo/pessoas", "padrao"));
+    }
+
+    @Test
     void ouvidoriaBateComOExemplo() throws Exception {
         JsonNode real = chamar("/v1/ouvidoria", 4);
         assertConformeSchema(real, "Ouvidoria");
