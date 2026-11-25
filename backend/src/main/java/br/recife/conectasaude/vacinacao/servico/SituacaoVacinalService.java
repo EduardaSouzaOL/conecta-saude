@@ -2,6 +2,7 @@ package br.recife.conectasaude.vacinacao.servico;
 
 import br.recife.conectasaude.vacinacao.api.Respostas;
 import br.recife.conectasaude.vacinacao.api.TratadorDeErros.NaoEncontradoException;
+import br.recife.conectasaude.vacinacao.dados.DoseAnteriorOficial;
 import br.recife.conectasaude.vacinacao.dados.DoseEsquema;
 import br.recife.conectasaude.vacinacao.dados.DoseEsquemaRepository;
 import br.recife.conectasaude.vacinacao.dados.FabricanteImunobiologico;
@@ -28,6 +29,7 @@ import br.recife.conectasaude.vacinacao.regra.RegistroParaRegra;
 import br.recife.conectasaude.vacinacao.regra.ResultadoSituacao;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -154,9 +156,15 @@ public class SituacaoVacinalService {
         return new DoseCalendario(
                 d.getId(), d.getEsquema().getId(), d.getEsquema().getNome(),
                 d.getEsquema().getVacina().getId(), d.getEsquema().getVacina().getNome(),
-                d.getNumeroDose(), d.getDescricao(), d.getIdadeRecomendadaDias(), d.getIntervaloAposAnteriorDias(),
-                d.getCodigoDoseRnds(), d.getIdadeMinimaDias(), d.getIdadeMaximaDias(),
-                d.getEsquema().getIdadeMinimaDias(), d.getEsquema().getIdadeMaximaDias());
+                d.getNumeroDose(), d.getDescricao(), d.getIntervaloAposAnteriorDias(), d.getCodigoDoseRnds(),
+                periodo(d.getIdadeRecomendadaPeriodo()), periodo(d.getIdadeMinimaPeriodo()),
+                periodo(d.getIdadeLimitePeriodo()), periodo(d.getIntervaloMinimoPeriodo()),
+                d.getDosesAnterioresOficiais().stream().map(DoseAnteriorOficial::getIdDoseAnterior).toList());
+    }
+
+    /** Período ISO 8601 do banco (P1M15D, P6M, P4Y); {@code null} se a coluna está vazia. */
+    private static Period periodo(String iso) {
+        return iso == null || iso.isBlank() ? null : Period.parse(iso);
     }
 
     private Respostas.RegistroVacinacao registro(RegistroVacinacao r) {

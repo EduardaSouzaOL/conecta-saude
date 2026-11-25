@@ -2,7 +2,7 @@ package br.recife.conectasaude.vacinacao.regra;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,6 +36,9 @@ import java.util.Optional;
  *   <li>senão: {@code PODE_TOMAR}.
  * </ol>
  * Data disponível = a mais tarde entre nascimento + idade mínima e dose anterior + intervalo mínimo.
+ * Idades e intervalos são períodos de calendário ("1M15D", "6 meses", "4 anos"), como nas fontes.
+ * Dose anterior: a oficial de outra vacina, quando a planilha manda (ex.: Penta D3 antes da DTP R1),
+ * ou a de número anterior no mesmo esquema.
  * Esquema interrompido continua de onde parou [MNP]: o intervalo conta da dose anterior registrada.
  *
  * <p>Doses sem idade recomendada no calendário (influenza anual, hepatite B a partir dos 7 anos)
@@ -54,19 +57,19 @@ public final class CalculadoraSituacaoVacinal {
     }
 
     public ResultadoSituacao calcular(LocalDate nascimento, LocalDate hoje, List<RegistroParaRegra> registros) {
-        long idadeDias = ChronoUnit.DAYS.between(nascimento, hoje);
         Map<Integer, RegistroParaRegra> cumpridas = associarRegistros(registros);
 
         List<DoseCalculada> doses = new ArrayList<>();
         List<DoseCalendario> foraDaIdade = new ArrayList<>();
         for (DoseCalendario dose : calendario) {
-            if (dose.idadeRecomendadaDias() == null) {
+            if (dose.idadeRecomendada() == null) {
                 continue;
             }
             RegistroParaRegra registro = cumpridas.get(dose.idDose());
-            // Passo 2 [PNI-REG]: sem registro e depois da idade máxima oficial da dose.
-            Integer idadeMaxima = dose.idadeMaximaEfetivaDias();
-            if (registro == null && idadeMaxima != null && idadeDias > idadeMaxima) {
+            // Passo 2 [PNI-REG]: sem registro e já no limite da idade máxima oficial da dose
+            // ("< 5A": fora a partir do 5º aniversário), contado no calendário.
+            if (registro == null && dose.idadeLimite() != null
+                    && !hoje.isBefore(nascimento.plus(dose.idadeLimite()))) {
                 foraDaIdade.add(dose);
                 continue;
             }
@@ -102,19 +105,25 @@ public final class CalculadoraSituacaoVacinal {
 
     private DoseCalculada calcularDose(DoseCalendario dose, LocalDate nascimento, LocalDate hoje,
             RegistroParaRegra registro, Map<Integer, RegistroParaRegra> cumpridas) {
-        LocalDate recomendada = nascimento.plusDays(dose.idadeRecomendadaDias());
-        Optional<DoseCalendario> anterior = anterior(dose);
-        RegistroParaRegra registroAnterior = anterior.map(a -> cumpridas.get(a.idDose())).orElse(null);
-        boolean faltaAnterior = anterior.isPresent() && registroAnterior == null;
+        LocalDate recomendada = nascimento.plus(dose.idadeRecomendada());
+        // [PNI-REG] dose anterior oficial: a primeira candidata que tem registro.
+        List<DoseCalendario> anteriores = anteriores(dose);
+        RegistroParaRegra registroAnterior = anteriores.stream()
+                .map(a -> cumpridas.get(a.idDose()))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        boolean faltaAnterior = !anteriores.isEmpty() && registroAnterior == null;
 
-        // [PNI-REG] disponível = a mais tarde entre a idade mínima e o intervalo mínimo após a anterior.
-        LocalDate pelaIdade = nascimento.plusDays(dose.idadeMinimaEfetivaDias());
+        // [PNI-REG] disponível = a mais tarde entre a idade mínima e o intervalo mínimo após a anterior,
+        // com meses e anos de calendário.
+        LocalDate pelaIdade = nascimento.plus(Optional.ofNullable(dose.idadeMinima()).orElse(Period.ZERO));
         LocalDate disponivel = null;
         if (!faltaAnterior) {
             disponivel = pelaIdade;
             if (registroAnterior != null) {
                 LocalDate peloIntervalo = registroAnterior.dataAplicacao()
-                        .plusDays(Optional.ofNullable(dose.intervaloMinimoDias()).orElse(0));
+                        .plus(Optional.ofNullable(dose.intervaloMinimo()).orElse(Period.ZERO));
                 if (peloIntervalo.isAfter(disponivel)) {
                     disponivel = peloIntervalo;
                 }
@@ -129,8 +138,8 @@ public final class CalculadoraSituacaoVacinal {
         // A orientação só aparece quando a dose anterior já devia ter sido tomada (passou da idade
         // recomendada dela); antes disso a dose seguinte é só "ainda não disponível".
         if (faltaAnterior) {
-            Integer idadeRecAnterior = anterior.get().idadeRecomendadaDias();
-            boolean anteriorVencida = idadeRecAnterior != null && hoje.isAfter(nascimento.plusDays(idadeRecAnterior));
+            Period idadeRecAnterior = anteriores.get(0).idadeRecomendada();
+            boolean anteriorVencida = idadeRecAnterior != null && hoje.isAfter(nascimento.plus(idadeRecAnterior));
             return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, null, null,
                     anteriorVencida ? List.of(Aviso.DOSE_ANTERIOR_SEM_REGISTRO) : List.of());
         }
@@ -148,10 +157,19 @@ public final class CalculadoraSituacaoVacinal {
         return new DoseCalculada(dose, situacao, recomendada, disponivel, null, List.of());
     }
 
-    private Optional<DoseCalendario> anterior(DoseCalendario dose) {
+    /**
+     * Doses anteriores possíveis, por prioridade: as oficiais de outra vacina ({@code dose_anterior_oficial})
+     * ou, sem elas, a dose de número anterior no mesmo esquema. Vazia = primeira dose.
+     */
+    private List<DoseCalendario> anteriores(DoseCalendario dose) {
+        if (!dose.idsDoseAnteriorOficial().isEmpty()) {
+            return dose.idsDoseAnteriorOficial().stream()
+                    .flatMap(id -> calendario.stream().filter(d -> d.idDose() == id))
+                    .toList();
+        }
         return calendario.stream()
                 .filter(d -> d.idEsquema() == dose.idEsquema() && d.numeroDose() == dose.numeroDose() - 1)
-                .findFirst();
+                .toList();
     }
 
     /**
@@ -186,7 +204,7 @@ public final class CalculadoraSituacaoVacinal {
                 }
             } else if (r.idVacina() != null) {
                 calendario.stream()
-                        .filter(d -> d.idVacina() == r.idVacina() && d.idadeRecomendadaDias() != null)
+                        .filter(d -> d.idVacina() == r.idVacina() && d.idadeRecomendada() != null)
                         .filter(d -> !cumpridas.containsKey(d.idDose()))
                         .findFirst()
                         .ifPresent(d -> cumpridas.put(d.idDose(), r));

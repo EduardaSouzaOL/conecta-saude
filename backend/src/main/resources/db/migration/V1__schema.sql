@@ -291,7 +291,16 @@ CREATE TABLE dose_esquema (
     -- não disponível; depois do máximo = fora da idade (outro esquema, ver na unidade)
     idade_minima_dias INT NULL,
     idade_maxima_dias INT NULL,
-    fonte_regra VARCHAR(200) NULL,           -- de onde vêm idade e intervalo desta dose
+    -- As mesmas regras em PERÍODO do calendário (ISO 8601: P1M15D, P6M, P4Y), como
+    -- estão escritas nas fontes ("1M15D", "6 meses", "4 anos"). A regra do app usa
+    -- estes períodos (nascimento + período, com meses e anos de calendário); as
+    -- colunas em dias acima ficam como aproximação, para consulta.
+    idade_recomendada_periodo VARCHAR(12) NULL,  -- [CNV-2026] idade recomendada
+    idade_minima_periodo VARCHAR(12) NULL,       -- [PNI] pode a partir de nascimento + período
+    idade_limite_periodo VARCHAR(12) NULL,       -- fora da idade A PARTIR de nascimento + período
+                                                 -- ("< 5A" = P5Y; "≤ 14A" = P15Y; "≤ 30D" = P31D)
+    intervalo_minimo_periodo VARCHAR(12) NULL,   -- [PNI] intervalo mínimo após a dose anterior
+    fonte_regra VARCHAR(300) NULL,           -- de onde vêm idade e intervalo desta dose
     descricao TEXT NULL,
     CONSTRAINT fk_dose_esquema
         FOREIGN KEY (id_esquema) REFERENCES esquema_vacinal(id_esquema),
@@ -303,6 +312,28 @@ CREATE TABLE dose_esquema (
         CHECK (intervalo_apos_anterior IS NULL OR intervalo_apos_anterior >= 0),
     CONSTRAINT ck_dose_faixa
         CHECK (idade_minima_dias IS NULL OR idade_maxima_dias IS NULL OR idade_maxima_dias >= idade_minima_dias)
+) ENGINE=InnoDB;
+
+-- [PNI] Dose anterior OFICIAL quando ela não é a de número anterior no mesmo
+-- esquema (coluna "próxima dose" das Regras de entrada de dados 4). Ex.: o reforço
+-- da MenACWY vem depois da D2 da Meningo C; o R1 da DTP, depois da D3 da Penta.
+-- Uma dose sem linha aqui tem como anterior a dose de número anterior do mesmo
+-- esquema. Com mais de uma linha, vale a primeira (menor prioridade) que tem
+-- registro: o intervalo mínimo conta a partir dela (ex.: dT depois da última dose
+-- com componente tetânico: DTP R2, senão DTP R1, senão Penta D3).
+CREATE TABLE dose_anterior_oficial (
+    id_dose_esquema INT NOT NULL,
+    id_dose_anterior INT NOT NULL,
+    prioridade INT NOT NULL,
+    fonte_regra VARCHAR(300) NULL,
+    CONSTRAINT pk_dose_anterior_oficial PRIMARY KEY (id_dose_esquema, id_dose_anterior),
+    CONSTRAINT fk_dao_dose
+        FOREIGN KEY (id_dose_esquema) REFERENCES dose_esquema(id_dose_esquema),
+    CONSTRAINT fk_dao_anterior
+        FOREIGN KEY (id_dose_anterior) REFERENCES dose_esquema(id_dose_esquema),
+    CONSTRAINT uq_dao_prioridade UNIQUE (id_dose_esquema, prioridade),
+    CONSTRAINT ck_dao_prioridade CHECK (prioridade > 0),
+    CONSTRAINT ck_dao_diferente CHECK (id_dose_esquema <> id_dose_anterior)
 ) ENGINE=InnoDB;
 
 CREATE TABLE fonte_dados (

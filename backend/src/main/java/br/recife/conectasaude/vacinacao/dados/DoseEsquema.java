@@ -1,12 +1,19 @@
 package br.recife.conectasaude.vacinacao.dados;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -49,8 +56,27 @@ public class DoseEsquema {
     @Column(name = "idade_maxima_dias")
     private Integer idadeMaximaDias;
 
-    @Column(name = "fonte_regra", length = 200)
+    @Column(name = "idade_recomendada_periodo", length = 12)
+    private String idadeRecomendadaPeriodo;
+
+    @Column(name = "idade_minima_periodo", length = 12)
+    private String idadeMinimaPeriodo;
+
+    @Column(name = "idade_limite_periodo", length = 12)
+    private String idadeLimitePeriodo;
+
+    @Column(name = "intervalo_minimo_periodo", length = 12)
+    private String intervaloMinimoPeriodo;
+
+    @Column(name = "fonte_regra", length = 300)
     private String fonteRegra;
+
+    /** Dose anterior oficial de outra vacina (tabela {@code dose_anterior_oficial}), por prioridade. */
+    @ElementCollection
+    @CollectionTable(name = "dose_anterior_oficial", joinColumns = @JoinColumn(name = "id_dose_esquema"))
+    @OrderBy("prioridade")
+    @Fetch(FetchMode.SUBSELECT)
+    private List<DoseAnteriorOficial> dosesAnterioresOficiais = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "descricao")
@@ -66,6 +92,12 @@ public class DoseEsquema {
     public String getCodigoDoseRnds() { return codigoDoseRnds; }
     public Integer getIdadeMinimaDias() { return idadeMinimaDias; }
     public Integer getIdadeMaximaDias() { return idadeMaximaDias; }
+    /** Períodos ISO 8601 (P1M15D, P6M, P4Y), como escritos nas fontes. O limite é exclusivo. */
+    public String getIdadeRecomendadaPeriodo() { return idadeRecomendadaPeriodo; }
+    public String getIdadeMinimaPeriodo() { return idadeMinimaPeriodo; }
+    public String getIdadeLimitePeriodo() { return idadeLimitePeriodo; }
+    public String getIntervaloMinimoPeriodo() { return intervaloMinimoPeriodo; }
     public String getFonteRegra() { return fonteRegra; }
+    public List<DoseAnteriorOficial> getDosesAnterioresOficiais() { return List.copyOf(dosesAnterioresOficiais); }
     public String getDescricao() { return descricao; }
 }

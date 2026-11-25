@@ -79,7 +79,11 @@ class RepositoriosTest extends BancoDeTeste {
     void regraOficialPorDose() {
         // D19: faixa etária e intervalo mínimo oficiais de cada dose, com a fonte (docs/16).
         DoseEsquema vipR1 = doses.findById(12).orElseThrow();
-        assertThat(vipR1.getIntervaloAposAnteriorDias()).isEqualTo(180);
+        assertThat(vipR1.getIntervaloAposAnteriorDias()).isEqualTo(183);
+        assertThat(vipR1.getIntervaloMinimoPeriodo()).isEqualTo("P6M");
+        assertThat(vipR1.getIdadeMinimaPeriodo()).isEqualTo("P1Y");
+        assertThat(vipR1.getIdadeLimitePeriodo()).isEqualTo("P5Y");
+        assertThat(vipR1.getIdadeRecomendadaPeriodo()).isEqualTo("P15M");
         assertThat(vipR1.getIdadeRecomendadaDias()).isEqualTo(457);
         assertThat(vipR1.getIdadeMinimaDias()).isEqualTo(365);
         assertThat(vipR1.getIdadeMaximaDias()).isEqualTo(1825);
@@ -89,6 +93,12 @@ class RepositoriosTest extends BancoDeTeste {
         assertThat(dT.getIdadeMinimaDias()).isEqualTo(2557);
         assertThat(dT.getIdadeMaximaDias()).isNull();
         assertThat(doses.findById(22).orElseThrow().getIntervaloAposAnteriorDias()).isNull();
+        // Dose anterior oficial de outra vacina: dT depois de DTP R2, senão DTP R1, senão Penta D3.
+        assertThat(dT.getDosesAnterioresOficiais()).extracting(DoseAnteriorOficial::getIdDoseAnterior)
+                .containsExactly(31, 30, 8);
+        assertThat(doses.findById(30).orElseThrow().getDosesAnterioresOficiais())
+                .extracting(DoseAnteriorOficial::getIdDoseAnterior).containsExactly(8);
+        assertThat(doses.findById(7).orElseThrow().getDosesAnterioresOficiais()).isEmpty();
     }
 
     @Test

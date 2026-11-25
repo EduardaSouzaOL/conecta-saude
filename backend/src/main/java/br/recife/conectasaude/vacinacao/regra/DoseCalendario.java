@@ -1,8 +1,12 @@
 package br.recife.conectasaude.vacinacao.regra;
 
+import java.time.Period;
+import java.util.List;
+
 /**
- * Uma dose do calendário vigente, como dado (RNF07). Idades e intervalos em DIAS. Os números vêm do
- * banco ({@code dose_esquema}), com a fonte em {@code fonte_regra} (D19, docs/16).
+ * Uma dose do calendário vigente, como dado (RNF07). Os números vêm do banco ({@code dose_esquema}
+ * e {@code dose_anterior_oficial}), com a fonte em {@code fonte_regra} (D19, docs/16). Idades e
+ * intervalos são PERÍODOS de calendário (meses e anos de verdade), como escritos nas fontes.
  *
  * @param idDose id da dose ({@code dose_esquema})
  * @param idEsquema esquema vacinal ao qual a dose pertence
@@ -11,13 +15,15 @@ package br.recife.conectasaude.vacinacao.regra;
  * @param nomeVacina nome da vacina
  * @param numeroDose ordem da dose no esquema (1 = primeira)
  * @param descricao descrição da dose no calendário ("2 meses", "Reforço aos 4 anos")
- * @param idadeRecomendadaDias idade recomendada [CNV-2026]; {@code null} = sem idade no calendário (ex. influenza)
- * @param intervaloMinimoDias intervalo mínimo oficial depois da dose anterior do esquema [PNI-REG]
+ * @param intervaloMinimoDias intervalo mínimo em dias (aproximação, só para a resposta da API)
  * @param codigoDoseRnds como a dose chega da RNDS (BRDose)
- * @param idadeMinimaDias idade mínima oficial da dose [PNI-REG]; {@code null} = vale a do esquema
- * @param idadeMaximaDias idade máxima oficial da dose [PNI-REG]; {@code null} = vale a do esquema
- * @param idadeMinimaEsquemaDias idade mínima do esquema [CNV-2026]
- * @param idadeMaximaEsquemaDias idade máxima do esquema [CNV-2026]; {@code null} = sem limite
+ * @param idadeRecomendada idade recomendada [CNV-2026]; {@code null} = sem idade no calendário (ex. influenza)
+ * @param idadeMinima pode a partir de nascimento + este período [PNI-REG]; {@code null} = desde o nascimento
+ * @param idadeLimite fora da idade A PARTIR de nascimento + este período ("&lt; 5A" = P5Y)
+ *     [PNI-REG, ou CNV-2026 quando a planilha não traz máximo]; {@code null} = sem limite
+ * @param intervaloMinimo intervalo mínimo depois da dose anterior [PNI-REG]; {@code null} = sem intervalo
+ * @param idsDoseAnteriorOficial dose anterior oficial de outra vacina, por prioridade (vale a primeira
+ *     com registro); vazia = a dose de número anterior no mesmo esquema
  */
 public record DoseCalendario(
         int idDose,
@@ -27,25 +33,15 @@ public record DoseCalendario(
         String nomeVacina,
         int numeroDose,
         String descricao,
-        Integer idadeRecomendadaDias,
         Integer intervaloMinimoDias,
         String codigoDoseRnds,
-        Integer idadeMinimaDias,
-        Integer idadeMaximaDias,
-        Integer idadeMinimaEsquemaDias,
-        Integer idadeMaximaEsquemaDias) {
+        Period idadeRecomendada,
+        Period idadeMinima,
+        Period idadeLimite,
+        Period intervaloMinimo,
+        List<Integer> idsDoseAnteriorOficial) {
 
-    /** Idade a partir da qual a dose pode ser aplicada: a da dose [PNI-REG] ou, sem ela, a do esquema. */
-    public int idadeMinimaEfetivaDias() {
-        Integer min = idadeMinimaDias != null ? idadeMinimaDias : idadeMinimaEsquemaDias;
-        return min != null ? min : 0;
-    }
-
-    /**
-     * Idade depois da qual a dose sai da lista ("fora da idade"): a da dose [PNI-REG] ou, quando a
-     * planilha não traz máximo, a do esquema no calendário [CNV-2026]; {@code null} = sem limite.
-     */
-    public Integer idadeMaximaEfetivaDias() {
-        return idadeMaximaDias != null ? idadeMaximaDias : idadeMaximaEsquemaDias;
+    public DoseCalendario {
+        idsDoseAnteriorOficial = idsDoseAnteriorOficial == null ? List.of() : List.copyOf(idsDoseAnteriorOficial);
     }
 }
