@@ -12,8 +12,11 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * Dose prevista no calendário. Idade recomendada e intervalo mínimo em DIAS.
+ * Dose prevista no calendário. Idades e intervalo mínimo em DIAS.
  * {@code codigoDoseRnds} é o de-para: como esta dose chega da RNDS (BRDose).
+ * Idade mínima, idade máxima e intervalo mínimo são os OFICIAIS da dose ("Regras de entrada de
+ * dados 4", PNI); a idade recomendada vem do Calendário 2026. A origem fica em {@code fonteRegra}
+ * (D19, docs/16).
  */
 @Entity
 @Immutable
@@ -40,6 +43,15 @@ public class DoseEsquema {
     @Column(name = "codigo_dose_rnds", length = 10)
     private String codigoDoseRnds;
 
+    @Column(name = "idade_minima_dias")
+    private Integer idadeMinimaDias;
+
+    @Column(name = "idade_maxima_dias")
+    private Integer idadeMaximaDias;
+
+    @Column(name = "fonte_regra", length = 200)
+    private String fonteRegra;
+
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "descricao")
     private String descricao;
@@ -52,5 +64,8 @@ public class DoseEsquema {
     public Integer getIntervaloAposAnteriorDias() { return intervaloAposAnteriorDias; }
     public Integer getIdadeRecomendadaDias() { return idadeRecomendadaDias; }
     public String getCodigoDoseRnds() { return codigoDoseRnds; }
+    public Integer getIdadeMinimaDias() { return idadeMinimaDias; }
+    public Integer getIdadeMaximaDias() { return idadeMaximaDias; }
+    public String getFonteRegra() { return fonteRegra; }
     public String getDescricao() { return descricao; }
 }

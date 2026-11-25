@@ -283,9 +283,15 @@ CREATE TABLE dose_esquema (
     id_dose_esquema INT AUTO_INCREMENT PRIMARY KEY,
     id_esquema INT NOT NULL,
     numero_dose INT NOT NULL,
-    intervalo_apos_anterior INT NULL,        -- dias (intervalo mínimo)
+    intervalo_apos_anterior INT NULL,        -- dias: intervalo MÍNIMO oficial após a dose anterior [PNI]
     idade_recomendada_dias INT NULL,         -- [RNDS] idade do calendário (dias)
     codigo_dose_rnds VARCHAR(10) NULL,       -- [RNDS] como a dose chega da RNDS (BRDose)
+    -- [PNI] faixa etária OFICIAL em que a dose pode ser aplicada/registrada
+    -- (Regras de entrada de dados 4, PNI, 04/09/2026). Antes do mínimo = ainda
+    -- não disponível; depois do máximo = fora da idade (outro esquema, ver na unidade)
+    idade_minima_dias INT NULL,
+    idade_maxima_dias INT NULL,
+    fonte_regra VARCHAR(200) NULL,           -- de onde vêm idade e intervalo desta dose
     descricao TEXT NULL,
     CONSTRAINT fk_dose_esquema
         FOREIGN KEY (id_esquema) REFERENCES esquema_vacinal(id_esquema),
@@ -294,7 +300,9 @@ CREATE TABLE dose_esquema (
     CONSTRAINT uq_dose_numero UNIQUE (id_esquema, numero_dose),
     CONSTRAINT ck_dose_numero CHECK (numero_dose > 0),
     CONSTRAINT ck_dose_intervalo
-        CHECK (intervalo_apos_anterior IS NULL OR intervalo_apos_anterior >= 0)
+        CHECK (intervalo_apos_anterior IS NULL OR intervalo_apos_anterior >= 0),
+    CONSTRAINT ck_dose_faixa
+        CHECK (idade_minima_dias IS NULL OR idade_maxima_dias IS NULL OR idade_maxima_dias >= idade_minima_dias)
 ) ENGINE=InnoDB;
 
 CREATE TABLE fonte_dados (

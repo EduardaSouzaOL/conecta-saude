@@ -76,6 +76,22 @@ class RepositoriosTest extends BancoDeTeste {
     }
 
     @Test
+    void regraOficialPorDose() {
+        // D19: faixa etária e intervalo mínimo oficiais de cada dose, com a fonte (docs/16).
+        DoseEsquema vipR1 = doses.findById(12).orElseThrow();
+        assertThat(vipR1.getIntervaloAposAnteriorDias()).isEqualTo(180);
+        assertThat(vipR1.getIdadeRecomendadaDias()).isEqualTo(457);
+        assertThat(vipR1.getIdadeMinimaDias()).isEqualTo(365);
+        assertThat(vipR1.getIdadeMaximaDias()).isEqualTo(1825);
+        assertThat(vipR1.getFonteRegra()).startsWith("[PNI-REG]").contains("VIP R1");
+        DoseEsquema dT = doses.findById(33).orElseThrow();
+        assertThat(dT.getIntervaloAposAnteriorDias()).isEqualTo(1826);
+        assertThat(dT.getIdadeMinimaDias()).isEqualTo(2557);
+        assertThat(dT.getIdadeMaximaDias()).isNull();
+        assertThat(doses.findById(22).orElseThrow().getIntervaloAposAnteriorDias()).isNull();
+    }
+
+    @Test
     void unidadesECampanhas() {
         assertThat(unidades.findByPossuiSalaVacinaTrueOrderById()).hasSize(12);
         assertThat(unidades.findByCnes("9987676")).get().extracting(UnidadeSaude::getNome)
