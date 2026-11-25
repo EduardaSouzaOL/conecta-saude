@@ -30,7 +30,8 @@ A pessoa logada só vê os próprios dados e os dos dependentes (403 para qualqu
 
 - Com o **Docker** rodando, os testes de banco sobem um MySQL 8.4 com Testcontainers.
 - Sem Docker, dá para apontar para um MySQL vazio: `TESTE_DB_URL=jdbc:mysql://127.0.0.1:3306/banco_vazio TESTE_DB_USER=... TESTE_DB_PASSWORD=... ./mvnw test`.
-- Sem nenhum dos dois, os testes de banco são **pulados** (as classes aparecem com 0 testes no relatório); os testes de FHIR e de "somente leitura" rodam sempre.
+- Sem nenhum dos dois, os testes de banco (API, contrato, migrações, repositórios) são **pulados** com um aviso `*** ATENÇÃO ***` no console; os testes de FHIR, da regra e de "somente leitura" rodam sempre.
+- Com `CI=true` (GitHub Actions) ou `EXIGIR_BANCO=true`, a falta de banco **quebra** o build em vez de pular. O workflow `.github/workflows/backend.yml` roda a suíte completa (71 testes) com Testcontainers a cada PR.
 
 ## Pacotes
 
