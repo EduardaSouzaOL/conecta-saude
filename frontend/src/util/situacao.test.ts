@@ -5,6 +5,7 @@ import { dataBr, idade } from './datas';
 
 const dose = (extra: Partial<DosePrevista>): DosePrevista => ({
   idDose: 1,
+  idEsquema: 1,
   vacina: { id: 1, nome: 'BCG' },
   numeroDose: 1,
   nomeDose: '2ª dose',
@@ -34,7 +35,7 @@ describe('textos da situação (RNF01)', () => {
       '2ª dose fica disponível depois que a dose anterior for registrada.',
     );
     expect(
-      explicacaoDose(dose({ situacao: 'EM_DIA', registro: { idRegistro: 1, dataAplicacao: '2026-01-10', transcricao: false } })),
+      explicacaoDose(dose({ situacao: 'EM_DIA', registro: { idRegistro: 1, dataAplicacao: '2026-01-10', transcricao: false, unidade: null } })),
     ).toBe('2ª dose tomada em 10/01/2026.');
   });
 

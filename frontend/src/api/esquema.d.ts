@@ -15,6 +15,9 @@ export interface paths {
          * Pessoa logada e seus dependentes
          * @description Devolve a pessoa identificada pelo token e as pessoas pelas quais ela é responsável
          *     (RF01, RF02). É o ponto de entrada do módulo: o front usa os ids daqui nas outras chamadas.
+         *
+         *     Também diz como a pessoa entrou no Conecta (`metodoLogin`) e o que ela pode usar
+         *     (`recursos`, D22): a carteira em PDF e a ouvidoria só ficam disponíveis com login gov.br.
          */
         get: operations["obterEu"];
         put?: never;
@@ -78,7 +81,7 @@ export interface paths {
          *     tem registro: `AINDA_NAO_DISPONIVEL`; (4) antes da idade mínima oficial: `AINDA_NAO_DISPONIVEL`;
          *     (5) antes do intervalo mínimo depois da dose anterior: `AINDA_NAO_DISPONIVEL`; (6) depois da
          *     idade recomendada: `ATRASADA`; (7) senão: `PODE_TOMAR`. Reforço segue a mesma regra (idade
-         *     mínima + intervalo mínimo). Não há situação "em processamento": a demora de até 14 dias
+         *     mínima + intervalo mínimo). Não há situação "em processamento": a demora de até 15 dias
          *     para o registro aparecer é só o aviso `ATRASO_REGISTRO`. Cada dose pode trazer
          *     `orientacoes` (dose anterior sem registro; atualizar a caderneta), que o front mostra junto dela.
          */
@@ -134,6 +137,29 @@ export interface paths {
          *     (aviso `DOSE_FORA_DA_IDADE`).
          */
         get: operations["obterDetalheDose"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pessoas/{idPessoa}/vacinas/{idVacina}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Acompanhamento consolidado de uma vacina (linha do tempo de doses)
+         * @description Alimenta a tela "Acompanhamento da vacina" (`SCR-06`): protocolo completo de doses da vacina
+         *     na ordem do esquema (tomadas com data e unidade, disponíveis, aguardando, atrasadas e fora da
+         *     idade), doenças que a vacina previne, registros detalhados e avisos. Funciona também para
+         *     vacinas com doses em `dosesForaDaIdade` (sem devolver 404).
+         */
+        get: operations["obterAcompanhamentoVacina"];
         put?: never;
         post?: never;
         delete?: never;
@@ -223,6 +249,8 @@ export interface paths {
          *     `elegivel` se a campanha é para a pessoa (D21), com a mesma regra do lembrete
          *     `CAMPANHA_VIGENTE` (ver `Campanha.elegivel`). Sem `idPessoa`, ou quando a campanha não
          *     tem faixa etária cadastrada (ex.: público de gestantes ou de grupos), `elegivel` vem `null`.
+         *
+         *     Sem `idPessoa`, responde sem token (modo visitante). Com `idPessoa`, exige login: sem token, **401**.
          */
         get: operations["listarCampanhas"];
         put?: never;
@@ -245,6 +273,94 @@ export interface paths {
          * @description Vacinas ativas do catálogo e as doenças que cada uma previne (RF22).
          */
         get: operations["listarVacinas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pessoas/{idPessoa}/carteira.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Carteira de vacinação em PDF (só com login gov.br)
+         * @description Gera na hora a carteira de vacinação da pessoa em PDF (RF09, D22): nome, data de nascimento e
+         *     as doses registradas (vacina, dose, data, lote, fabricante, unidade e se veio de transcrição),
+         *     da mais recente para a mais antiga, com a data de emissão. Vale para a própria pessoa e para
+         *     os dependentes vinculados, como o resto da API.
+         *
+         *     - **Só com login gov.br:** quem entrou com e-mail ou outra forma recebe **403**
+         *       `/problemas/login-gov-br-necessario` (D22).
+         *     - **Privacidade (RNF04):** o PDF não traz CPF, CNS, CID nem dado do profissional que aplicou a dose.
+         *     - O PDF diz que **não substitui o documento oficial** do Ministério da Saúde (Meu SUS Digital)
+         *       e, nos ambientes de demonstração, que os dados são sintéticos.
+         *     - Nada é gravado: o PDF não fica guardado no servidor (somente leitura, RNF05).
+         */
+        get: operations["baixarCarteiraPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/pessoas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pessoas para a tela "Entrar como" (só no perfil dev)
+         * @description Para a demonstração, como a tela "Entrar como" do protótipo do Conecta: algumas pessoas da
+         *     base sintética, cada uma com um caso bom para mostrar, e o token de teste de cada uma.
+         *     Quem escolhe uma pessoa passa a mandar `Authorization: Bearer <tokenGovBr>` (login com
+         *     gov.br) ou `<tokenEmail>` (login com e-mail, D22) nas outras chamadas.
+         *
+         *     - **Só nos perfis dev e test.** Fora deles o endpoint não existe (404) e nenhum token de teste vale.
+         *     - Não precisa de token. Não traz CPF, CNS nem dado de saúde: só nome, nascimento, idade,
+         *       dependentes e um resumo do caso.
+         *     - "Continuar sem entrar" não chama nada: usa só os endpoints do modo visitante.
+         *     - Quem aparece e o resumo vêm da configuração do perfil (`minha-vacinacao.demo.pessoas`).
+         */
+        get: operations["listarPessoasDemo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ouvidoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Canais de ouvidoria (só com login gov.br)
+         * @description Canais de ouvidoria para quando a unidade de saúde se recusa a atualizar (transcrever) a
+         *     caderneta ou há outro problema no atendimento de vacinação (RF23, D22). O texto e os canais vêm
+         *     prontos; o front mostra sem mudar a redação.
+         *
+         *     - **Só com login gov.br:** quem entrou com e-mail ou outra forma recebe **403**
+         *       `/problemas/login-gov-br-necessario` (D22).
+         *     - Canais (confirmados em 25/11/2026): Ouvidoria Municipal de Saúde do Recife (0800 281 1520),
+         *       WhatsApp ConectaZap ((81) 9117-1407, opção Atendimento e depois Ouvidoria SUS) e
+         *       Ouvidoria-Geral do SUS (OuvSUS, 136).
+         *     - O app **não registra** a manifestação: só mostra os canais (somente leitura, RNF05).
+         */
+        get: operations["obterOuvidoria"];
         put?: never;
         post?: never;
         delete?: never;
@@ -287,9 +403,61 @@ export interface components {
             parentesco: components["schemas"]["Parentesco"];
         };
         Eu: {
+            metodoLogin: components["schemas"]["MetodoLogin"];
+            recursos: components["schemas"]["Recursos"];
             pessoa: components["schemas"]["PessoaResumo"];
             /** @description Pessoas vinculadas à pessoa logada como responsável (vínculos sem data de fim) */
             dependentes: components["schemas"]["Dependente"][];
+        };
+        /**
+         * @description Como a pessoa entrou no Conecta Recife (D22). `GOV_BR`: conta gov.br. `EMAIL`: e-mail e
+         *     senha do Conecta. `OUTRO`: qualquer outra forma (ex.: rede social). **[provisório]** O nível
+         *     da conta gov.br (bronze, prata, ouro) ainda não é considerado.
+         * @enum {string}
+         */
+        MetodoLogin: "GOV_BR" | "EMAIL" | "OUTRO";
+        /** @description O que a pessoa logada pode usar, conforme o método de login (D22) */
+        Recursos: {
+            /** @description `true` só com login gov.br: pode baixar `GET /v1/pessoas/{idPessoa}/carteira.pdf` */
+            carteiraPdf: boolean;
+            /** @description `true` só com login gov.br: pode ver `GET /v1/ouvidoria` */
+            ouvidoria: boolean;
+        };
+        ListaPessoasDemo: {
+            pessoas: components["schemas"]["PessoaDemo"][];
+            /** @description Texto para mostrar na tela ("Só para demonstração…") */
+            aviso: string;
+        };
+        PessoaDemo: {
+            id: number;
+            nome: string;
+            /** Format: date */
+            dataNascimento: string;
+            /** @description Idade em texto ("21 anos", "6 meses"), na data de referência */
+            idade: string;
+            /** @description O caso que essa pessoa mostra na demonstração */
+            resumo: string;
+            dependentes: components["schemas"]["PessoaResumo"][];
+            /** @description Token de teste com login gov.br (`dev-pessoa-<id>`) */
+            tokenGovBr: string;
+            /** @description Token de teste com login por e-mail (`dev-pessoa-<id>-email`) */
+            tokenEmail: string;
+        };
+        Ouvidoria: {
+            /** @description Texto que explica quando procurar a ouvidoria */
+            orientacao: string;
+            canais: components["schemas"]["CanalOuvidoria"][];
+            avisos: components["schemas"]["Avisos"];
+        };
+        CanalOuvidoria: {
+            nome: string;
+            descricao: string;
+            /** @description Número para ligar, como deve aparecer na tela (o front monta o `tel:` só com os dígitos) */
+            telefone: string | null;
+            /** @description Número de WhatsApp, como deve aparecer na tela (o front abre o WhatsApp com DDI 55 + os dígitos) */
+            whatsapp: string | null;
+            /** Format: uri */
+            site: string | null;
         };
         VacinaResumo: {
             id: number;
@@ -301,7 +469,7 @@ export interface components {
         };
         /**
          * @description Situação de uma dose prevista (RF05). São só estas 4; não existe "não posso tomar"
-         *     (RN03) nem "em processamento" (D17: a demora de até 14 dias para o registro aparecer
+         *     (RN03) nem "em processamento" (D17: a demora de até 15 dias para o registro aparecer
          *     vira só o aviso `ATRASO_REGISTRO`).
          *
          *     **Regra oficial (D19, em alinhamento com a SESAU).** Detalhes e fontes em
@@ -310,8 +478,8 @@ export interface components {
          *     recomendada do Calendário 2026) e são contados em meses e anos de calendário, como
          *     escritos nas fontes ("1M15D" = nascimento + 1 mês + 15 dias). A dose anterior é a de
          *     número anterior no mesmo esquema ou, quando a regra oficial manda, uma dose de outra
-         *     vacina (tabela `dose_anterior_oficial`: Meningo C D2 antes do reforço da MenACWY, Penta
-         *     D3 antes da DTP R1, última dose com componente tetânico antes da dT).
+         *     vacina (tabela `dose_anterior_oficial`: Penta D3 antes da DTP R1, última dose com
+         *     componente tetânico antes da dT; a MenACWY aos 12 meses independe da Meningo C pela IN-2026).
          *     - `EM_DIA`: há registro que cumpre esta dose.
          *     - `AINDA_NAO_DISPONIVEL`: sem registro e (a) a dose anterior oficial não tem registro
          *       (a regra oficial exige a dose anterior; `dataDisponivel` fica `null`), ou (b) hoje é antes
@@ -343,10 +511,14 @@ export interface components {
             dataAplicacao: string;
             /** @description Verdadeiro quando o registro veio da transcrição do cartão físico (`fonte_primaria = false`) */
             transcricao: boolean;
+            /** @description Unidade onde a dose foi aplicada, se for uma unidade conhecida */
+            unidade: components["schemas"]["UnidadeResumo"] | null;
         };
         DosePrevista: {
             /** @description Id da dose no calendário (`dose_esquema`) */
             idDose: number;
+            /** @description Id do esquema vacinal (`esquema_vacinal`) */
+            idEsquema: number;
             vacina: components["schemas"]["VacinaResumo"];
             /**
              * @description Ordem da dose no esquema (1 = primeira). Serve para ordenar; para mostrar a dose, use
@@ -359,9 +531,9 @@ export interface components {
             situacao: components["schemas"]["SituacaoDose"];
             /**
              * Format: date
-             * @description Data de nascimento + idade recomendada no calendário (`idade_recomendada_dias`).
+             * @description Data de nascimento + idade recomendada no calendário (`idade_recomendada_periodo`).
              *     Depois dela, a dose sem registro fica `ATRASADA`. `null` quando o calendário não
-             *     tem idade recomendada (ex. influenza anual).
+             *     tem idade recomendada (ex. Hepatite B ≥ 7 anos, que nunca fica atrasada).
              */
             dataRecomendada: string | null;
             /**
@@ -381,10 +553,12 @@ export interface components {
          * @description Dose sem registro cuja idade máxima oficial a pessoa já passou (D17, D19). Não é
          *     mostrada como atrasada: o front só orienta a conversar na unidade (aviso
          *     `DOSE_FORA_DA_IDADE`). Não tem detalhe em `/v1/pessoas/{idPessoa}/doses/{idDose}`
-         *     (devolve 404).
+         *     (devolve 404), mas aparece no acompanhamento consolidado da vacina em
+         *     `/v1/pessoas/{idPessoa}/vacinas/{idVacina}`.
          */
         DoseForaDaIdade: {
             idDose: number;
+            idEsquema: number;
             vacina: components["schemas"]["VacinaResumo"];
             numeroDose: number;
             nomeDose: components["schemas"]["NomeDose"];
@@ -428,7 +602,7 @@ export interface components {
          *       (D17). Sempre presente enquanto as regras forem provisórias.
          *     - `PREVISAO_DE_ROTINA`: o aprazamento oficial é do profissional; confirme na unidade (RN02).
          *     - `CARTAO_DESATUALIZADO`: dose no cartão físico que não aparece aqui (RF08).
-         *     - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 14 dias para aparecer (RNF09, D17).
+         *     - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 15 dias para aparecer (RNF09, D17). Prazo da Portaria GM/MS nº 5.663/2024: até 24 horas nas salas com internet e até 15 dias nas salas sem internet.
          *     - `DOSE_FORA_DA_IDADE`: há doses em `dosesForaDaIdade`; converse na unidade (D17).
          *
          *     Só em `orientacoes` de uma dose (docs/16):
@@ -448,6 +622,80 @@ export interface components {
             mensagem: string;
         };
         Avisos: components["schemas"]["Aviso"][];
+        /**
+         * @description `DOSES`: vacina com trilha fixa de doses (`CMP-02`, "Etapa X de Y").
+         *     `PERIODICA`: vacina repetida em intervalo regular (ex.: dT a cada 10 anos); sem trilha no card.
+         * @enum {string}
+         */
+        TipoEsquemaVacina: "DOSES" | "PERIODICA";
+        /**
+         * @description Aba em que a vacina aparece (RULE-01, nunca "não posso tomar"):
+         *     `ATRASADA` → `PODE_TOMAR` → `EM_DIA` → `PROXIMAS`.
+         * @enum {string}
+         */
+        StatusAbaVacina: "ATRASADA" | "PODE_TOMAR" | "EM_DIA" | "PROXIMAS";
+        /**
+         * @description Subseção dentro da aba Atrasada (RULE-02):
+         *     - `AINDA_POSSO_TOMAR`: há dose atrasada dentro da faixa etária oficial.
+         *     - `PRAZO_ENCERRADO`: doses passaram da idade máxima oficial (orientar avaliação na UBS; não entra em `resumoVacinas.atrasadas` nem em `vacinaDestaqueHome`).
+         * @enum {string}
+         */
+        SubsecaoAtrasada: "AINDA_POSSO_TOMAR" | "PRAZO_ENCERRADO";
+        /**
+         * @description Estado de cada segmento na trilha (`CMP-02`) e na linha do tempo (`SCR-06`).
+         * @enum {string}
+         */
+        EstadoDoseTrilha: "TOMADA" | "ATRASADA" | "DISPONIVEL" | "AGUARDANDO" | "PRAZO_ENCERRADO";
+        DoseNaTrilha: {
+            idDose: number;
+            idEsquema: number;
+            numeroDose: number;
+            nomeDose: components["schemas"]["NomeDose"];
+            descricao: string;
+            estado: components["schemas"]["EstadoDoseTrilha"];
+            /** Format: date */
+            dataRecomendada: string | null;
+            /** Format: date */
+            dataDisponivel: string | null;
+            registro: components["schemas"]["RegistroResumo"] | null;
+            orientacoes: components["schemas"]["Avisos"];
+        };
+        /** @description Card consolidado por vacina (`CMP-01`, `RULE-01`–`RULE-04`). */
+        VacinaSituacao: {
+            vacina: components["schemas"]["VacinaResumo"];
+            idEsquema: number;
+            nomeEsquema: string;
+            tipoEsquema: components["schemas"]["TipoEsquemaVacina"];
+            statusAba: components["schemas"]["StatusAbaVacina"];
+            subsecaoAtrasada: components["schemas"]["SubsecaoAtrasada"] | null;
+            /** @description Doses tomadas no esquema (`X` em "Etapa X de Y"). `null` em `PERIODICA`. */
+            etapaAtual: number | null;
+            /** @description Total de doses do esquema (`Y` em "Etapa X de Y"). `null` em `PERIODICA`. */
+            totalEtapas: number | null;
+            /** @description Segmentos da trilha (`CMP-02`) na ordem do esquema. Vazia em `PERIODICA`. */
+            trilhaDoses: components["schemas"]["DoseNaTrilha"][];
+            /**
+             * Format: date
+             * @description Data de aplicação da última dose registrada desta vacina (útil em `PERIODICA`).
+             */
+            dataUltimaDose: string | null;
+            /** @description Texto de periodicidade (ex. "Reforço a cada 10 anos"). `null` em `DOSES`. */
+            periodicidadeTexto: string | null;
+            /**
+             * Format: date
+             * @description Menor `dataDisponivel` dentre as doses ainda não tomadas da vacina.
+             */
+            proximaDataDisponivel: string | null;
+            /** @description `true` em `ATRASADA` (`AINDA_POSSO_TOMAR`) e `PODE_TOMAR`; `false` em `EM_DIA`, `PROXIMAS` e `PRAZO_ENCERRADO`. */
+            podeVerOndeTomar: boolean;
+        };
+        /** @description Contadores por vacina para o painel-resumo (`RULE-03`). Não conta vacinas em `PRAZO_ENCERRADO` (D19/IN-2026). */
+        ResumoVacinas: {
+            atrasadas: number;
+            podeTomar: number;
+            emDia: number;
+            proximas: number;
+        };
         SituacaoVacinal: {
             pessoa: components["schemas"]["PessoaResumo"];
             /**
@@ -457,18 +705,32 @@ export interface components {
             dataReferencia: string;
             /**
              * Format: date-time
-             * @description **[provisório]** Quando os dados desta pessoa foram atualizados pela última vez na
-             *     fonte (hoje: o registro mais recente que chegou à RNDS simulada). `null` se a pessoa
+             * @description Quando o registro mais recente desta pessoa chegou à fonte (RNDS). `null` se a pessoa
              *     não tem registros.
              */
             dataUltimaAtualizacao: string | null;
-            resumo: components["schemas"]["ResumoSituacao"];
             /**
-             * @description **[provisório]** Próxima dose que vai ficar disponível (RF07): a dose
-             *     `AINDA_NAO_DISPONIVEL` com a menor `dataDisponivel`. Dose sem `dataDisponivel` (falta a
-             *     dose anterior) não entra. `null` se não houver.
+             * Format: date-time
+             * @description Data da última importação concluída da fonte (`importacao_dados`). Alimenta
+             *     "Histórico atualizado em [data]" na tela SCR-04.
+             */
+            dataUltimaSincronizacao: string | null;
+            resumo: components["schemas"]["ResumoSituacao"];
+            resumoVacinas: components["schemas"]["ResumoVacinas"];
+            /**
+             * @description Próxima dose prevista de rotina que vai ficar disponível (RF07; aprazamento oficial é do
+             *     profissional na unidade, MNP-2024 p. 140–141): a dose `AINDA_NAO_DISPONIVEL` com a menor
+             *     `dataDisponivel`. Dose sem `dataDisponivel` (falta a anterior) não entra. `null` se não houver.
              */
             proximaDose: components["schemas"]["DosePrevista"] | null;
+            /**
+             * @description Vacina em destaque no card "Acompanhe suas vacinações" na Home do Conecta (`SCR-02`, `RULE-04`):
+             *     a vacina em `ATRASADA` (`AINDA_POSSO_TOMAR`) com a dose atrasada há mais tempo. `null` se não
+             *     houver vacina atrasada dentro da faixa etária (o card não aparece).
+             */
+            vacinaDestaqueHome: components["schemas"]["VacinaSituacao"] | null;
+            /** @description Projeção consolidada por vacina para os cards `CMP-01` e as 4 abas de `SCR-04`/`SCR-05`. */
+            vacinas: components["schemas"]["VacinaSituacao"][];
             /** @description Doses previstas no calendário para a pessoa, ordenadas por `dataRecomendada` */
             doses: components["schemas"]["DosePrevista"][];
             /** @description Doses sem registro cuja idade máxima oficial já passou (D17, D19). Lista vazia se não houver */
@@ -540,6 +802,34 @@ export interface components {
             dataUltimaAtualizacao: string | null;
             avisos: components["schemas"]["Avisos"];
         };
+        /** @description Acompanhamento consolidado de uma vacina (`SCR-06`). */
+        DetalheVacina: {
+            idPessoa: number;
+            vacina: components["schemas"]["VacinaResumo"];
+            idEsquema: number;
+            nomeEsquema: string;
+            tipoEsquema: components["schemas"]["TipoEsquemaVacina"];
+            statusAba: components["schemas"]["StatusAbaVacina"];
+            subsecaoAtrasada: components["schemas"]["SubsecaoAtrasada"] | null;
+            etapaAtual: number | null;
+            totalEtapas: number | null;
+            /** Format: date */
+            dataUltimaDose: string | null;
+            periodicidadeTexto: string | null;
+            /** Format: date */
+            proximaDataDisponivel: string | null;
+            podeVerOndeTomar: boolean;
+            doencas: components["schemas"]["DoencaResumo"][];
+            /** @description Linha do tempo de doses da vacina, na ordem do esquema (preenchida mesmo em `PERIODICA`). */
+            protocolo: components["schemas"]["DoseNaTrilha"][];
+            /** @description Registros RNDS desta vacina (incluindo equivalentes, ex. SCRV). */
+            registros: components["schemas"]["RegistroVacinacao"][];
+            /** Format: date-time */
+            dataUltimaAtualizacao: string | null;
+            /** Format: date-time */
+            dataUltimaSincronizacao: string | null;
+            avisos: components["schemas"]["Avisos"];
+        };
         /**
          * @description Disponibilidade da vacina na unidade, informada pela Prefeitura. `SEM_INFORMACAO` quando não há dado
          * @enum {string}
@@ -555,12 +845,19 @@ export interface components {
             latitude: number | null;
             longitude: number | null;
             possuiSalaVacina: boolean;
+            telefone: string | null;
+            /**
+             * @description Horário da sala de vacina, em texto, como vem da fonte (ex.: "Segunda à sexta das 08:00 às 17:00",
+             *     "24 horas"). Fonte: base aberta "Rede de atenção à saúde no Recife" (dados.recife.pe.gov.br, campo
+             *     `horario`), ligada pelo CNES. Na base sintética, horário fixo por tipo de unidade. `null` = sem informação.
+             */
+            horarioFuncionamento: string | null;
         };
         UnidadeNoMapa: components["schemas"]["Unidade"] & {
             /** @description Distância em linha reta até o ponto informado. `null` sem `lat`/`lng` */
-            distanciaMetros?: number | null;
+            distanciaMetros: number | null;
             /** @description Disponibilidade da vacina filtrada. `null` sem o filtro `vacina` */
-            disponibilidadeVacina?: components["schemas"]["Disponibilidade"] | null;
+            disponibilidadeVacina: components["schemas"]["Disponibilidade"] | null;
         };
         ListaUnidades: {
             unidades: components["schemas"]["UnidadeNoMapa"][];
@@ -574,9 +871,6 @@ export interface components {
         };
         DetalheUnidade: components["schemas"]["Unidade"] & {
             cnes: string | null;
-            telefone: string | null;
-            /** @description **[provisório]** Ainda não existe no banco; vem `null` até a fonte ser definida */
-            horarioFuncionamento: string | null;
             vacinas: components["schemas"]["VacinaNaUnidade"][];
             avisoPortaAberta: string;
         };
@@ -878,6 +1172,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NaoAutenticado"];
+            404: components["responses"]["NaoEncontrado"];
         };
     };
     listarMeusLembretes: {
@@ -932,7 +1227,13 @@ export interface operations {
     };
     listarRegistros: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Filtra registros pela vacina do catálogo (inclui equivalentes, ex. SCRV em Tríplice viral ou Varicela)
+                 * @example 4
+                 */
+                vacina?: number;
+            };
             header?: never;
             path: {
                 /**
@@ -997,6 +1298,40 @@ export interface operations {
             404: components["responses"]["NaoEncontrado"];
         };
     };
+    obterAcompanhamentoVacina: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Id da pessoa (a logada ou um dependente vinculado a ela)
+                 * @example 5
+                 */
+                idPessoa: components["parameters"]["IdPessoa"];
+                /**
+                 * @description Id da vacina do catálogo (`GET /v1/vacinas`)
+                 * @example 6
+                 */
+                idVacina: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Acompanhamento da vacina */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalheVacina"];
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+            403: components["responses"]["SemAcesso"];
+            404: components["responses"]["NaoEncontrado"];
+        };
+    };
     listarLembretesDaPessoa: {
         parameters: {
             query?: never;
@@ -1044,6 +1379,12 @@ export interface operations {
                  * @example -34.93
                  */
                 lng?: number;
+                /**
+                 * @description Quando `true` junto com `vacina`, retorna apenas unidades onde a vacina filtrada está
+                 *     `DISPONIVEL` (oferta mensal informada pela Prefeitura, sem estoque em tempo real;
+                 *     `avisoPortaAberta` continua obrigatório). Sem `vacina`, ignorado. Padrão `false`.
+                 */
+                somenteDisponiveis?: boolean;
             };
             header?: never;
             path?: never;
@@ -1118,6 +1459,7 @@ export interface operations {
             400: components["responses"]["RequisicaoInvalida"];
             401: components["responses"]["NaoAutenticado"];
             403: components["responses"]["SemAcesso"];
+            404: components["responses"]["NaoEncontrado"];
         };
     };
     listarVacinas: {
@@ -1139,6 +1481,101 @@ export interface operations {
                 };
             };
             401: components["responses"]["NaoAutenticado"];
+        };
+    };
+    baixarCarteiraPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Id da pessoa (a logada ou um dependente vinculado a ela)
+                 * @example 5
+                 */
+                idPessoa: components["parameters"]["IdPessoa"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Carteira em PDF */
+            200: {
+                headers: {
+                    /** @description `attachment; filename="carteira-vacinacao-{idPessoa}.pdf"` */
+                    "Content-Disposition"?: string;
+                    /** @description `no-store` (documento com dado de saúde) */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+            /**
+             * @description Sem login gov.br (`/problemas/login-gov-br-necessario`) ou sem acesso à pessoa pedida
+             *     (`about:blank`, como nos outros endpoints). O teste de login vem primeiro.
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            404: components["responses"]["NaoEncontrado"];
+        };
+    };
+    listarPessoasDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pessoas da demonstração */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaPessoasDemo"];
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+        };
+    };
+    obterOuvidoria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canais de ouvidoria */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ouvidoria"];
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+            /** @description Sem login gov.br */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
 }
