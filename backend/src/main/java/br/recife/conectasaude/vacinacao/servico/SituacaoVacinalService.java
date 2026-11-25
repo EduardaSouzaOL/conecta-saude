@@ -155,7 +155,8 @@ public class SituacaoVacinalService {
                 d.getId(), d.getEsquema().getId(), d.getEsquema().getNome(),
                 d.getEsquema().getVacina().getId(), d.getEsquema().getVacina().getNome(),
                 d.getNumeroDose(), d.getDescricao(), d.getIdadeRecomendadaDias(), d.getIntervaloAposAnteriorDias(),
-                d.getCodigoDoseRnds(), d.getEsquema().getIdadeMinimaDias(), d.getEsquema().getIdadeMaximaDias());
+                d.getCodigoDoseRnds(), d.getIdadeMinimaDias(), d.getIdadeMaximaDias(),
+                d.getEsquema().getIdadeMinimaDias(), d.getEsquema().getIdadeMaximaDias());
     }
 
     private Respostas.RegistroVacinacao registro(RegistroVacinacao r) {

@@ -13,24 +13,29 @@ import java.util.Optional;
 
 /**
  * Regra de situação vacinal (RN01), em Java puro, sem Spring e sem banco. Recebe o calendário e as
- * equivalências como DADOS (RNF07) e os registros da pessoa.
+ * equivalências como DADOS (RNF07) e os registros da pessoa. Segue as fontes oficiais (D19); a regra
+ * completa, com as fontes, está em docs/16-regra-situacao-vacinal.md.
  *
- * <p><b>Regras provisórias, em alinhamento com a SESAU (D17 e D18):</b>
- * <ul>
- *   <li>{@code EM_DIA}: há registro que cumpre a dose.
- *   <li>Sem registro e a pessoa já passou da idade máxima do esquema: a dose sai da lista e vai para
- *       "fora da idade" (o front orienta "converse na unidade").
- *   <li>{@code AINDA_NAO_DISPONIVEL}: hoje é antes da data em que a dose fica disponível.
- *   <li>{@code ATRASADA}: já disponível e hoje é depois da data recomendada.
- *   <li>{@code PODE_TOMAR}: já disponível e hoje ainda não passou da data recomendada.
- *   <li>Disponível a partir de: 1ª dose = nascimento + idade mínima do esquema; seguintes = dose
- *       anterior + intervalo mínimo; reforço nunca antes da data recomendada (D18). Se a dose
- *       anterior não tem registro, a data fica desconhecida e vale só a data recomendada.
- *   <li>Orientação {@code DOSE_ANTERIOR_SEM_REGISTRO}: a dose anterior não tem registro e já passou
- *       da data recomendada dela (D18).
- *   <li>Orientação {@code ATUALIZAR_CADERNETA}: passou da data recomendada, mas o intervalo mínimo
- *       depois da dose anterior ainda não foi cumprido (D18).
- * </ul>
+ * <p>Fontes: <b>[PNI-REG]</b> "Regras de entrada de dados 4" (PNI, 04/09/2026): faixa etária,
+ * intervalo mínimo e sequência das doses. <b>[CNV-2026]</b> Calendário Nacional 2026: idade
+ * recomendada. <b>[MNP]</b> Manual de Normas e Procedimentos para Vacinação (MS, 2014): esquema
+ * interrompido não é reiniciado. Nenhuma idade ou intervalo fica no código: tudo vem de
+ * {@link DoseCalendario} (tabela {@code dose_esquema}).
+ *
+ * <p>Para cada dose, vale o primeiro passo que se encaixa:
+ * <ol>
+ *   <li>há registro que cumpre a dose: {@code EM_DIA};
+ *   <li>a pessoa passou da idade máxima da dose: sai da lista, vai para "fora da idade" [PNI-REG];
+ *   <li>a dose anterior do esquema não tem registro: {@code AINDA_NAO_DISPONIVEL} com a orientação
+ *       {@code DOSE_ANTERIOR_SEM_REGISTRO} [PNI-REG: sequência, "sem D1 não há D2"];
+ *   <li>a pessoa ainda não tem a idade mínima: {@code AINDA_NAO_DISPONIVEL} com a data [PNI-REG];
+ *   <li>não passou o intervalo mínimo desde a dose anterior: {@code AINDA_NAO_DISPONIVEL} com a data;
+ *       se já passou da idade recomendada, também {@code ATUALIZAR_CADERNETA} [PNI-REG];
+ *   <li>passou da idade recomendada: {@code ATRASADA} [CNV-2026] (no dia seguinte à data recomendada, D17);
+ *   <li>senão: {@code PODE_TOMAR}.
+ * </ol>
+ * Data disponível = a mais tarde entre nascimento + idade mínima e dose anterior + intervalo mínimo.
+ * Esquema interrompido continua de onde parou [MNP]: o intervalo conta da dose anterior registrada.
  *
  * <p>Doses sem idade recomendada no calendário (influenza anual, hepatite B a partir dos 7 anos)
  * ficam fora do cálculo até a regra ser definida (pergunta 10 do changelog do contrato).
@@ -58,7 +63,9 @@ public final class CalculadoraSituacaoVacinal {
                 continue;
             }
             RegistroParaRegra registro = cumpridas.get(dose.idDose());
-            if (registro == null && dose.idadeMaximaEsquemaDias() != null && idadeDias > dose.idadeMaximaEsquemaDias()) {
+            // Passo 2 [PNI-REG]: sem registro e depois da idade máxima oficial da dose.
+            Integer idadeMaxima = dose.idadeMaximaEfetivaDias();
+            if (registro == null && idadeMaxima != null && idadeDias > idadeMaxima) {
                 foraDaIdade.add(dose);
                 continue;
             }
@@ -70,10 +77,10 @@ public final class CalculadoraSituacaoVacinal {
         doses.sort(porDataEId);
         foraDaIdade.sort(Comparator.comparingInt(DoseCalendario::idDose));
 
+        // Próxima dose: a que fica disponível primeiro. Dose sem data (falta a anterior) não entra.
         DoseCalculada proxima = doses.stream()
-                .filter(d -> d.situacao() == Situacao.AINDA_NAO_DISPONIVEL)
-                .min(Comparator.comparing((DoseCalculada d) -> Optional.ofNullable(d.dataDisponivel()).orElse(d.dataRecomendada()))
-                        .thenComparing(porDataEId))
+                .filter(d -> d.situacao() == Situacao.AINDA_NAO_DISPONIVEL && d.dataDisponivel() != null)
+                .min(Comparator.comparing(DoseCalculada::dataDisponivel).thenComparing(porDataEId))
                 .orElse(null);
 
         LocalDateTime ultimaAtualizacao = registros.stream()
@@ -97,45 +104,43 @@ public final class CalculadoraSituacaoVacinal {
         LocalDate recomendada = nascimento.plusDays(dose.idadeRecomendadaDias());
         Optional<DoseCalendario> anterior = anterior(dose);
         RegistroParaRegra registroAnterior = anterior.map(a -> cumpridas.get(a.idDose())).orElse(null);
+        boolean faltaAnterior = anterior.isPresent() && registroAnterior == null;
 
-        LocalDate disponivel;
-        if (anterior.isEmpty()) {
-            disponivel = nascimento.plusDays(Optional.ofNullable(dose.idadeMinimaEsquemaDias()).orElse(0));
-        } else if (registroAnterior != null) {
-            disponivel = registroAnterior.dataAplicacao()
-                    .plusDays(Optional.ofNullable(dose.intervaloMinimoDias()).orElse(0));
-        } else {
-            disponivel = null;
-        }
-        if (disponivel != null && dose.isReforco() && disponivel.isBefore(recomendada)) {
-            disponivel = recomendada;
+        // [PNI-REG] disponível = a mais tarde entre a idade mínima e o intervalo mínimo após a anterior.
+        LocalDate pelaIdade = nascimento.plusDays(dose.idadeMinimaEfetivaDias());
+        LocalDate disponivel = null;
+        if (!faltaAnterior) {
+            disponivel = pelaIdade;
+            if (registroAnterior != null) {
+                LocalDate peloIntervalo = registroAnterior.dataAplicacao()
+                        .plusDays(Optional.ofNullable(dose.intervaloMinimoDias()).orElse(0));
+                if (peloIntervalo.isAfter(disponivel)) {
+                    disponivel = peloIntervalo;
+                }
+            }
         }
 
+        // Passo 1: há registro que cumpre a dose.
         if (registro != null) {
             return new DoseCalculada(dose, Situacao.EM_DIA, recomendada, disponivel, registro, List.of());
         }
-
-        LocalDate liberaEm = disponivel != null ? disponivel : recomendada;
-        Situacao situacao;
-        if (hoje.isBefore(liberaEm)) {
-            situacao = Situacao.AINDA_NAO_DISPONIVEL;
-        } else if (hoje.isAfter(recomendada)) {
-            situacao = Situacao.ATRASADA;
-        } else {
-            situacao = Situacao.PODE_TOMAR;
+        // Passo 3 [PNI-REG]: a dose seguinte só existe depois da anterior ("sem D1 não há D2").
+        if (faltaAnterior) {
+            return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, null, null,
+                    List.of(Aviso.DOSE_ANTERIOR_SEM_REGISTRO));
         }
-
-        List<Aviso> orientacoes = new ArrayList<>();
-        boolean anteriorPendente = anterior.isPresent() && registroAnterior == null
-                && anterior.get().idadeRecomendadaDias() != null
-                && hoje.isAfter(nascimento.plusDays(anterior.get().idadeRecomendadaDias()));
-        if (anteriorPendente) {
-            orientacoes.add(Aviso.DOSE_ANTERIOR_SEM_REGISTRO);
+        // Passo 4 [PNI-REG]: antes da idade mínima.
+        if (hoje.isBefore(pelaIdade)) {
+            return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, disponivel, null, List.of());
         }
-        if (situacao == Situacao.AINDA_NAO_DISPONIVEL && hoje.isAfter(recomendada) && disponivel != null) {
-            orientacoes.add(Aviso.ATUALIZAR_CADERNETA);
+        // Passo 5 [PNI-REG]: intervalo mínimo depois da dose anterior ainda não cumprido.
+        if (hoje.isBefore(disponivel)) {
+            List<Aviso> orientacoes = hoje.isAfter(recomendada) ? List.of(Aviso.ATUALIZAR_CADERNETA) : List.of();
+            return new DoseCalculada(dose, Situacao.AINDA_NAO_DISPONIVEL, recomendada, disponivel, null, orientacoes);
         }
-        return new DoseCalculada(dose, situacao, recomendada, disponivel, null, List.copyOf(orientacoes));
+        // Passos 6 e 7 [CNV-2026]: dose liberada; atrasada depois da idade recomendada.
+        Situacao situacao = hoje.isAfter(recomendada) ? Situacao.ATRASADA : Situacao.PODE_TOMAR;
+        return new DoseCalculada(dose, situacao, recomendada, disponivel, null, List.of());
     }
 
     private Optional<DoseCalendario> anterior(DoseCalendario dose) {

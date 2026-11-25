@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @param dataReferencia o "hoje" usado no cálculo
  * @param doses doses previstas, ordenadas por data recomendada e id da dose
- * @param dosesForaDaIdade doses sem registro de esquemas cuja idade máxima já passou (D17)
+ * @param dosesForaDaIdade doses sem registro cuja idade máxima oficial já passou (D17, docs/16)
  * @param resumo contagem por situação (não conta as fora da idade)
  * @param proximaDose próxima dose que vai ficar disponível; {@code null} se não houver
  * @param dataUltimaAtualizacao registro mais recente que chegou à fonte; {@code null} sem registros
