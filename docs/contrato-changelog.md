@@ -2,6 +2,15 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.4.1 · 25/11/2026 · dose anterior entre vacinas e idades em calendário (D19)
+
+O formato das respostas **não mudou**; mudou o cálculo, para seguir a regra oficial também nestes pontos ([16](16-regra-situacao-vacinal.md)):
+
+- **Dose anterior de outra vacina** (coluna "próxima dose" das Regras de entrada de dados do PNI): o reforço da MenACWY só libera 60 dias depois da Meningo C D2; a DTP R1, 6 meses depois da Penta D3; a dT, 5 anos depois da última dose com componente tetânico (DTP R2, senão DTP R1, senão Penta D3). Sem essa dose, a seguinte fica `AINDA_NAO_DISPONIVEL` com `dataDisponivel: null`.
+- **Idades e intervalos em meses e anos de calendário**, como escritos nas fontes: `dataRecomendada` e `dataDisponivel` são nascimento (ou data da dose anterior) + o período ("4 meses" de 07/05 é 07/09, não 06/09; "1M15D" de 07/05 é 22/06).
+- **Idade máxima**: a dose sai para `dosesForaDaIdade` no dia em que a pessoa chega ao limite ("< 1A" = no 1º aniversário).
+- Exemplos atualizados com a base sintética: datas recomendadas pelo calendário; MenACWY do Heitor (pessoa 95) passou de atrasada para "ainda não disponível" (falta a Meningo C D2); DTP R1 dele liberada em 30/06/2026 (6 meses depois da Penta D3).
+
 ## 0.4.0 · 25/11/2026 · regra oficial do PNI (D19)
 
 > Decisão D19 (Duda, 25/11/2026): a situação vacinal segue **fielmente** as fontes oficiais. Regra completa e fontes em [16 · Regra de situação vacinal](16-regra-situacao-vacinal.md). A regra ainda está em alinhamento com a SESAU, por isso o aviso `REGRA_EM_ALINHAMENTO` continua.
