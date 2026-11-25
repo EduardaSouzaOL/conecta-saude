@@ -232,6 +232,7 @@ public class SituacaoVacinalService {
                     c.idDose(),
                     new Respostas.VacinaResumo(c.idVacina(), c.nomeVacina()),
                     c.numeroDose(),
+                    c.nomeDose(),
                     c.descricao(),
                     d.situacao().name(),
                     d.dataRecomendada(),
@@ -244,7 +245,7 @@ public class SituacaoVacinalService {
 
         static Respostas.DoseForaDaIdade foraDaIdade(DoseCalendario c) {
             return new Respostas.DoseForaDaIdade(c.idDose(), new Respostas.VacinaResumo(c.idVacina(), c.nomeVacina()),
-                    c.numeroDose(), c.descricao());
+                    c.numeroDose(), c.nomeDose(), c.descricao());
         }
     }
 }

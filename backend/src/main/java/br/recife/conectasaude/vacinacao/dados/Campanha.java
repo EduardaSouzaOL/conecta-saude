@@ -15,7 +15,10 @@ import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/** Campanha de vacinação (RF17, RF18). O público-alvo é texto livre. */
+/**
+ * Campanha de vacinação (RF17, RF18). {@code publicoAlvo} é texto para mostrar; quem é elegível
+ * por idade vem de {@link CampanhaFaixaEtaria} ({@link CampanhaFaixaEtariaRepository}, RNF07).
+ */
 @Entity
 @Immutable
 @Table(name = "campanha")
@@ -45,6 +48,14 @@ public class Campanha {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    /**
+     * TRUE = vacinação seletiva: só é público quem tem dose a fazer das vacinas da campanha
+     * (Multivacinação 2026, [MS-MULTI-2026]). FALSE = todos na faixa etária são público
+     * (campanha anual de influenza).
+     */
+    @Column(name = "seletiva", nullable = false)
+    private Boolean seletiva;
+
     @ManyToMany
     @JoinTable(name = "campanha_vacina",
             joinColumns = @JoinColumn(name = "id_campanha"),
@@ -68,6 +79,7 @@ public class Campanha {
     public LocalDate getDataFim() { return dataFim; }
     public String getPublicoAlvo() { return publicoAlvo; }
     public String getStatus() { return status; }
+    public boolean isSeletiva() { return Boolean.TRUE.equals(seletiva); }
     public List<Vacina> getVacinas() { return vacinas; }
     public List<UnidadeSaude> getUnidades() { return unidades; }
 }

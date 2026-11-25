@@ -44,4 +44,9 @@ public record DoseCalendario(
     public DoseCalendario {
         idsDoseAnteriorOficial = idsDoseAnteriorOficial == null ? List.of() : List.copyOf(idsDoseAnteriorOficial);
     }
+
+    /** Nome da dose para mostrar ("2ª dose", "1º reforço"), por {@link NomeDose} (D21). */
+    public String nomeDose() {
+        return NomeDose.de(codigoDoseRnds, numeroDose);
+    }
 }

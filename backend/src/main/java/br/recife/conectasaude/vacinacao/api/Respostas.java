@@ -31,6 +31,7 @@ public final class Respostas {
             int idDose,
             VacinaResumo vacina,
             int numeroDose,
+            String nomeDose,
             String descricao,
             String situacao,
             LocalDate dataRecomendada,
@@ -38,7 +39,7 @@ public final class Respostas {
             RegistroResumo registro,
             List<Aviso> orientacoes) {}
 
-    public record DoseForaDaIdade(int idDose, VacinaResumo vacina, int numeroDose, String descricao) {}
+    public record DoseForaDaIdade(int idDose, VacinaResumo vacina, int numeroDose, String nomeDose, String descricao) {}
 
     public record ResumoSituacao(int atrasadas, int podeTomar, int emDia, int aindaNaoDisponiveis) {}
 
@@ -126,6 +127,7 @@ public final class Respostas {
             LocalDate dataFim,
             String publicoAlvo,
             String status,
+            boolean seletiva,
             List<VacinaResumo> vacinas,
             Boolean elegivel) {}
 

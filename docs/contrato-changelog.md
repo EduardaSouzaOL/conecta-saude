@@ -2,6 +2,44 @@
 
 Histórico de versões de [`contrato/openapi.yaml`](../contrato/openapi.yaml). Mudança que quebra compatibilidade sobe a versão em `info.version` e é descrita aqui. Quem mantém: agente `contrato-api` ([15](15-proposta-agentes-implementacao.md), seção 2).
 
+## 0.6.0 · 25/11/2026 · lembretes e elegibilidade pelo PNI/MS (D21)
+
+> Decisão D21 (Adan, 25/11/2026): as regras dos lembretes e da elegibilidade em campanha seguem o PNI e as fontes do Ministério da Saúde, não escolhas nossas. Responde as perguntas 16, 17, 19, 20 e 21. Só a 18 (janela de 30 dias de "em breve") continua aberta.
+
+**Mudança compatível** (só acrescenta campos obrigatórios na resposta, `nomeDose` e `Campanha.seletiva`, e muda o cálculo de valores que já existiam). Quem lê a resposta e ignora campos novos não quebra.
+
+### Fontes
+
+| Sigla | Fonte | O que usamos dela |
+|---|---|---|
+| **[MS-MULTI-2026]** | Ministério da Saúde, [Estratégia para a atualização das cadernetas de vacinação das crianças e dos adolescentes menores de 15 anos · Multivacinação 2026](https://www.gov.br/saude/pt-br/vacinacao/publicacoes/estrategia-para-a-atualizacao-da-cadernetas-de-vacinacao-das-criancas-e-dos-adolescentes-menores-de-15-anos-2013-multivacinacao-2026.pdf); e Agência Gov, [Campanha de Multivacinação 2026 já começou](https://agenciagov.ebc.com.br/noticias/202608/campanha-de-multivacinacao-2026-ja-comecou-e-segue-ate-1o-de-setembro-dia-d-sera-em-22-de-agosto) | Público "menores de 15 anos (14 anos, 11 meses e 29 dias)"; objetivo "resgatar não vacinados ou completar esquemas"; vacinação **seletiva**: "aplicar somente as doses necessárias para iniciar ou completar o esquema" **[dado]** |
+| **[IN-CNV-2026]** | [Instrução Normativa do Calendário Nacional de Vacinação 2026](https://www.gov.br/saude/pt-br/composicao/svsa/pni/calendario-tecnico/instrucao-normativa-que-instrui-o-calendario-nacional-de-vacinacao-2026) | Nomes das doses ("1ª dose", "2ª dose", "1º reforço", "2º reforço", "dose única", "reforço"); esquema em atraso: atualizar "o mais breve possível" e "não reiniciar o esquema"; limites de idade por vacina **[dado]** |
+| **[PNI-REG]** | Regras de entrada de dados 4, PNI (ver [16](16-regra-situacao-vacinal.md)) | Faixa etária de cada dose e sequência ("sem D1 não há D2") |
+| **[RNDS]** | CodeSystem BRDose (tabela `rnds_dose`), ligado a cada dose por `dose_esquema.codigo_dose_rnds` | Descrição oficial de cada dose: 1 "1ª Dose", 2 "2ª Dose", 3 "3ª Dose", 6 "1º Reforço", 7 "2º Reforço", 8 "Dose", 9 "Única", 10 "Revacinação", 38 "Reforço", 39 "3º Reforço" |
+| Alerta | O POVO, [Mensagem do governo federal sobre vacina Pneumo 20 gera dúvidas entre pais](https://mais.opovo.com.br/jornal/ciencia-e-saude/2026/10/25/mensagem-do-governo-federal-sobre-vacina-pneumo-20-gera-duvidas-entre-pais.html) (25/10/2026) | A mensagem de campanha enviada a todos (gov.br e WhatsApp) chegou a pais com a caderneta em dia e causou confusão **[indício]**. Por isso o lembrete de campanha só vai para quem tem dose a fazer |
+
+### O que mudou
+
+- **Novo campo obrigatório `nomeDose`** em `DosePrevista` (situação vacinal, próxima dose, detalhe da dose) e em `DoseForaDaIdade`, com o novo schema `NomeDose`. É a descrição oficial da dose na RNDS em linguagem simples: "1ª dose", "2ª dose", "3ª dose", "1º reforço", "2º reforço", "3º reforço", "reforço", "dose única", "dose" (código 8), "revacinação". Dose sem `codigo_dose_rnds`: "{numeroDose}ª dose". `numeroDose` continua, só para ordenar. Resolve a lacuna do front sobre o texto do reforço.
+- **Títulos dos lembretes de dose usam `nomeDose`**, com artigo e concordância pelo gênero ("Hora da 2ª dose…", "Hora do 1º reforço…", "Hora da dose única…", "O seu reforço … está atrasado"). Tabela de modelos atualizada em `Lembrete`.
+- **`CAMPANHA_VIGENTE` só para quem é elegível:** a pessoa está numa faixa etária da campanha (nova tabela `campanha_faixa_etaria`, criada pelo `dados-fhir`; mesma convenção de limite de [16](16-regra-situacao-vacinal.md): fora a partir de nascimento + `idade_limite_periodo`; limite nulo = sem limite de cima; com várias faixas, basta uma). Se a campanha é **seletiva** (nova coluna `campanha.seletiva`), a pessoa também precisa ter pelo menos uma dose `ATRASADA` ou `PODE_TOMAR` de uma vacina da campanha (`campanha_vacina`) [MS-MULTI-2026]. Se não é seletiva (ex.: influenza anual), basta a faixa. Um lembrete por pessoa e campanha. Campanha sem faixa etária cadastrada (gestantes, grupos) não gera lembrete.
+- **Nova mensagem do lembrete de campanha seletiva**, já que agora só vai para quem tem dose a fazer: "A caderneta de {nome} tem vacina para colocar em dia. A campanha vai até {dataFim}. Procure uma unidade de saúde com {nome}. Confirme na unidade." (logada: "A sua caderneta…"). Para campanha **não seletiva**: "{nome} faz parte do público desta campanha. A campanha vai até {dataFim}. Procure uma unidade de saúde com {nome}. Confirme na unidade." (logada: "Você faz parte…") **[provisório]**. O título não mudou. Sai o "Veja se é para você".
+- **`Campanha.elegivel` calculado** em `GET /v1/campanhas?idPessoa=` com a mesma regra: `true` ou `false`; `null` só sem `idPessoa` ou quando a campanha não tem faixa etária cadastrada. Deixa de ser **[provisório]**.
+- **Novo campo obrigatório `seletiva`** (boolean) em `Campanha`, espelho de `campanha.seletiva`: Multivacinação 2026 `true`, Influenza 2026 `false`. Diz ao front qual regra de `elegivel` se aplicou.
+- Lembretes de dose: **comportamento igual**; a descrição agora cita as fontes (perguntas 19 e 20).
+
+### Exemplos (base sintética, 24/11/2026)
+
+- Todas as doses dos exemplos ganharam `nomeDose`, pelo `codigo_dose_rnds` do seed-02. Ex.: BCG "dose única" (código 9); hepatite B ao nascer e febre amarela aos 9 meses "dose" (código 8); VIP R2 "2º reforço" (código 7); DTP R1 "1º reforço" (código 6); MenACWY e febre amarela aos 4 anos "reforço" (código 38).
+- `GET /v1/eu/lembretes` (`valentinaEHeitor`): sai o lembrete da Multivacinação da Valentina (21 anos, fora da faixa). O do Heitor (6 meses) fica: ele tem 4 doses atrasadas de vacinas da campanha. **7 lembretes** (eram 8).
+- `GET /v1/pessoas/48/lembretes` (`bernardo`): o lembrete da Multivacinação fica (Bernardo tem 3 doses atrasadas e 1 disponível de vacinas da campanha), com a mensagem nova. Continua com 6 lembretes.
+- Os títulos dos lembretes de dose dos exemplos não mudaram, porque são todos de "1ª/2ª/3ª dose".
+- `GET /v1/campanhas`: todos os exemplos ganharam `seletiva: true` (só a Multivacinação está vigente); o exemplo `vigentes` passou a listar as 14 vacinas da campanha 2 (era um recorte de 3); novos exemplos `vigentesParaHeitor` (`elegivel: true`) e `vigentesParaValentina` (`elegivel: false`).
+
+### Perguntas respondidas (D21)
+
+Ver a seção "Perguntas", abaixo: 16, 17, 19, 20 e 21 respondidas com a fonte; 18 continua aberta.
+
 ## 0.5.0 · 25/11/2026 · lembretes no app (D20)
 
 > Decisão D20 (Adan, 25/11/2026): lembretes (RF19, Must) entram no piloto. Desenho **em andamento**: lembretes **no app**, calculados na hora, **sem push** e **sem gravar nada**. As regras de geração, de texto e de ordem estão marcadas **[provisório, a confirmar com a Duda]**.
@@ -129,7 +167,7 @@ Escolhas da v0:
 - Regras da D18 (reforço, orientações por dose), também aguardando a SESAU.
 - Definição de `dataUltimaAtualizacao`.
 - Escolha da `proximaDose`.
-- `elegivel` nas campanhas.
+- ~~`elegivel` nas campanhas.~~ Resolvido na 0.6.0 (D21).
 - `horarioFuncionamento` da unidade.
 
 ## Perguntas
@@ -162,11 +200,14 @@ Escolhas da v0:
 14. **Quando mostrar `DOSE_ANTERIOR_SEM_REGISTRO`:** a API mostra só quando a dose anterior já passou da idade recomendada (está pendente). Para um bebê cuja D1 ainda nem chegou, a D2 futura não recebe a orientação. Confirma?
 15. **Doses que não são reforço, mas têm idade recomendada muito depois do intervalo mínimo** (ex.: varicela D2, recomendada aos 4 anos, com intervalo mínimo de 30 dias depois da D1 aos 15 meses): pela D18 elas ficam "já pode tomar" logo após o intervalo. Mantém assim?
 
-### Abertas (surgiram com os lembretes, D20; para a Duda)
+### Respondidas (lembretes, D21: seguem o PNI e o Ministério da Saúde)
 
-16. **Campanha sem elegibilidade:** hoje toda campanha vigente gera lembrete para todas as pessoas. No exemplo, a Valentina (21 anos) recebe lembrete da Multivacinação 2026, que é para menores de 15. A mensagem mostra o público-alvo e pede "veja se é para você", mas pode confundir. Mantemos assim, filtramos por uma faixa etária simples ou só mostramos campanha quando `elegivel` existir (pergunta 7)?
-17. **Um lembrete de campanha por pessoa ou por família?** Hoje são dois lembretes iguais da mesma campanha para a Valentina e o Heitor.
-18. **Janela de "em breve":** 30 dias, contados a partir de hoje (inclusive o 30º dia). O número está bom?
-19. **Atrasada antiga:** a Valentina recebe lembrete da tríplice viral D2, atrasada desde 2007. Toda dose `ATRASADA` gera lembrete, sem limite de tempo?
-20. **Doses `AINDA_NAO_DISPONIVEL` com a orientação `DOSE_ANTERIOR_SEM_REGISTRO`** (ex.: Meningo C D2 do Heitor) não geram lembrete, porque não têm data. Elas deveriam gerar um lembrete do tipo "procure a unidade"?
-21. **Texto com o número da dose:** o título usa `numeroDose` ("4ª dose" para o 1º reforço da VIP; "1ª dose" para a dose única do HPV). Serve, ou o título deve usar a `descricao` da dose nesses casos?
+16. **Campanha sem elegibilidade:** resolvida. A campanha gera lembrete só para quem está numa faixa etária dela (`campanha_faixa_etaria`) e, se a campanha é **seletiva** (`campanha.seletiva`), tem pelo menos uma dose atrasada ou disponível de uma vacina da campanha; se não é seletiva (ex.: influenza anual), basta a faixa. Fonte: a Multivacinação 2026 é para "menores de 15 anos (14 anos, 11 meses e 29 dias)", com o objetivo de "resgatar não vacinados ou completar esquemas", e a vacinação é **seletiva**: "aplicar somente as doses necessárias para iniciar ou completar o esquema" [MS-MULTI-2026]. A mensagem federal da Pneumo 20 (out/2026), que chegou a pais com caderneta em dia e confundiu, mostra o risco de avisar quem não tem dose a fazer **[indício]**. A Valentina (21 anos) deixa de receber a Multivacinação. Campanha cujo público não é por idade (gestantes, grupos) não gera lembrete pela API. A mesma regra calcula `Campanha.elegivel` (também responde a pergunta 7 para as campanhas).
+17. **Um lembrete por pessoa ou por família:** por pessoa. A vacinação é feita pela caderneta de cada um e só com as doses que faltam a ela [MS-MULTI-2026]; cada pessoa elegível recebe um lembrete da campanha.
+19. **Atrasada antiga:** a dose atrasada gera lembrete enquanto está dentro da **idade máxima oficial** dela, sem outro limite de tempo, porque o esquema em atraso deve ser atualizado "o mais breve possível" [IN-CNV-2026]. Depois da idade máxima, a dose vai para `dosesForaDaIdade` e não gera lembrete (só "converse na unidade") [PNI-REG]. Sem mudança de comportamento: a tríplice viral D2 da Valentina continua, porque a idade máxima dela é 59 anos ([16](16-regra-situacao-vacinal.md)).
+20. **Dose sem data por falta da anterior:** não gera lembrete próprio. O lembrete é o da **dose anterior**, que aparece como atrasada ou disponível enquanto estiver na idade. É coerente com "não reiniciar o esquema" [IN-CNV-2026] e com "sem D1 não há D2" [PNI-REG]. Ex.: a Meningo C D2 do Heitor (pessoa 5) não gera lembrete; a Meningo C D1, atrasada, gera. Sem mudança de comportamento.
+21. **Texto com o número da dose:** o título usa o novo campo `nomeDose`, com a descrição oficial da dose na RNDS (BRDose) [RNDS], no padrão do Calendário Nacional [IN-CNV-2026]: "1º reforço" para o reforço da VIP aos 15 meses (era "4ª dose") e "dose única" para o HPV (era "1ª dose").
+
+### Aberta (lembretes; para a Duda)
+
+18. **Janela de "em breve":** 30 dias, contados a partir de hoje (inclusive o 30º dia). **Não há regra oficial** sobre isso; é escolha nossa. O número está bom?

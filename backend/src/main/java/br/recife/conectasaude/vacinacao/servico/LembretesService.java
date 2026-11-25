@@ -1,10 +1,12 @@
 package br.recife.conectasaude.vacinacao.servico;
 
 import br.recife.conectasaude.vacinacao.api.Respostas;
+import br.recife.conectasaude.vacinacao.dados.Campanha;
 import br.recife.conectasaude.vacinacao.dados.CampanhaRepository;
 import br.recife.conectasaude.vacinacao.dados.VinculoResponsavel;
 import br.recife.conectasaude.vacinacao.dados.VinculoResponsavelRepository;
 import br.recife.conectasaude.vacinacao.regra.Aviso;
+import br.recife.conectasaude.vacinacao.regra.ElegibilidadeCampanha;
 import br.recife.conectasaude.vacinacao.regra.GeradorLembretes;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -18,7 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Lembretes do app (RF19, D20), calculados na hora: situação vacinal de cada pessoa (mesma regra e
- * mesma data de {@link SituacaoVacinalService}) + campanhas vigentes. Somente leitura: não usa as
+ * mesma data de {@link SituacaoVacinalService}) + campanhas vigentes para as quais a pessoa é elegível
+ * (mesma regra de {@code GET /v1/campanhas}, via {@link CriteriosCampanha}). Somente leitura: não usa as
  * tabelas {@code lembrete} e {@code notificacao}, não grava nada e não envia push. Não registra nada
  * em log.
  */
@@ -33,14 +36,16 @@ public class LembretesService {
     private final SituacaoVacinalService situacao;
     private final VinculoResponsavelRepository vinculos;
     private final CampanhaRepository campanhas;
+    private final CriteriosCampanha criterios;
     private final Clock relogio;
     private final GeradorLembretes gerador = new GeradorLembretes();
 
     public LembretesService(SituacaoVacinalService situacao, VinculoResponsavelRepository vinculos,
-            CampanhaRepository campanhas, Clock relogio) {
+            CampanhaRepository campanhas, CriteriosCampanha criterios, Clock relogio) {
         this.situacao = situacao;
         this.vinculos = vinculos;
         this.campanhas = campanhas;
+        this.criterios = criterios;
         this.relogio = relogio;
     }
 
@@ -65,11 +70,13 @@ public class LembretesService {
 
         List<GeradorLembretes.Pessoa> paraRegra = calculos.stream()
                 .map(c -> new GeradorLembretes.Pessoa(c.pessoa().getId(), c.pessoa().getNome(),
-                        c.pessoa().getId() == idPessoaLogada, c.resultado()))
+                        c.pessoa().getDataNascimento(), c.pessoa().getId() == idPessoaLogada, c.resultado()))
                 .toList();
-        List<GeradorLembretes.Campanha> vigentes = campanhas.buscarVigentes(hoje).stream()
-                .map(c -> new GeradorLembretes.Campanha(c.getId(), c.getNome(), c.getPublicoAlvo(), c.getDataInicio(),
-                        c.getDataFim()))
+        List<Campanha> vigentesNoBanco = campanhas.buscarVigentes(hoje);
+        Map<Integer, ElegibilidadeCampanha.Criterio> criterioPorCampanha = criterios.de(vigentesNoBanco);
+        List<GeradorLembretes.Campanha> vigentes = vigentesNoBanco.stream()
+                .map(c -> new GeradorLembretes.Campanha(c.getId(), c.getNome(), c.getDataInicio(), c.getDataFim(),
+                        criterioPorCampanha.get(c.getId())))
                 .toList();
 
         Map<Integer, Respostas.PessoaResumo> resumos = calculos.stream()

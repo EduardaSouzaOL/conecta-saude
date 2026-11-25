@@ -167,14 +167,29 @@ class ContratoTest extends BancoDeTeste {
         assertThat(unidade.path("cnes")).isEqualTo(exUnidade.path("cnes"));
         assertThat(unidade.path("horarioFuncionamento").isNull()).isTrue();
 
-        JsonNode campanhas = chamar("/v1/campanhas?vigentes=true&idPessoa=5", 4);
-        assertConformeSchema(campanhas, "ListaCampanhas");
-        assertThat(campanhas.path("campanhas")).hasSize(1);
-        assertThat(campanhas.path("campanhas").get(0).path("nome").asText()).isEqualTo("Multivacinação 2026");
-        assertThat(campanhas.path("campanhas").get(0).path("elegivel").isNull()).isTrue();
 
         JsonNode vacinas = chamar("/v1/vacinas", 4);
         assertConformeSchema(vacinas, "ListaVacinas");
         assertContemItens(vacinas.path("vacinas"), exemplo("/v1/vacinas", "recorte").path("vacinas"), "id");
+    }
+
+    /** Os exemplos de campanhas vigentes são listas completas (D21: seletiva e elegivel). */
+    @Test
+    void campanhasVigentesBatemComOsExemplos() throws Exception {
+        Object[][] casos = {{"/v1/campanhas?vigentes=true", "vigentes"},
+                {"/v1/campanhas?vigentes=true&idPessoa=5", "vigentesParaHeitor"},
+                {"/v1/campanhas?vigentes=true&idPessoa=4", "vigentesParaValentina"}};
+        for (Object[] caso : casos) {
+            JsonNode esperado = exemplo("/v1/campanhas", (String) caso[1]);
+            assertThat(esperado.isMissingNode()).as("exemplo %s no contrato", caso[1]).isFalse();
+            assertConformeSchema(esperado, "ListaCampanhas");
+            JsonNode real = chamar((String) caso[0], 4);
+            assertConformeSchema(real, "ListaCampanhas");
+            assertThat(real).as("exemplo %s", caso[1]).isEqualTo(esperado);
+        }
+
+        JsonNode todas = chamar("/v1/campanhas?idPessoa=5", 4);
+        assertConformeSchema(todas, "ListaCampanhas");
+        assertThat(todas.path("campanhas")).allSatisfy(c -> assertThat(c.has("seletiva")).isTrue());
     }
 }

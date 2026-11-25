@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints de contrato/openapi.yaml (v0.5.0). Somente GET: nenhum endpoint cria ou altera dose
+ * Endpoints de contrato/openapi.yaml (v0.6.0). Somente GET: nenhum endpoint cria ou altera dose
  * (RNF05, RN05). Dados de uma pessoa passam sempre pelo {@link ControleDeAcesso}.
  */
 @RestController
@@ -90,7 +90,7 @@ public class MinhaVacinacaoController {
         if (idPessoa != null) {
             acesso.exigirAcesso(idPessoa);
         }
-        return consultas.campanhas(vigentes);
+        return consultas.campanhas(vigentes, idPessoa);
     }
 
     @GetMapping("/vacinas")

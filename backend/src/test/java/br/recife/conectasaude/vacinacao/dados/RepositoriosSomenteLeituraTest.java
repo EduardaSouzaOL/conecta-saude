@@ -24,7 +24,8 @@ class RepositoriosSomenteLeituraTest {
             DoseEsquemaRepository.class, VacinaRepository.class, UnidadeSaudeRepository.class,
             UnidadeVacinaRepository.class, CampanhaRepository.class, RndsImunobiologicoRepository.class,
             FabricanteImunobiologicoRepository.class, ImportacaoDadosRepository.class,
-            RndsDoseRepository.class, RndsEstrategiaVacinacaoRepository.class);
+            RndsDoseRepository.class, RndsEstrategiaVacinacaoRepository.class,
+            CampanhaFaixaEtariaRepository.class);
 
     private static final Set<String> PREFIXOS_DE_ESCRITA =
             Set.of("save", "delete", "remove", "insert", "update", "flush", "persist", "merge");
