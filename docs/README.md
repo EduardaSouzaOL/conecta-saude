@@ -36,6 +36,7 @@ Esta pasta organiza o conteúdo do arquivo original `Hackathon - ARIES (1).md` (
 | 16 | [Regra de situação vacinal](16-regra-situacao-vacinal.md) | Como o app decide atrasada / já pode tomar / ainda não disponível, seguindo as fontes oficiais do PNI |
 | 18 | [Pesquisa: regras do Ministério da Saúde](18-pesquisa-regras-ministerio.md) | Respostas, com fonte, para as regras que estavam "a confirmar" (IN 2026, Manual de Normas 2024, Portaria 5.663/2024) |
 | 17 | [Critérios de aceite do front](17-criterios-de-aceite-front.md) | O que cada tela do front precisa fazer para ser aceita, a partir do contrato da API (inclui carteira em PDF e ouvidoria, D22) |
+| 19 | [Especificação de design](19-especificacao-design.md) | Telas SCR-01 a SCR-09, componentes, cores e regras de tela vindas do Figma (nome **Próxima**, pop-up de atualização da carteira) |
 | — | [Dúvidas para o alinhamento com a COP](duvidas-alinhamento-cop.md) | Perguntas em aberto por tema, para o alinhamento de 25/11/2026 |
 | A | [Anexo — histórico e ideias iniciais](anexo-historico-ideias-iniciais.md) | Como o projeto evoluiu do nicho climático para a vacinação |
 

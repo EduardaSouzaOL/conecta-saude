@@ -76,7 +76,7 @@ erDiagram
 ## Pontos de atenção para a implementação
 
 - **Situação da dose não é coluna**: é calculada (view ou serviço) a partir de `dose_esquema.intervalo_apos_anterior`, `esquema_vacinal.idade_minima/maxima`, `pessoa.data_nascimento` e `registro_vacinacao`. ✅ Resolvido em 24/11/2026: idades e intervalos em **dias**; `dose_esquema.idade_recomendada_dias` guarda a idade do calendário.
-- **Status "não posso tomar"**: a SESAU pediu para revisar (ver RN03 em [03](03-requisitos.md)). Isso afeta o enum calculado.
+- **Status "não posso tomar"**: substituído por **Próxima** na tela (D08, 25/11/2026). O enum calculado continua `AINDA_NAO_DISPONIVEL` (ver RN03 em [03](03-requisitos.md)).
 - **`registro_vacinacao.id_dose_esquema` é obrigatório**: cada registro externo precisa ser mapeado para uma dose de esquema, e esse é justamente o **de-para**. ✅ Resolvido em 24/11/2026: `id_dose_esquema` aceita `NULL` para registros sem de-para (ex.: esquema especial). O de-para fica em `rnds_imunobiologico.id_vacina` e `dose_esquema.codigo_dose_rnds`.
 - **`unidade_vacina`** atende o requisito da gestão de informar mensalmente quais unidades têm cada vacina (`disponibilidade`, `data_atualizacao`).
 - **Sala de vacina aberta/fechada**: não existe campo para isso em `unidade_saude`. Em 24/11/2026 entrou `possui_sala_vacina`; `horario_funcionamento` continua em aberto.

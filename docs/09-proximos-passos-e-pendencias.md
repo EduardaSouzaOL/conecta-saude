@@ -5,7 +5,8 @@
 ## Próximos passos
 
 ### Produto / Design
-- [ ] Ajustar o protótipo do cidadão com o feedback da reunião (status "não posso tomar", aviso de transcrição, ligação com o mapa).
+- [x] ~~Ajustar o protótipo do cidadão com o feedback da reunião~~: feito no Figma e documentado no [19](19-especificacao-design.md) (categoria Próxima, aviso e pop-up de atualização da carteira, ligação com o mapa).
+- [ ] Resolver com a designer as pendências da especificação ([19](19-especificacao-design.md) §7) e com a Duda as divergências listadas na D25 (sino de lembretes, número da ouvidoria municipal no pop-up).
 - [ ] Gerar um **link navegável** (Figma) e um QR Code funcionando e enviar para a SESAU **via Ivo**.
 - [ ] Revisar os textos com linguagem simples (ver RNF01 em [03](03-requisitos.md)).
 - [ ] Testes de usabilidade com cidadãos de territórios contrastantes.
@@ -44,7 +45,7 @@
 ## Perguntas em aberto
 
 1. Qual base será usada de fato no protótipo e no futuro: RNDS, PEC ou "espelho" do Meu SUS Digital?
-2. Como substituir o status "não posso tomar"?
+2. ~~Como substituir o status "não posso tomar"?~~ Decidido: categoria **Próxima** (D08, 25/11/2026).
 3. Vale exibir o PDF da carteira, ou isso compete com o documento oficial do Ministério?
 4. Como tratar esquemas especiais (imunossuprimidos, indicações clínicas) sem expor dados sensíveis?
 5. Como a disponibilidade de vacina por unidade será mantida (quem atualiza, com que frequência)?
