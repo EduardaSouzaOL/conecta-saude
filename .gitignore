@@ -1,0 +1,14 @@
+# Variáveis de ambiente locais (senhas do banco de desenvolvimento)
+.env
+.env.*
+!.env.example
+
+# Sistema operacional e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Configuração local do Claude Code
+.claude/settings.local.json

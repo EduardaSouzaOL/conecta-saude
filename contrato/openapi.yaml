@@ -1,0 +1,1215 @@
+openapi: 3.1.0
+info:
+  title: Minha vacinação · API do ConectaSaúde Recife
+  version: 0.4.1
+  summary: Situação vacinal, histórico de doses, unidades, campanhas e vacinas para o módulo "Minha vacinação" do Conecta Recife.
+  description: |
+    Contrato **v0.4** do microsserviço do módulo "Minha vacinação" (decisão D14). É a fonte de verdade
+    para o backend (Spring Boot) e para o front web (React + TypeScript, D12/D15).
+
+    Regras que valem para toda a API:
+    - **Somente leitura** (RNF05, RN05): nenhum endpoint cria ou altera dose.
+    - **Dados sintéticos** em desenvolvimento e demonstração (RNF08). Todos os exemplos vêm de
+      `docs/banco-de-dados/sintetico/` e usam como data de referência **24/11/2026**.
+    - **Privacidade** (RNF04): a API nunca devolve CID, condição clínica, grupo de atendimento,
+      CPF, CNS ou dados do profissional que aplicou a dose.
+    - A situação vacinal é uma **previsão de rotina**; o aprazamento oficial é do profissional de
+      saúde (RN02). Por isso as respostas trazem o aviso "confirme na unidade" e a data da última
+      atualização dos dados (RNF09).
+    - **Regra oficial (D19):** a situação da dose segue as fontes oficiais do PNI (faixa etária,
+      intervalo mínimo e sequência das "Regras de entrada de dados"; idade recomendada do
+      Calendário 2026), descritas em `docs/16-regra-situacao-vacinal.md`. A regra ainda está em
+      alinhamento com a Secretaria de Saúde. Enquanto isso, toda resposta de situação vacinal e de detalhe da dose
+      traz em `avisos` o item `REGRA_EM_ALINHAMENTO`, e o front mostra todos os `avisos` recebidos.
+    - A pessoa logada só acessa os próprios dados e os dos dependentes vinculados a ela
+      (`pessoa_responsavel`). Outra pessoa devolve **403**.
+    - Erros seguem o formato Problem Details (RFC 9457), `application/problem+json`.
+
+    Pontos marcados com **[provisório]** dependem de definição de regra de negócio e podem mudar
+    (ver `docs/contrato-changelog.md`).
+  contact:
+    name: Equipe ConectaSaúde Recife (Projeto ARIES)
+  license:
+    name: Uso restrito ao Projeto ARIES
+    identifier: LicenseRef-ARIES
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local (perfil dev)
+security:
+  - tokenConecta: []
+tags:
+  - name: Pessoa
+    description: Pessoa logada e seus dependentes (RF01, RF02)
+  - name: Situação vacinal
+    description: Painel-resumo, doses por situação, histórico e detalhe da dose (RF04 a RF08)
+  - name: Unidades
+    description: Mapa e detalhe das unidades de saúde (RF10 a RF13)
+  - name: Campanhas
+    description: Campanhas vigentes e elegibilidade (RF18)
+  - name: Vacinas
+    description: Catálogo de vacinas e doenças que elas previnem (RF22)
+
+paths:
+  /v1/eu:
+    get:
+      tags: [Pessoa]
+      operationId: obterEu
+      summary: Pessoa logada e seus dependentes
+      description: |
+        Devolve a pessoa identificada pelo token e as pessoas pelas quais ela é responsável
+        (RF01, RF02). É o ponto de entrada do módulo: o front usa os ids daqui nas outras chamadas.
+      responses:
+        '200':
+          description: Pessoa logada e dependentes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Eu'
+              examples:
+                responsavelComUmFilho:
+                  summary: Valentina (pessoa 4) com o filho Heitor (pessoa 5)
+                  value:
+                    pessoa:
+                      id: 4
+                      nome: Valentina Oliveira Ferreira
+                      dataNascimento: '2005-11-12'
+                    dependentes:
+                      - pessoa:
+                          id: 5
+                          nome: Heitor Nascimento Ferreira
+                          dataNascimento: '2026-05-07'
+                        parentesco: MAE
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /v1/pessoas/{idPessoa}/situacao-vacinal:
+    get:
+      tags: [Situação vacinal]
+      operationId: obterSituacaoVacinal
+      summary: Painel-resumo e doses previstas por situação
+      description: |
+        Calcula a situação de cada dose prevista no calendário para a pessoa (RN01), a partir do
+        esquema vacinal, da data de nascimento e dos registros existentes. Alimenta a tela
+        "Minha vacinação" (painel-resumo RF06, lista por situação RF05, próxima dose RF07,
+        aviso de cartão desatualizado RF08 e data da última atualização RNF09).
+
+        **Regra oficial (D19, `docs/16-regra-situacao-vacinal.md`), em alinhamento com a SESAU.**
+        Para cada dose, vale o primeiro passo que se encaixa: (1) há registro: `EM_DIA`;
+        (2) a pessoa passou da idade máxima oficial da dose: sai da lista e vai para
+        `dosesForaDaIdade`, com o aviso "converse na unidade"; (3) a dose anterior do esquema não
+        tem registro: `AINDA_NAO_DISPONIVEL`; (4) antes da idade mínima oficial: `AINDA_NAO_DISPONIVEL`;
+        (5) antes do intervalo mínimo depois da dose anterior: `AINDA_NAO_DISPONIVEL`; (6) depois da
+        idade recomendada: `ATRASADA`; (7) senão: `PODE_TOMAR`. Reforço segue a mesma regra (idade
+        mínima + intervalo mínimo). Não há situação "em processamento": a demora de até 14 dias
+        para o registro aparecer é só o aviso `ATRASO_REGISTRO`. Cada dose pode trazer
+        `orientacoes` (dose anterior sem registro; atualizar a caderneta), que o front mostra junto dela.
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Situação vacinal da pessoa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituacaoVacinal'
+              examples:
+                bebeDeSeisMeses:
+                  summary: Heitor (pessoa 5, nascido em 07/05/2026), doses até 9 meses
+                  description: |
+                    Doses do calendário até 9 meses (sem a influenza anual). O resumo conta só
+                    as doses deste exemplo. A Rotavírus D1 foi tomada, mas não chegou ao sistema
+                    (sub-registro da base sintética): aparece como atrasada, mesmo com a D2
+                    registrada, que é o caso do aviso de cartão desatualizado. A VIP D3 já passou
+                    da idade recomendada, mas o intervalo mínimo depois da D2 (aplicada em 07/11)
+                    ainda não foi cumprido: fica "ainda não disponível" até 07/12, com a
+                    orientação `ATUALIZAR_CADERNETA`. A Meningo C D2 fica "ainda não disponível",
+                    com a orientação `DOSE_ANTERIOR_SEM_REGISTRO`, porque a D1 não tem registro e a
+                    regra oficial exige a dose anterior. A Meningo C D1 libera a partir de 2 meses
+                    (idade mínima oficial), embora a idade recomendada seja 3 meses.
+                  value:
+                    pessoa:
+                      id: 5
+                      nome: Heitor Nascimento Ferreira
+                      dataNascimento: '2026-05-07'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
+                    resumo: { atrasadas: 4, podeTomar: 0, emDia: 8, aindaNaoDisponiveis: 3 }
+                    proximaDose:
+                      { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-07', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
+                    doses:
+                      - { idDose: 1, vacina: { id: 1, nome: BCG }, numeroDose: 1, descricao: Ao nascer (dose única), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 35, dataAplicacao: '2026-05-07', transcricao: false }, orientacoes: [] }
+                      - { idDose: 2, vacina: { id: 2, nome: Hepatite B }, numeroDose: 1, descricao: Ao nascer (até 30 dias), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 36, dataAplicacao: '2026-05-07', transcricao: false }, orientacoes: [] }
+                      - { idDose: 6, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: { idRegistro: 37, dataAplicacao: '2026-07-17', transcricao: false }, orientacoes: [] }
+                      - { idDose: 9, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: { idRegistro: 39, dataAplicacao: '2026-07-20', transcricao: false }, orientacoes: [] }
+                      - { idDose: 14, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 1, descricao: 2 meses, situacao: ATRASADA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-06-22', registro: null, orientacoes: [] }
+                      - { idDose: 16, vacina: { id: 6, nome: Pneumocócica 10-valente }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-07-07', dataDisponivel: '2026-07-07', registro: { idRegistro: 42, dataAplicacao: '2026-07-21', transcricao: false }, orientacoes: [] }
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses, situacao: ATRASADA, dataRecomendada: '2026-08-07', dataDisponivel: '2026-07-07', registro: null, orientacoes: [] }
+                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-07', dataDisponivel: '2026-08-16', registro: { idRegistro: 38, dataAplicacao: '2026-09-06', transcricao: false }, orientacoes: [] }
+                      - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-07', dataDisponivel: '2026-08-19', registro: { idRegistro: 40, dataAplicacao: '2026-11-07', transcricao: false }, orientacoes: [] }
+                      - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-07', dataDisponivel: null, registro: { idRegistro: 41, dataAplicacao: '2026-11-08', transcricao: false }, orientacoes: [] }
+                      - { idDose: 17, vacina: { id: 6, nome: Pneumocócica 10-valente }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-09-07', dataDisponivel: '2026-08-20', registro: null, orientacoes: [] }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-10-07', dataDisponivel: null, registro: null, orientacoes: [{ codigo: DOSE_ANTERIOR_SEM_REGISTRO, mensagem: 'Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde.' }] }
+                      - { idDose: 8, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 3, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2026-11-07', dataDisponivel: '2026-10-06', registro: null, orientacoes: [] }
+                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-07', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
+                      - { idDose: 23, vacina: { id: 9, nome: Febre amarela }, numeroDose: 1, descricao: 9 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2027-02-07', dataDisponivel: '2027-02-07', registro: null, orientacoes: [] }
+                    dosesForaDaIdade: []
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                bebeDeQuatroMeses:
+                  summary: Bernardo (pessoa 48, nascido em 13/07/2026), recorte com "já pode tomar"
+                  description: |
+                    A Meningo C D2 é recomendada aos 5 meses (13/12), mas o intervalo mínimo
+                    depois da D1 já foi cumprido em 19/11: "já pode tomar". A Penta D2 já passou da
+                    idade recomendada, mas a D1 foi aplicada em 26/10 e o intervalo mínimo só se
+                    cumpre em 25/11: "ainda não disponível", com a orientação `ATUALIZAR_CADERNETA`.
+                    O resumo conta só as doses do recorte.
+                  value:
+                    pessoa:
+                      id: 48
+                      nome: Bernardo Oliveira Andrade
+                      dataNascimento: '2026-07-13'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
+                    resumo: { atrasadas: 1, podeTomar: 1, emDia: 2, aindaNaoDisponiveis: 1 }
+                    proximaDose:
+                      { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-13', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
+                    doses:
+                      - { idDose: 6, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-09-13', dataDisponivel: '2026-08-28', registro: { idRegistro: 611, dataAplicacao: '2026-10-26', transcricao: false }, orientacoes: [] }
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses, situacao: EM_DIA, dataRecomendada: '2026-10-13', dataDisponivel: '2026-09-13', registro: { idRegistro: 615, dataAplicacao: '2026-10-20', transcricao: false }, orientacoes: [] }
+                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-13', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
+                      - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-11-13', dataDisponivel: '2026-10-12', registro: null, orientacoes: [] }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: PODE_TOMAR, dataRecomendada: '2026-12-13', dataDisponivel: '2026-11-19', registro: null, orientacoes: [] }
+                    dosesForaDaIdade: []
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                criancaComDoseForaDaIdade:
+                  summary: Heitor (pessoa 95, nascido em 19/06/2025), recorte com dose fora da idade
+                  description: |
+                    A Meningo C (esquema até 364 dias de idade) não tem registro e a criança já
+                    passou da idade máxima: as duas doses saem da lista e vão para
+                    `dosesForaDaIdade`, com o aviso "converse na unidade". A VIP D3 e a Rotavírus
+                    D2 foram tomadas, mas não chegaram ao sistema, e aparecem como atrasadas. O
+                    1º reforço da DTP ficou liberado 6 meses depois da Penta D3 (30/06/2026), como
+                    manda a regra oficial. O reforço da MenACWY fica "ainda não disponível", com a
+                    orientação `DOSE_ANTERIOR_SEM_REGISTRO`, porque a dose anterior oficial dele é a
+                    Meningo C D2, que não tem registro. O 2º reforço da VIP e o reforço da febre
+                    amarela só ficam disponíveis aos 4 anos, que é a idade mínima oficial dessas doses.
+                  value:
+                    pessoa:
+                      id: 95
+                      nome: Heitor Ferreira Rocha
+                      dataNascimento: '2025-06-19'
+                    dataReferencia: '2026-11-24'
+                    dataUltimaAtualizacao: '2026-10-18T08:23:00-03:00'
+                    resumo: { atrasadas: 3, podeTomar: 0, emDia: 2, aindaNaoDisponiveis: 3 }
+                    proximaDose:
+                      { idDose: 13, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 5, descricao: 2º reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2029-06-19', registro: null, orientacoes: [] }
+                    doses:
+                      - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2025-10-19', dataDisponivel: '2025-10-04', registro: null, orientacoes: [] }
+                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2025-12-19', dataDisponivel: '2025-12-28', registro: null, orientacoes: [] }
+                      - { idDose: 21, vacina: { id: 8, nome: Meningocócica ACWY }, numeroDose: 1, descricao: Reforço aos 12 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-06-19', dataDisponivel: null, registro: null, orientacoes: [{ codigo: DOSE_ANTERIOR_SEM_REGISTRO, mensagem: 'Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde.' }] }
+                      - { idDose: 26, vacina: { id: 10, nome: Tríplice viral (SCR) }, numeroDose: 2, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-07-17', registro: { idRegistro: 1266, dataAplicacao: '2026-09-20', transcricao: false }, orientacoes: [] }
+                      - { idDose: 27, vacina: { id: 11, nome: Varicela }, numeroDose: 1, descricao: 15 meses, situacao: EM_DIA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-09-19', registro: { idRegistro: 1267, dataAplicacao: '2026-10-01', transcricao: false }, orientacoes: [] }
+                      - { idDose: 30, vacina: { id: 13, nome: DTP (tríplice bacteriana) }, numeroDose: 1, descricao: 1º reforço aos 15 meses, situacao: ATRASADA, dataRecomendada: '2026-09-19', dataDisponivel: '2026-06-30', registro: null, orientacoes: [] }
+                      - { idDose: 13, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 5, descricao: 2º reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2029-06-19', registro: null, orientacoes: [] }
+                      - { idDose: 24, vacina: { id: 9, nome: Febre amarela }, numeroDose: 2, descricao: Reforço aos 4 anos, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2029-06-19', dataDisponivel: '2029-06-19', registro: null, orientacoes: [] }
+                    dosesForaDaIdade:
+                      - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses }
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: DOSE_FORA_DA_IDADE, mensagem: 'Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer.' }
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/pessoas/{idPessoa}/registros:
+    get:
+      tags: [Situação vacinal]
+      operationId: listarRegistros
+      summary: Histórico de doses registradas
+      description: |
+        Lista os registros de vacinação da pessoa (RF04): vacina, dose, data, lote, fabricante,
+        unidade e fonte do registro. Inclui registros que não se encaixam no calendário
+        (`idDose` nulo, por exemplo tetra viral ou HPV em esquema especial). Ordem: data de
+        aplicação, da mais recente para a mais antiga.
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+      responses:
+        '200':
+          description: Registros da pessoa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaRegistros'
+              examples:
+                bebeDeSeisMeses:
+                  summary: Heitor (pessoa 5), três registros mais recentes
+                  value:
+                    idPessoa: 5
+                    dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
+                    registros:
+                      - id: 41
+                        idDose: 15
+                        vacina: { id: 5, nome: Rotavírus humano }
+                        imunobiologico: { codigo: '45', sigla: ROTA }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-11-08'
+                        lote: SIMYA5051
+                        fabricante: { codigo: '27880', nome: GlaxoSmithKline (GSK) }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-11-11T14:56:00-03:00'
+                      - id: 40
+                        idDose: 10
+                        vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        imunobiologico: { codigo: '22', sigla: VIP }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-11-07'
+                        lote: SIMLG8850
+                        fabricante: { codigo: '2862', nome: Sanofi Pasteur }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-11-10T09:29:00-03:00'
+                      - id: 38
+                        idDose: 7
+                        vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        imunobiologico: { codigo: '42', sigla: Penta }
+                        dose: { codigo: '2', sigla: D2, descricao: 2ª Dose }
+                        estrategia: { codigo: '1', descricao: Rotina }
+                        dataAplicacao: '2026-09-06'
+                        lote: SIMZL1382
+                        fabricante: { codigo: '163', nome: Serum Institute of India }
+                        unidade: { id: 7, nome: USF Fictícia Afogados }
+                        transcricao: false
+                        dataRegistroNaFonte: '2026-09-06T09:22:00-03:00'
+                transcricaoSemLote:
+                  summary: Cecília (pessoa 1), influenza transcrita do cartão físico, sem lote
+                  value:
+                    idPessoa: 1
+                    dataUltimaAtualizacao: '2026-10-24T17:06:00-03:00'
+                    registros:
+                      - id: 6
+                        idDose: 36
+                        vacina: { id: 16, nome: Influenza }
+                        imunobiologico: { codigo: '33', sigla: INF3 }
+                        dose: { codigo: '9', sigla: DU, descricao: Única }
+                        estrategia: { codigo: '8', descricao: Serviço Privado }
+                        dataAplicacao: '2026-05-13'
+                        lote: null
+                        fabricante: { codigo: '152', nome: Instituto Butantan }
+                        unidade: { id: 11, nome: USF Fictícia Cohab }
+                        transcricao: true
+                        dataRegistroNaFonte: '2026-10-24T17:06:00-03:00'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/pessoas/{idPessoa}/doses/{idDose}:
+    get:
+      tags: [Situação vacinal]
+      operationId: obterDetalheDose
+      summary: Detalhe de uma dose prevista
+      description: |
+        Tela 3 do protótipo: situação da dose, quando fica disponível, doenças que a vacina
+        previne e os registros ligados a ela. `idDose` é o id da dose no calendário
+        (`dose_esquema`).
+      parameters:
+        - $ref: '#/components/parameters/IdPessoa'
+        - name: idDose
+          in: path
+          required: true
+          description: Id da dose no calendário (`dose_esquema.id_dose_esquema`)
+          schema:
+            type: integer
+            minimum: 1
+          example: 20
+      responses:
+        '200':
+          description: Detalhe da dose
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheDose'
+              examples:
+                meningoCSegundaDose:
+                  summary: Bernardo (pessoa 48), Meningo C 2ª dose, já pode tomar
+                  value:
+                    idPessoa: 48
+                    dose: { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: PODE_TOMAR, dataRecomendada: '2026-12-13', dataDisponivel: '2026-11-19', registro: null, orientacoes: [] }
+                    esquema: Meningo C – 2 doses
+                    intervaloMinimoDias: 30
+                    doencas:
+                      - { id: 10, nome: Doença meningocócica C }
+                    registros: []
+                    dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
+                    avisos:
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
+                      - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/unidades:
+    get:
+      tags: [Unidades]
+      operationId: listarUnidades
+      summary: Unidades de saúde para o mapa
+      description: |
+        Lista as unidades com sala de vacina (RF10). Com `vacina`, cada unidade traz a
+        disponibilidade daquela vacina (RF13). Com `lat` e `lng`, traz a distância e ordena da
+        mais próxima para a mais distante. Vacina é porta aberta (RF12, RN04): unidades sem a
+        vacina disponível continuam na lista, com a disponibilidade indicada.
+      parameters:
+        - name: vacina
+          in: query
+          required: false
+          description: Id da vacina do catálogo (`GET /v1/vacinas`)
+          schema:
+            type: integer
+            minimum: 1
+          example: 4
+        - name: lat
+          in: query
+          required: false
+          description: Latitude do ponto de referência. Enviar junto com `lng`.
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+          example: -8.12
+        - name: lng
+          in: query
+          required: false
+          description: Longitude do ponto de referência. Enviar junto com `lat`.
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+          example: -34.93
+      responses:
+        '200':
+          description: Unidades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaUnidades'
+              examples:
+                vipPertoDoIbura:
+                  summary: VIP, a partir de um ponto no Ibura (recorte com 2 unidades)
+                  value:
+                    unidades:
+                      - id: 9
+                        nome: USF Fictícia Ibura
+                        tipo: USF
+                        endereco: Rua Fictícia do Ibura, 15 – Ibura
+                        distritoSanitario: DS VI
+                        latitude: -8.127
+                        longitude: -34.937
+                        possuiSalaVacina: true
+                        distanciaMetros: 1095
+                        disponibilidadeVacina: DISPONIVEL
+                      - id: 8
+                        nome: USF Fictícia Boa Viagem
+                        tipo: USF
+                        endereco: Av. Fictícia de Boa Viagem, 4000 – Boa Viagem
+                        distritoSanitario: DS VI
+                        latitude: -8.118
+                        longitude: -34.897
+                        possuiSalaVacina: true
+                        distanciaMetros: 3639
+                        disponibilidadeVacina: INDISPONIVEL
+                    avisoPortaAberta: >-
+                      Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde.
+        '400':
+          $ref: '#/components/responses/RequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /v1/unidades/{idUnidade}:
+    get:
+      tags: [Unidades]
+      operationId: obterUnidade
+      summary: Detalhe da unidade
+      description: |
+        Nome, endereço, telefone, horário, sala de vacina e as vacinas com a disponibilidade
+        informada pela Prefeitura (RF11, RF15).
+      parameters:
+        - name: idUnidade
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 9
+      responses:
+        '200':
+          description: Detalhe da unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalheUnidade'
+              examples:
+                ibura:
+                  summary: USF Fictícia Ibura (recorte das vacinas)
+                  value:
+                    id: 9
+                    nome: USF Fictícia Ibura
+                    tipo: USF
+                    endereco: Rua Fictícia do Ibura, 15 – Ibura
+                    distritoSanitario: DS VI
+                    latitude: -8.127
+                    longitude: -34.937
+                    possuiSalaVacina: true
+                    cnes: '9987676'
+                    telefone: (81) 3355-9444
+                    horarioFuncionamento: null
+                    vacinas:
+                      - vacina: { id: 1, nome: BCG }
+                        disponibilidade: TEMPORARIAMENTE_INDISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                      - vacina: { id: 3, nome: Penta (DTP/Hib/HB) }
+                        disponibilidade: DISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                      - vacina: { id: 4, nome: Poliomielite inativada (VIP) }
+                        disponibilidade: DISPONIVEL
+                        dataAtualizacao: '2026-11-03T08:00:00-03:00'
+                    avisoPortaAberta: >-
+                      Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /v1/campanhas:
+    get:
+      tags: [Campanhas]
+      operationId: listarCampanhas
+      summary: Campanhas de vacinação
+      description: |
+        Lista as campanhas (RF18). Com `vigentes=true`, só as que estão acontecendo hoje
+        (status ATIVA e data de hoje dentro do período). Com `idPessoa`, cada campanha diz se
+        a pessoa é elegível **[provisório]**: a regra de elegibilidade ainda não está definida
+        (o público-alvo é texto livre no banco); enquanto isso, `elegivel` vem `null`.
+      parameters:
+        - name: vigentes
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: idPessoa
+          in: query
+          required: false
+          description: Pessoa para calcular a elegibilidade (a logada ou um dependente)
+          schema:
+            type: integer
+            minimum: 1
+          example: 5
+      responses:
+        '200':
+          description: Campanhas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaCampanhas'
+              examples:
+                vigentes:
+                  summary: Campanhas vigentes em 24/11/2026
+                  value:
+                    campanhas:
+                      - id: 2
+                        nome: Multivacinação 2026
+                        descricao: Atualização da caderneta de crianças e adolescentes menores de 15 anos
+                        dataInicio: '2026-11-09'
+                        dataFim: '2026-12-12'
+                        publicoAlvo: Menores de 15 anos
+                        status: ATIVA
+                        vacinas:
+                          - { id: 3, nome: Penta (DTP/Hib/HB) }
+                          - { id: 4, nome: Poliomielite inativada (VIP) }
+                          - { id: 6, nome: Pneumocócica 10-valente }
+                        elegivel: null
+        '400':
+          $ref: '#/components/responses/RequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemAcesso'
+
+  /v1/vacinas:
+    get:
+      tags: [Vacinas]
+      operationId: listarVacinas
+      summary: Catálogo de vacinas
+      description: Vacinas ativas do catálogo e as doenças que cada uma previne (RF22).
+      responses:
+        '200':
+          description: Vacinas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaVacinas'
+              examples:
+                recorte:
+                  summary: Recorte com 2 das 16 vacinas
+                  value:
+                    vacinas:
+                      - id: 1
+                        nome: BCG
+                        descricao: Calendário Nacional de Vacinação
+                        doencas:
+                          - { id: 1, nome: Tuberculose (formas graves) }
+                      - id: 3
+                        nome: Penta (DTP/Hib/HB)
+                        descricao: Calendário Nacional de Vacinação
+                        doencas:
+                          - { id: 2, nome: Hepatite B }
+                          - { id: 3, nome: Difteria }
+                          - { id: 4, nome: Tétano }
+                          - { id: 5, nome: Coqueluche }
+                          - { id: 6, nome: Haemophilus influenzae b }
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+components:
+  securitySchemes:
+    tokenConecta:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token do login do Conecta Recife (SSO, D15). O formato real ainda não está definido.
+        No perfil `dev`, o backend aceita um token falso que indica qual pessoa sintética está
+        logada (docs/15, seção 1).
+
+  parameters:
+    IdPessoa:
+      name: idPessoa
+      in: path
+      required: true
+      description: Id da pessoa (a logada ou um dependente vinculado a ela)
+      schema:
+        type: integer
+        minimum: 1
+      example: 5
+
+  responses:
+    NaoAutenticado:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Não autenticado
+            status: 401
+            detail: Entre de novo no Conecta Recife.
+    SemAcesso:
+      description: A pessoa logada não é a pessoa pedida nem responsável por ela
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Sem acesso
+            status: 403
+            detail: Você só pode ver os seus dados e os das pessoas que estão sob a sua responsabilidade.
+    NaoEncontrado:
+      description: Recurso não encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Não encontrado
+            status: 404
+            detail: Não encontramos o que você procurou.
+    RequisicaoInvalida:
+      description: Parâmetros inválidos (por exemplo, `lat` sem `lng`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+          example:
+            type: about:blank
+            title: Requisição inválida
+            status: 400
+            detail: Envie latitude e longitude juntas.
+
+  schemas:
+    Problema:
+      type: object
+      description: Problem Details (RFC 9457)
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+
+    PessoaResumo:
+      type: object
+      description: Dados mínimos da pessoa. Nunca inclui CPF, CNS ou dados de saúde.
+      required: [id, nome, dataNascimento]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        dataNascimento:
+          type: string
+          format: date
+
+    Parentesco:
+      type: string
+      description: Parentesco do responsável com o dependente, como está em `pessoa_responsavel.parentesco`
+      examples: [MAE]
+
+    Dependente:
+      type: object
+      required: [pessoa, parentesco]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        parentesco:
+          $ref: '#/components/schemas/Parentesco'
+
+    Eu:
+      type: object
+      required: [pessoa, dependentes]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        dependentes:
+          type: array
+          description: Pessoas vinculadas à pessoa logada como responsável (vínculos sem data de fim)
+          items:
+            $ref: '#/components/schemas/Dependente'
+
+    VacinaResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    DoencaResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    SituacaoDose:
+      type: string
+      description: |
+        Situação de uma dose prevista (RF05). São só estas 4; não existe "não posso tomar"
+        (RN03) nem "em processamento" (D17: a demora de até 14 dias para o registro aparecer
+        vira só o aviso `ATRASO_REGISTRO`).
+
+        **Regra oficial (D19, em alinhamento com a SESAU).** Detalhes e fontes em
+        `docs/16-regra-situacao-vacinal.md`. Idades e intervalos vêm da tabela `dose_esquema`
+        (faixa etária e intervalo mínimo das "Regras de entrada de dados" do PNI; idade
+        recomendada do Calendário 2026) e são contados em meses e anos de calendário, como
+        escritos nas fontes ("1M15D" = nascimento + 1 mês + 15 dias). A dose anterior é a de
+        número anterior no mesmo esquema ou, quando a regra oficial manda, uma dose de outra
+        vacina (tabela `dose_anterior_oficial`: Meningo C D2 antes do reforço da MenACWY, Penta
+        D3 antes da DTP R1, última dose com componente tetânico antes da dT).
+        - `EM_DIA`: há registro que cumpre esta dose.
+        - `AINDA_NAO_DISPONIVEL`: sem registro e (a) a dose anterior oficial não tem registro
+          (a regra oficial exige a dose anterior; `dataDisponivel` fica `null`), ou (b) hoje é antes
+          de `dataDisponivel` (idade mínima oficial da dose ou intervalo mínimo depois da anterior).
+        - `ATRASADA`: sem registro, já liberada, e hoje é depois de `dataRecomendada` (a dose fica
+          atrasada logo depois da idade recomendada).
+        - `PODE_TOMAR`: sem registro, já liberada, e hoje ainda não passou de `dataRecomendada`.
+
+        Dose sem registro cuja pessoa já passou da **idade máxima oficial da dose** (ou, quando a
+        regra oficial não traz máximo, a do esquema no calendário) não recebe situação: sai de
+        `doses` e vai para `dosesForaDaIdade` (ver `SituacaoVacinal`).
+
+        Reforço segue a mesma regra das outras doses: fica disponível na idade mínima oficial,
+        respeitando o intervalo mínimo, mesmo antes da `dataRecomendada`.
+
+        Orientações:
+        - **Dose anterior sem registro**, e ela já passou da idade recomendada dela:
+          `AINDA_NAO_DISPONIVEL` com a orientação `DOSE_ANTERIOR_SEM_REGISTRO`.
+        - **Passou da idade recomendada, mas o intervalo mínimo ainda não foi cumprido:**
+          `AINDA_NAO_DISPONIVEL`, com `dataDisponivel` dizendo quando libera, e a orientação
+          `ATUALIZAR_CADERNETA`.
+      enum: [ATRASADA, PODE_TOMAR, EM_DIA, AINDA_NAO_DISPONIVEL]
+
+    RegistroResumo:
+      type: object
+      description: Registro que cumpre a dose
+      required: [idRegistro, dataAplicacao, transcricao]
+      properties:
+        idRegistro:
+          type: integer
+        dataAplicacao:
+          type: string
+          format: date
+        transcricao:
+          type: boolean
+          description: Verdadeiro quando o registro veio da transcrição do cartão físico (`fonte_primaria = false`)
+
+    DosePrevista:
+      type: object
+      required: [idDose, vacina, numeroDose, descricao, situacao, dataRecomendada, dataDisponivel, registro, orientacoes]
+      properties:
+        idDose:
+          type: integer
+          description: Id da dose no calendário (`dose_esquema`)
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        numeroDose:
+          type: integer
+          minimum: 1
+          description: Ordem da dose no esquema (1 = primeira). O front transforma em texto simples ("hora da segunda dose")
+        descricao:
+          type: string
+          description: Descrição da dose no calendário (ex. "2 meses", "Reforço aos 4 anos")
+        situacao:
+          $ref: '#/components/schemas/SituacaoDose'
+        dataRecomendada:
+          type: [string, 'null']
+          format: date
+          description: |
+            Data de nascimento + idade recomendada no calendário (`idade_recomendada_dias`).
+            Depois dela, a dose sem registro fica `ATRASADA`. `null` quando o calendário não
+            tem idade recomendada (ex. influenza anual).
+        dataDisponivel:
+          type: [string, 'null']
+          format: date
+          description: |
+            A partir de quando a pessoa pode tomar a dose (D19): a data mais tarde entre
+            nascimento + idade mínima oficial da dose e data da dose anterior oficial + intervalo
+            mínimo oficial, em meses e anos de calendário. Vale também para reforços. `null` quando a dose anterior não tem registro
+            (a dose fica `AINDA_NAO_DISPONIVEL` até a anterior ser registrada).
+        registro:
+          description: Registro que cumpre a dose, ou `null` se não há
+          oneOf:
+            - $ref: '#/components/schemas/RegistroResumo'
+            - type: 'null'
+        orientacoes:
+          type: array
+          description: |
+            Orientações desta dose, que o front mostra junto dela, sem mudar o texto: `DOSE_ANTERIOR_SEM_REGISTRO` e `ATUALIZAR_CADERNETA`. Lista vazia se não houver.
+          items:
+            $ref: '#/components/schemas/Aviso'
+
+    DoseForaDaIdade:
+      type: object
+      description: |
+        Dose sem registro cuja idade máxima oficial a pessoa já passou (D17, D19). Não é
+        mostrada como atrasada: o front só orienta a conversar na unidade (aviso
+        `DOSE_FORA_DA_IDADE`).
+      required: [idDose, vacina, numeroDose, descricao]
+      properties:
+        idDose:
+          type: integer
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        numeroDose:
+          type: integer
+          minimum: 1
+        descricao:
+          type: string
+
+    ResumoSituacao:
+      type: object
+      description: Contagem para o painel-resumo (RF06). Não conta `dosesForaDaIdade`.
+      required: [atrasadas, podeTomar, emDia, aindaNaoDisponiveis]
+      properties:
+        atrasadas:
+          type: integer
+          minimum: 0
+        podeTomar:
+          type: integer
+          minimum: 0
+        emDia:
+          type: integer
+          minimum: 0
+        aindaNaoDisponiveis:
+          type: integer
+          minimum: 0
+
+    CodigoAviso:
+      type: string
+      description: |
+        - `REGRA_EM_ALINHAMENTO`: as regras de situação ainda estão em alinhamento com a SESAU
+          (D17). Sempre presente enquanto as regras forem provisórias.
+        - `PREVISAO_DE_ROTINA`: o aprazamento oficial é do profissional; confirme na unidade (RN02).
+        - `CARTAO_DESATUALIZADO`: dose no cartão físico que não aparece aqui (RF08).
+        - `ATRASO_REGISTRO`: uma vacina tomada pode levar até 14 dias para aparecer (RNF09, D17).
+        - `DOSE_FORA_DA_IDADE`: há doses em `dosesForaDaIdade`; converse na unidade (D17).
+
+        Só em `orientacoes` de uma dose (docs/16):
+        - `DOSE_ANTERIOR_SEM_REGISTRO`: a dose anterior do esquema não tem registro e já passou da
+          idade recomendada dela; a dose fica `AINDA_NAO_DISPONIVEL`.
+        - `ATUALIZAR_CADERNETA`: passou da idade recomendada, mas o intervalo mínimo depois da dose
+          anterior ainda não foi cumprido.
+      enum: [REGRA_EM_ALINHAMENTO, PREVISAO_DE_ROTINA, CARTAO_DESATUALIZADO, ATRASO_REGISTRO, DOSE_FORA_DA_IDADE, DOSE_ANTERIOR_SEM_REGISTRO, ATUALIZAR_CADERNETA]
+
+    Aviso:
+      type: object
+      description: |
+        Texto que o front mostra junto da situação vacinal, sem mudar a redação. O front
+        mostra todos os avisos que vierem, na ordem recebida.
+      required: [codigo, mensagem]
+      properties:
+        codigo:
+          $ref: '#/components/schemas/CodigoAviso'
+        mensagem:
+          type: string
+
+    Avisos:
+      type: array
+      items:
+        $ref: '#/components/schemas/Aviso'
+
+    SituacaoVacinal:
+      type: object
+      required: [pessoa, dataReferencia, dataUltimaAtualizacao, resumo, proximaDose, doses, dosesForaDaIdade, avisos]
+      properties:
+        pessoa:
+          $ref: '#/components/schemas/PessoaResumo'
+        dataReferencia:
+          type: string
+          format: date
+          description: Data usada no cálculo (hoje, no fuso de Recife)
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+          description: |
+            **[provisório]** Quando os dados desta pessoa foram atualizados pela última vez na
+            fonte (hoje: o registro mais recente que chegou à RNDS simulada). `null` se a pessoa
+            não tem registros.
+        resumo:
+          $ref: '#/components/schemas/ResumoSituacao'
+        proximaDose:
+          description: |
+            **[provisório]** Próxima dose que vai ficar disponível (RF07): a dose
+            `AINDA_NAO_DISPONIVEL` com a menor `dataDisponivel`. Dose sem `dataDisponivel` (falta a
+            dose anterior) não entra. `null` se não houver.
+          oneOf:
+            - $ref: '#/components/schemas/DosePrevista'
+            - type: 'null'
+        doses:
+          type: array
+          description: Doses previstas no calendário para a pessoa, ordenadas por `dataRecomendada`
+          items:
+            $ref: '#/components/schemas/DosePrevista'
+        dosesForaDaIdade:
+          type: array
+          description: Doses sem registro cuja idade máxima oficial já passou (D17, D19). Lista vazia se não houver
+          items:
+            $ref: '#/components/schemas/DoseForaDaIdade'
+        avisos:
+          $ref: '#/components/schemas/Avisos'
+
+    CodigoDescricao:
+      type: object
+      required: [codigo]
+      properties:
+        codigo:
+          type: string
+        sigla:
+          type: [string, 'null']
+        descricao:
+          type: [string, 'null']
+
+    Fabricante:
+      type: object
+      required: [codigo, nome]
+      properties:
+        codigo:
+          type: [string, 'null']
+          description: Código BRFabricantePNI
+        nome:
+          type: string
+          description: Nome por extenso (ou o display oficial, se não houver)
+
+    UnidadeResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    RegistroVacinacao:
+      type: object
+      description: |
+        Um registro de vacinação (espelho somente leitura de um `Immunization` da RNDS).
+        Não inclui dados do profissional que aplicou a dose nem motivo de indicação.
+      required: [id, idDose, vacina, imunobiologico, dose, estrategia, dataAplicacao, lote, fabricante, unidade, transcricao, dataRegistroNaFonte]
+      properties:
+        id:
+          type: integer
+        idDose:
+          type: [integer, 'null']
+          description: Dose do calendário que este registro cumpre. `null` quando o registro não se encaixa no calendário (ex. tetra viral, HPV em esquema especial)
+        vacina:
+          description: Vacina do catálogo do app (de-para do código RNDS). `null` se o código não está no catálogo
+          oneOf:
+            - $ref: '#/components/schemas/VacinaResumo'
+            - type: 'null'
+        imunobiologico:
+          $ref: '#/components/schemas/CodigoDescricao'
+        dose:
+          $ref: '#/components/schemas/CodigoDescricao'
+        estrategia:
+          $ref: '#/components/schemas/CodigoDescricao'
+        dataAplicacao:
+          type: string
+          format: date
+        lote:
+          type: [string, 'null']
+          description: Pode faltar em transcrição
+        fabricante:
+          description: Pode faltar em transcrição
+          oneOf:
+            - $ref: '#/components/schemas/Fabricante'
+            - type: 'null'
+        unidade:
+          description: Unidade onde a dose foi aplicada, se for uma unidade conhecida
+          oneOf:
+            - $ref: '#/components/schemas/UnidadeResumo'
+            - type: 'null'
+        transcricao:
+          type: boolean
+          description: Verdadeiro quando o registro veio da transcrição do cartão físico (`fonte_primaria = false`)
+        dataRegistroNaFonte:
+          type: [string, 'null']
+          format: date-time
+          description: Quando o registro ficou disponível na fonte (RNDS)
+
+    ListaRegistros:
+      type: object
+      required: [idPessoa, dataUltimaAtualizacao, registros]
+      properties:
+        idPessoa:
+          type: integer
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+        registros:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistroVacinacao'
+
+    DetalheDose:
+      type: object
+      required: [idPessoa, dose, esquema, intervaloMinimoDias, doencas, registros, dataUltimaAtualizacao, avisos]
+      properties:
+        idPessoa:
+          type: integer
+        dose:
+          $ref: '#/components/schemas/DosePrevista'
+        esquema:
+          type: string
+          description: Nome do esquema vacinal
+        intervaloMinimoDias:
+          type: [integer, 'null']
+          description: Intervalo mínimo oficial após a dose anterior do esquema, em dias (D19)
+        doencas:
+          type: array
+          description: Doenças que a vacina previne
+          items:
+            $ref: '#/components/schemas/DoencaResumo'
+        registros:
+          type: array
+          description: Registros que cumprem esta dose
+          items:
+            $ref: '#/components/schemas/RegistroVacinacao'
+        dataUltimaAtualizacao:
+          type: [string, 'null']
+          format: date-time
+        avisos:
+          $ref: '#/components/schemas/Avisos'
+
+    Disponibilidade:
+      type: string
+      description: Disponibilidade da vacina na unidade, informada pela Prefeitura. `SEM_INFORMACAO` quando não há dado
+      enum: [DISPONIVEL, INDISPONIVEL, TEMPORARIAMENTE_INDISPONIVEL, SEM_INFORMACAO]
+
+    Unidade:
+      type: object
+      required: [id, nome, tipo, endereco, distritoSanitario, latitude, longitude, possuiSalaVacina]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        tipo:
+          type: string
+          description: Tipo da unidade (USF, POLICLINICA, MATERNIDADE…)
+        endereco:
+          type: string
+        distritoSanitario:
+          type: [string, 'null']
+        latitude:
+          type: [number, 'null']
+        longitude:
+          type: [number, 'null']
+        possuiSalaVacina:
+          type: boolean
+
+    UnidadeNoMapa:
+      allOf:
+        - $ref: '#/components/schemas/Unidade'
+        - type: object
+          properties:
+            distanciaMetros:
+              type: [integer, 'null']
+              description: Distância em linha reta até o ponto informado. `null` sem `lat`/`lng`
+            disponibilidadeVacina:
+              description: Disponibilidade da vacina filtrada. `null` sem o filtro `vacina`
+              oneOf:
+                - $ref: '#/components/schemas/Disponibilidade'
+                - type: 'null'
+
+    ListaUnidades:
+      type: object
+      required: [unidades, avisoPortaAberta]
+      properties:
+        unidades:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnidadeNoMapa'
+        avisoPortaAberta:
+          type: string
+
+    VacinaNaUnidade:
+      type: object
+      required: [vacina, disponibilidade, dataAtualizacao]
+      properties:
+        vacina:
+          $ref: '#/components/schemas/VacinaResumo'
+        disponibilidade:
+          $ref: '#/components/schemas/Disponibilidade'
+        dataAtualizacao:
+          type: [string, 'null']
+          format: date-time
+
+    DetalheUnidade:
+      allOf:
+        - $ref: '#/components/schemas/Unidade'
+        - type: object
+          required: [cnes, telefone, horarioFuncionamento, vacinas, avisoPortaAberta]
+          properties:
+            cnes:
+              type: [string, 'null']
+            telefone:
+              type: [string, 'null']
+            horarioFuncionamento:
+              type: [string, 'null']
+              description: '**[provisório]** Ainda não existe no banco; vem `null` até a fonte ser definida'
+            vacinas:
+              type: array
+              items:
+                $ref: '#/components/schemas/VacinaNaUnidade'
+            avisoPortaAberta:
+              type: string
+
+    Campanha:
+      type: object
+      required: [id, nome, descricao, dataInicio, dataFim, publicoAlvo, status, vacinas, elegivel]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: [string, 'null']
+        dataInicio:
+          type: string
+          format: date
+        dataFim:
+          type: string
+          format: date
+        publicoAlvo:
+          type: string
+        status:
+          type: string
+          enum: [PLANEJADA, ATIVA, ENCERRADA, CANCELADA]
+        vacinas:
+          type: array
+          items:
+            $ref: '#/components/schemas/VacinaResumo'
+        elegivel:
+          type: [boolean, 'null']
+          description: '**[provisório]** Se a pessoa de `idPessoa` é elegível. `null` sem `idPessoa` ou enquanto a regra não estiver definida'
+
+    ListaCampanhas:
+      type: object
+      required: [campanhas]
+      properties:
+        campanhas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campanha'
+
+    Vacina:
+      type: object
+      required: [id, nome, descricao, doencas]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: [string, 'null']
+        doencas:
+          type: array
+          items:
+            $ref: '#/components/schemas/DoencaResumo'
+
+    ListaVacinas:
+      type: object
+      required: [vacinas]
+      properties:
+        vacinas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vacina'

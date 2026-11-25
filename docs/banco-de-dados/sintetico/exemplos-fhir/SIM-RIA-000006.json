@@ -1,0 +1,75 @@
+{
+  "resourceType": "Immunization",
+  "meta": {
+    "profile": [
+      "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRImunobiologicoAdministrado-3.0"
+    ]
+  },
+  "status": "completed",
+  "vaccineCode": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico",
+        "code": "33"
+      }
+    ]
+  },
+  "patient": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
+      "value": "31543411614"
+    }
+  },
+  "occurrenceDateTime": "2026-05-13",
+  "primarySource": false,
+  "site": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRLocalAplicacao",
+        "code": "0"
+      }
+    ]
+  },
+  "route": {
+    "coding": [
+      {
+        "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRViaAdministracao",
+        "code": "0"
+      }
+    ]
+  },
+  "performer": [
+    {
+      "actor": {
+        "identifier": {
+          "system": "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
+          "value": "881181205747482"
+        }
+      }
+    }
+  ],
+  "protocolApplied": [
+    {
+      "extension": [
+        {
+          "url": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BREstrategiaVacinacao-1.0",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BREstrategiaVacinacao",
+                "code": "8"
+              }
+            ]
+          }
+        }
+      ],
+      "doseNumberString": "9"
+    }
+  ],
+  "manufacturer": {
+    "identifier": {
+      "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRFabricantePNI",
+      "value": "152"
+    }
+  }
+}
