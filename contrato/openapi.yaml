@@ -128,7 +128,7 @@ paths:
                     dataUltimaAtualizacao: '2026-11-11T14:56:00-03:00'
                     resumo: { atrasadas: 5, podeTomar: 0, emDia: 8, aindaNaoDisponiveis: 2 }
                     proximaDose:
-                      { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: Procure uma unidade de saúde para atualizar sua caderneta. }] }
+                      { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
                     doses:
                       - { idDose: 1, vacina: { id: 1, nome: BCG }, numeroDose: 1, descricao: Ao nascer (dose única), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 35, dataAplicacao: '2026-05-07', transcricao: false }, orientacoes: [] }
                       - { idDose: 2, vacina: { id: 2, nome: Hepatite B }, numeroDose: 1, descricao: Ao nascer (até 30 dias), situacao: EM_DIA, dataRecomendada: '2026-05-07', dataDisponivel: '2026-05-07', registro: { idRegistro: 36, dataAplicacao: '2026-05-07', transcricao: false }, orientacoes: [] }
@@ -141,16 +141,16 @@ paths:
                       - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-06', dataDisponivel: '2026-08-19', registro: { idRegistro: 40, dataAplicacao: '2026-11-07', transcricao: false }, orientacoes: [] }
                       - { idDose: 15, vacina: { id: 5, nome: Rotavírus humano }, numeroDose: 2, descricao: 4 meses, situacao: EM_DIA, dataRecomendada: '2026-09-06', dataDisponivel: null, registro: { idRegistro: 41, dataAplicacao: '2026-11-08', transcricao: false }, orientacoes: [] }
                       - { idDose: 17, vacina: { id: 6, nome: Pneumocócica 10-valente }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-09-06', dataDisponivel: '2026-08-20', registro: null, orientacoes: [] }
-                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: ATRASADA, dataRecomendada: '2026-10-06', dataDisponivel: null, registro: null, orientacoes: [{ codigo: DOSE_ANTERIOR_SEM_REGISTRO, mensagem: Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde. }] }
+                      - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: ATRASADA, dataRecomendada: '2026-10-06', dataDisponivel: null, registro: null, orientacoes: [{ codigo: DOSE_ANTERIOR_SEM_REGISTRO, mensagem: 'Não encontramos a dose anterior no seu registro. Procure uma unidade de saúde.' }] }
                       - { idDose: 8, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 3, descricao: 6 meses, situacao: ATRASADA, dataRecomendada: '2026-11-06', dataDisponivel: '2026-10-06', registro: null, orientacoes: [] }
-                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: Procure uma unidade de saúde para atualizar sua caderneta. }] }
+                      - { idDose: 11, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 3, descricao: 6 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-06', dataDisponivel: '2026-12-07', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
                       - { idDose: 23, vacina: { id: 9, nome: Febre amarela }, numeroDose: 1, descricao: 9 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2027-02-05', dataDisponivel: '2027-02-05', registro: null, orientacoes: [] }
                     dosesForaDaIdade: []
                     avisos:
-                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
-                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
                 bebeDeQuatroMeses:
                   summary: Bernardo (pessoa 48, nascido em 13/07/2026), recorte com "já pode tomar"
                   description: |
@@ -168,19 +168,19 @@ paths:
                     dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
                     resumo: { atrasadas: 1, podeTomar: 1, emDia: 2, aindaNaoDisponiveis: 1 }
                     proximaDose:
-                      { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: Procure uma unidade de saúde para atualizar sua caderneta. }] }
+                      { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
                     doses:
                       - { idDose: 6, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 1, descricao: 2 meses, situacao: EM_DIA, dataRecomendada: '2026-09-12', dataDisponivel: '2026-08-28', registro: { idRegistro: 611, dataAplicacao: '2026-10-26', transcricao: false }, orientacoes: [] }
                       - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses, situacao: EM_DIA, dataRecomendada: '2026-10-12', dataDisponivel: '2026-10-12', registro: { idRegistro: 615, dataAplicacao: '2026-10-20', transcricao: false }, orientacoes: [] }
-                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: Procure uma unidade de saúde para atualizar sua caderneta. }] }
+                      - { idDose: 7, vacina: { id: 3, nome: Penta (DTP/Hib/HB) }, numeroDose: 2, descricao: 4 meses, situacao: AINDA_NAO_DISPONIVEL, dataRecomendada: '2026-11-12', dataDisponivel: '2026-11-25', registro: null, orientacoes: [{ codigo: ATUALIZAR_CADERNETA, mensagem: 'Procure uma unidade de saúde para atualizar sua caderneta.' }] }
                       - { idDose: 10, vacina: { id: 4, nome: Poliomielite inativada (VIP) }, numeroDose: 2, descricao: 4 meses, situacao: ATRASADA, dataRecomendada: '2026-11-12', dataDisponivel: '2026-10-12', registro: null, orientacoes: [] }
                       - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses, situacao: PODE_TOMAR, dataRecomendada: '2026-12-12', dataDisponivel: '2026-11-19', registro: null, orientacoes: [] }
                     dosesForaDaIdade: []
                     avisos:
-                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
-                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
                 criancaComDoseForaDaIdade:
                   summary: Heitor (pessoa 95, nascido em 19/06/2025), recorte com dose fora da idade
                   description: |
@@ -213,11 +213,11 @@ paths:
                       - { idDose: 19, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 1, descricao: 3 meses }
                       - { idDose: 20, vacina: { id: 7, nome: Meningocócica C conjugada }, numeroDose: 2, descricao: 5 meses }
                     avisos:
-                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: CARTAO_DESATUALIZADO, mensagem: Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar. }
-                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
-                      - { codigo: DOSE_FORA_DA_IDADE, mensagem: Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer. }
+                      - { codigo: CARTAO_DESATUALIZADO, mensagem: 'Tem dose no seu cartão físico que não aparece aqui? Procure a unidade mais próxima para atualizar.' }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
+                      - { codigo: DOSE_FORA_DA_IDADE, mensagem: 'Algumas vacinas já passaram da idade indicada no calendário. Converse na unidade de saúde para saber o que fazer.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -351,9 +351,9 @@ paths:
                     registros: []
                     dataUltimaAtualizacao: '2026-10-31T16:21:00-03:00'
                     avisos:
-                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade. }
+                      - { codigo: REGRA_EM_ALINHAMENTO, mensagem: 'Estas regras ainda estão em alinhamento com a Secretaria de Saúde. Confirme sempre na unidade.' }
                       - { codigo: PREVISAO_DE_ROTINA, mensagem: 'Esta é uma previsão de rotina. Quem define as datas das suas doses é o profissional de saúde: confirme na unidade.' }
-                      - { codigo: ATRASO_REGISTRO, mensagem: Uma vacina tomada pode levar até 14 dias para aparecer aqui. }
+                      - { codigo: ATRASO_REGISTRO, mensagem: 'Uma vacina tomada pode levar até 14 dias para aparecer aqui.' }
         '401':
           $ref: '#/components/responses/NaoAutenticado'
         '403':
@@ -418,7 +418,7 @@ paths:
                         latitude: -8.127
                         longitude: -34.937
                         possuiSalaVacina: true
-                        distanciaMetros: 1090
+                        distanciaMetros: 1095
                         disponibilidadeVacina: DISPONIVEL
                       - id: 8
                         nome: USF Fictícia Boa Viagem
@@ -428,7 +428,7 @@ paths:
                         latitude: -8.118
                         longitude: -34.897
                         possuiSalaVacina: true
-                        distanciaMetros: 3650
+                        distanciaMetros: 3639
                         disponibilidadeVacina: INDISPONIVEL
                     avisoPortaAberta: >-
                       Vacina é porta aberta: você pode se vacinar em qualquer unidade de saúde.
